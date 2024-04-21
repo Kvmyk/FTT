@@ -1,23 +1,27 @@
 class Client():
-    def __init__(self, name, surName, age, amount, data):
-        self.name = name
-        self.surName = surName
-        self.age = age
-        self.amount = amount
-        self.data = data
+    def __init__(self, nickName, rating, place, street, city, country):
+        self.nickName = nickName
+        self.rating = rating
+        self.place = place
+        self.street = street
+        self.city = city
+        self.country = country
+        
 
     def __str__(self):
-        return f"{self.name} {self.surName} {self.age} {self.amount} {self.data}"
+        return f"NickName: {self.nickName}, Rating: {self.rating}, Place: {self.place}, Street: {self.street}, City: {self.city}, Country: {self.country}"
     
     def changeData(self):
+        
         while True:
-            print("What would you like to change in your reservation?")
-            print("1. Name")
-            print("2. Surname")
-            print("3. Age")
-            print("4. Amount")
-            print("5. Data")
-            print("6. Exit")
+            print("What would you like to change in your opinion?")
+            print("1. Nickname")
+            print("2. Rating")
+            print("3. Place")
+            print("4. Street")
+            print("5. City")
+            print("6. Country")
+            print("7. Exit")
             change = int(input())
             match change:
                 case 1:
@@ -31,10 +35,12 @@ class Client():
                 case 5:
                     self.data = input("Enter new data: ")
                 case 6:
-                    print("Exit")
+                    self.country = input("Enter new country: ")
+                case 7:
+                    break
                 case _:
                     print("Invalid option")
-            print("Your reservation has been changed")
+            print("Your opinion has been changed")
             while True: 
                 print("Would you like to change anything else? Y/N")
                 answer = input()
