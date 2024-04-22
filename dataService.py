@@ -1,6 +1,6 @@
 from dataClass import Client as Cl
 
-class DataService(Cl):
+class DataServiceRestaurant(Cl):
 
     def __init__(self, nickName, rating, place, street, city, country):
         super().__init__(nickName, rating, place, street, city, country)
@@ -33,6 +33,7 @@ class DataService(Cl):
             self.dataList[i] = self.dataList[i - 1]
             i -= 1
         self.dataList[i] = new_client
+<<<<<<< Updated upstream
 
     def searchData(self, place, street, city, country):
         left, right = 0, len(self.dataList) - 1
@@ -64,3 +65,5 @@ class DataService(Cl):
         matches.sort(key=count_matches, reverse=True)
 
         return matches
+=======
+>>>>>>> Stashed changes
