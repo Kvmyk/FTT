@@ -21,6 +21,24 @@ class DataServiceRestaurant(Cl):
     def sortData(self, dataList):
         dataList.sort(key = lambda x: (x.place, x.street, x.city, x.country))
 
+    def sortBynickName(self, dataList):
+        dataList.sort(key = lambda x: x.nickName)
+    
+    def sortByRating(self, dataList):
+        dataList.sort(key = lambda x: x.rating)
+
+    def sortByPlace(self, dataList):
+        dataList.sort(key = lambda x: x.place)
+
+    def sortByStreet(self, dataList):
+        dataList.sort(key = lambda x: x.street)
+
+    def sortByCity(self, dataList):
+        dataList.sort(key = lambda x: x.city)
+    
+    def sortByCountry(self, dataList):
+        dataList.sort(key = lambda x: x.country)
+
     def showData(self, dataList):
         for i in dataList:
             print(i)

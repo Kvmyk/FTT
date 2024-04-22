@@ -1,5 +1,7 @@
 from dataClass import Client as Cl
 from dataService import DataServiceRestaurant as Dsr
+from dbServiceClass import dbService as Dbs
+import pymysql
 
 
 clientData = Dsr("Joe", 6, "Bar", "First Street", "Boston", "USA")
@@ -33,7 +35,11 @@ else:
     searchResult = clientData.searchAllData("Bar", "First Stree", "Boston", "USA")
     if searchResult != -1:
         for i in searchResult:
-            print(i)
+            print(i)    
     else:
         print("Nie znaleziono")
-        
+db = Dbs(clientData.dataList)
+db.selectData()
+db.deleteData("John", 5, "Restaurant", "Main Street", "New York", "USA")
+print("Po usunięciu")
+db.selectData()
