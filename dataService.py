@@ -2,28 +2,25 @@ from dataClass import Client as Cl
 
 class DataServiceRestaurant(Cl):
 
-    def __init__(self, nickName, rating, place, street, city, country):
-        super().__init__(nickName, rating, place, street, city, country)
+    def __init__(self,rating, place, street, city, country, desc):
+        super().__init__(rating, place, street, city, country, desc)
         self.dataList = list(tuple())
 
     def __str__(self):
         return self.dataList
     
-    def addData(self, nickName, rating, place, street, city, country):
-        self.dataList.append(Cl(nickName, rating, place, street, city, country))
+    def addData(self,rating, place, street, city, country, desc):
+        self.dataList.append(Cl(rating, place, street, city, country, desc))
 
-    def removeData(self, nickName, rating, place, street, city, country):
+    def removeData(self, rating, place, street, city, country, desc):
         for client in self.dataList:
-            if client.nickName == nickName and client.rating == rating and client.place == place and client.street == street and client.city == city and client.country == country:
+            if client.rating == rating and client.place == place and client.street == street and client.city == city and client.country == country and client.desc == desc:
                 self.dataList.remove(client)
                 return
             
     def sortData(self, dataList):
         dataList.sort(key = lambda x: (x.place, x.street, x.city, x.country))
 
-    def sortBynickName(self, dataList):
-        dataList.sort(key = lambda x: x.nickName)
-    
     def sortByRating(self, dataList):
         dataList.sort(key = lambda x: x.rating)
 
@@ -43,11 +40,11 @@ class DataServiceRestaurant(Cl):
         for i in dataList:
             print(i)
     
-    def insertData(self, nickName, rating, place, street, city, country):
-        new_client = Cl(nickName, rating, place, street, city, country)
+    def insertData(self, rating, place, street, city, country, desc):
+        new_client = Cl(rating, place, street, city, country, desc)
         self.dataList.append(new_client)
         i = len(self.dataList) - 1
-        while i > 0 and self.dataList[i - 1].nickName > new_client.nickName:
+        while i > 0 and self.dataList[i - 1].place > new_client.place:
             self.dataList[i] = self.dataList[i - 1]
             i -= 1
         self.dataList[i] = new_client
