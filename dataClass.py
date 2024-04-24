@@ -1,4 +1,7 @@
+<<<<<<< Updated upstream
 import sys
+=======
+>>>>>>> Stashed changes
 
 class Client():
     def __init__(self, rating, place, street, city, country, desc):
@@ -59,3 +62,7 @@ class Client():
                         break
                     case _:
                         print("Invalid option")
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes

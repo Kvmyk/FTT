@@ -1,7 +1,6 @@
 from dataClass import Client as Cl
 from dataService import DataServiceRestaurant as Dsr
 from dbServiceClass import dbService as Dbs
-import pymysql
 
 
 clientData = Dsr(6, "Bar", "First Street", "Boston", "USA", "Nice place")
@@ -18,6 +17,7 @@ else:
             print(i)    
     else:
         print("Nie znaleziono")
+
 db = Dbs(clientData.dataList)
 db.selectData()
 db.insertData("Joe", 6, "Bar", "First Street", "Boston", "USA")
