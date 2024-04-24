@@ -1,3 +1,5 @@
+import sys
+
 class Client():
     def __init__(self, nickName, rating, place, street, city, country):
         self.nickName = nickName
