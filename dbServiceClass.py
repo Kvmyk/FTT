@@ -17,18 +17,25 @@ class dbService(Dsr):
             print(i)
         connection.close()
 
-    def insertData(self, nickName, rating, place, street, city, country):
+    def insertData(self,rating, place, street, city, country, desc):
+        ID = None
         connection = pymysql.connect(host="localhost",port = 3306, user ="root", password="", db="dbtoalety")
         cursor = connection.cursor()
-        cursor.execute('INSERT INTO toalety VALUES(%s, %s, %s, %s, %s, %s)', (nickName, rating, place, street, city, country))
+        cursor.execute('INSERT INTO toalety VALUES(%s,%s, %s, %s, %s, %s, %s)', (ID,rating, place, street, city, country, desc))
         connection.commit()
         connection.close()
     
-    def deleteData(self, nickName, rating, place, street, city, country):
+    def deleteData(self,rating, place, street, city, country):
         connection = pymysql.connect(host="localhost",port = 3306, user ="root", password="", db="dbtoalety")
         cursor = connection.cursor()
-        rows_deleted = cursor.execute('DELETE FROM toalety WHERE (nickName = %s AND rating = %s AND place = %s AND street = %s AND city = %s AND country = %s)', (nickName, rating, place, street, city, country))
+        rows_deleted = cursor.execute('DELETE FROM toalety WHERE (nickName = %s AND rating = %s AND place = %s AND street = %s AND city = %s AND country = %s)', (rating, place, street, city, country))
         connection.commit()
         if rows_deleted == 0:
             print("No rows were deleted. Check if the record exists.")
         connection.close()
+
+    def deleteAllData(self):
+        connection = pymysql.connect(host="localhost",port = 3306, user ="root", password="", db="dbtoalety")
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM toalety WHERE ID > 0')
+        connection.commit()
