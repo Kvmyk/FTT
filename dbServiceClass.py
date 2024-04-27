@@ -16,6 +16,7 @@ class dbService(Dsr):
         for i in result:
             print(i)
         connection.close()
+        return result
 
     def insertData(self,rating, place, street, city, country, desc):
         ID = None

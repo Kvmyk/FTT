@@ -64,9 +64,9 @@ class DataServiceRestaurant(Cl):
 
         return -1
 
-    def searchAllData(self, place, street, city, country):
+    def searchAllData(self, city, country):
         # Filter the dataList to include only elements that match at least one criterion.
-        matches = list(filter(lambda x: x.place == place or x.street == street or x.city == city or x.country == country, self.dataList))
+        matches = list(filter(lambda x: x.city == city or x.country == country, self.dataList))
 
         # If no matches were found, return -1.
         if not matches:
@@ -74,7 +74,7 @@ class DataServiceRestaurant(Cl):
 
         # Define a function that counts the number of matches for a given element.
         def count_matches(x):
-            return sum([x.place == place, x.street == street, x.city == city, x.country == country])
+            return sum([x.city == city, x.country == country])
 
         # Sort the matches from most to least.
         matches.sort(key=count_matches, reverse=True)
