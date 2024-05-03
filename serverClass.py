@@ -9,21 +9,12 @@ class Server():
     def set_data(self, data):
         self.data = data
 
-app = Flask(__name__)
+    def runThePage(self, data):
+        app = Flask(__name__)
 
-@app.route('/my-first-api', methods=['GET'])
+        @app.route('/hello')
 
-def hello():
+        def hello():
+            return data
 
-    name = request.args.get('name')
-
-    if name is None:
-        text = 'Hello!'
-
-    else:
-        text = 'Hello ' + name + '!'
-
-    return jsonify({"message": text})
-
-if __name__ == '__main__':
-    app.run(debug=True, port=8000)
+        app.run(host="0.0.0.0", port=8000, debug=True)

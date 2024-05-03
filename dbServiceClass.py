@@ -26,17 +26,30 @@ class dbService(Dsr):
         connection.commit()
         connection.close()
     
+    def setID(self):
+        connection = pymysql.connect(host="localhost",port = 3306, user ="root", password="", db="dbtoalety")
+        cursor = connection.cursor()
+        cursor.execute('SET  @num := 0;')
+        cursor.execute('UPDATE toalety SET ID = @num := (@num+1);')
+        cursor.execute('ALTER TABLE toalety AUTO_INCREMENT = 1;')
+        connection.commit()
+        connection.close()
+
     def deleteData(self,rating, place, street, city, country):
         connection = pymysql.connect(host="localhost",port = 3306, user ="root", password="", db="dbtoalety")
         cursor = connection.cursor()
-        rows_deleted = cursor.execute('DELETE FROM toalety WHERE (nickName = %s AND rating = %s AND place = %s AND street = %s AND city = %s AND country = %s)', (rating, place, street, city, country))
+        rows_deleted = cursor.execute('DELETE FROM toalety WHERE (rating = %s AND place = %s AND street = %s AND city = %s AND country = %s)', (rating, place, street, city, country))
         connection.commit()
         if rows_deleted == 0:
             print("No rows were deleted. Check if the record exists.")
         connection.close()
+        self.setID()
 
     def deleteAllData(self):
         connection = pymysql.connect(host="localhost",port = 3306, user ="root", password="", db="dbtoalety")
         cursor = connection.cursor()
-        cursor.execute('DELETE FROM toalety WHERE ID > 0')
+        cursor.execute('DELETE FROM toalety WHERE ID >= 0')
         connection.commit()
+        connection.close()
+        self.setID()
+    
