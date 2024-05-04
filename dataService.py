@@ -16,8 +16,9 @@ class DataServiceRestaurant(Cl):
         for client in self.dataList:
             if client.rating == rating and client.place == place and client.street == street and client.city == city and client.country == country and client.desc == desc:
                 self.dataList.remove(client)
-                return
-
+    
+    def removeAllData(self):
+        self.dataList.clear()
 
     def sortData(self, dataList):
         dataList.sort(key = lambda x: (x.place, x.street, x.city, x.country))

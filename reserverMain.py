@@ -12,14 +12,7 @@ dane = db.selectData()
 
 server = Srv()
 
-for i in dane:
-    rating = i[1]
-    place = i[2]
-    street = i[3]
-    city = i[4]
-    country = i[5]
-    desc = i[6]
-    print(rating, place, street, city, country, desc)
-    clientData.insertData(rating, place, street, city, country, desc)
 
 server.runThePage(dane)
+
+
