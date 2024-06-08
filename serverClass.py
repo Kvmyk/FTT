@@ -5,6 +5,14 @@ from dataService import DataServiceRestaurant as Dsr
 from dbServiceClass import dbService as Dbs
 import pymysql
 import folium
+import requests
+
+def get_location():
+    response = requests.get('http://ip-api.com/json/')
+    data = response.json()
+    lat = data['lat']
+    lon = data['lon']
+    return lat, lon
 
 
 class Server():
@@ -22,8 +30,9 @@ class Server():
         @app.route('/')
         def fullscreen():
             """Simple example of a fullscreen map."""
-            mapbox_url = "https://api.mapbox.com/styles/v1/kvmyk9/clwowzgw200qt01pcc3bw3u45/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1Ijoia3ZteWs5IiwiYSI6ImNsd293eGg4czEyNnEyanFlZ2lnd2Vqd2IifQ.hnwVAUb5V5WKhAKFrd0efA"
-            m = folium.Map(tiles=mapbox_url, attr="Mapbox", zoom_start=10)
+            lat, lon = get_location()
+            mapbox_url = "https://api.mapbox.com/styles/v1/kvmyk9/clwtnakr2010w01qs94q19z35/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1Ijoia3ZteWs5IiwiYSI6ImNsd293eGg4czEyNnEyanFlZ2lnd2Vqd2IifQ.hnwVAUb5V5WKhAKFrd0efA"
+            m = folium.Map(location=[lat,lon],tiles=mapbox_url, attr="Mapbox", zoom_start=15)
             return m.get_root().render()
         @app.route("/iframe")
         def iframe():
