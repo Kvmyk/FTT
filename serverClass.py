@@ -33,7 +33,15 @@ class Server():
             """Simple example of a fullscreen map."""
             lat, lon = get_location()
             mapbox_url = "https://api.mapbox.com/styles/v1/kvmyk9/clwtnakr2010w01qs94q19z35/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1Ijoia3ZteWs5IiwiYSI6ImNsd293eGg4czEyNnEyanFlZ2lnd2Vqd2IifQ.hnwVAUb5V5WKhAKFrd0efA"
-            m = folium.Map(location=[lat, lon], zoom_start=15, width = 750, height = 500,tiles=mapbox_url, attr="Mapbox attribution", overlay = False)
+            m = folium.Map(location=[lat, lon], tiles=None, zoom_start=15, control_scale=True)
+            folium.TileLayer(tiles=mapbox_url, attr="Mapbox").add_to(m)
+            folium.TileLayer(
+            tiles=mapbox_url,
+            attr='Mapbox',
+            name='Mapbox',
+            overlay=False,
+            control=False
+            ).add_to(m)
             return m.get_root().render()
         
         app.run(host="0.0.0.0", port=8000, debug=True)
