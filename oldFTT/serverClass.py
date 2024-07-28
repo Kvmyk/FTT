@@ -5,7 +5,7 @@ import requests
 from flask import Flask, jsonify, request, send_file, render_template_string
 from markupsafe import escape
 from dataService import DataServiceRestaurant as Dsr
-from dbServiceClass import dbService as Dbs
+from oldFTT.dbServiceClass import dbService as Dbs
 from folium import plugins
 
 def get_location():

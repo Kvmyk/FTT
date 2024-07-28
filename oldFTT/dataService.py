@@ -1,4 +1,4 @@
-from dataClass import Client as Cl
+from oldFTT.dataClass import Client as Cl
 
 class DataServiceRestaurant(Cl):
 
