@@ -1,7 +1,9 @@
-import folium, flask, requests, os
-from flask import Flask, send_from_directory, Response
+import folium, flask, requests, os, geopy
+from flask import Flask, send_from_directory, Response, jsonify, request
+from geopy.geocoders import Nominatim
 
-toilet_icon = "C:\\Users\\kubak\\Desktop\\toilet_icon.png"
+geolocator = Nominatim(user_agent="geoapiExercises")
+toilet_icon = "C:\\Users\\kubak\\Desktop\\FTT\\toilet_icon.png"
 
 
 def get_location():
@@ -11,6 +13,13 @@ def get_location():
     lon = data['lon']
     return lat, lon
 
+def get_coordinates(location):
+    location = geolocator.geocode(location)
+    if location:
+        return location.latitude, location.longitude
+    else:
+        return None
+    
 class Server():
 
     def __init__(self):
@@ -20,23 +29,19 @@ class Server():
     def set_data(self, data):
         self.data = data
 
+
     def runThePage(self):
         app = Flask(__name__)   
 
+        lat, lon = get_location()
+        m = folium.Map(location= [lat, lon],tiles= "Cartodb positron",zoom_start=15, overlay = False)
+        icon = folium.CustomIcon(toilet_icon, icon_size=(50,50))
+
         @app.route('/')
         def fullscreen():
-            lat, lon = get_location()
-            m = folium.Map(location= [lat, lon],tiles= "Cartodb positron",zoom_start=15, overlay = False)
 
-            # setting up the custom icon
-
-            icon = folium.CustomIcon(toilet_icon, icon_size=(50,50))
-
-            # setting the icon on map
-
-            folium.Marker(location=[lat, lon], icon=icon).add_to(m)
             m.save('map.html')
-
+           
             with open('map.html', 'a', encoding='utf-8') as file:
                 file.write("""
                 <!DOCTYPE html>
@@ -103,17 +108,41 @@ class Server():
                 document.getElementById('myModal').style.display = 'none';
                 });
                 function submitModal() {
-                // Tutaj możesz dodać kod do obsługi danych wprowadzonych przez użytkownika
-                var userInput = document.getElementById('userInput').value;
-                console.log(userInput); // Przykład wyświetlenia wprowadzonych danych w konsoli
-                document.getElementById('myModal').style.display = 'none';
+                    var userInput = document.getElementById('userInput').value;
+                    console.log(userInput); // Wyświetlenie danych w konsoli
+                
+                    // Używanie AJAX do wysłania danych do serwera Flask
+                    fetch('/submit', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ userInput: userInput }), // Wysyłanie danych jako JSON
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Success:', data);
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+                
+                    document.getElementById('myModal').style.display = 'none';
                 }
                 </script>
                 </body>
                 </html>
                 """)
-
-            return send_from_directory('.', 'map.html',)
+            return send_from_directory('.', 'map.html')
+        
+        @app.route('/submit', methods=['POST'])
+        def submit():
+            data = request.json
+            userInput = data['userInput']
+            lat, lon = get_coordinates(userInput)
+            folium.Marker(location=[lat, lon], icon=icon).add_to(m)
+            return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
+        
         app.run(host="0.0.0.0", port=8000, debug=True)
 
 
