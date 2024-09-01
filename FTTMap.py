@@ -2,9 +2,8 @@ import folium, flask, requests, os, geopy
 from flask import Flask, send_from_directory, Response, jsonify, request
 from geopy.geocoders import Nominatim
 
-geolocator = Nominatim(user_agent="geoapiExercises")
+geolocator = Nominatim(user_agent="test")
 toilet_icon = "C:\\Users\\kubak\\Desktop\\FTT\\toilet_icon.png"
-
 
 def get_location():
     response = requests.get('http://ip-api.com/json/')
@@ -18,30 +17,44 @@ def get_coordinates(location):
     if location:
         return location.latitude, location.longitude
     else:
-        return None
-    
-class Server():
+        return None, None
 
+class Server():
     def __init__(self):
         self.data = None
-    def get_data(self):
-        return self.data
-    def set_data(self, data):
-        self.data = data
+        self.app = Flask(__name__)
+        self.lat, self.lon = get_location()
+        self.m = folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
+        self.iconToilet = folium.CustomIcon(toilet_icon, icon_size=(50, 50))
+        self.markers=[]
+        self.setup_routes()
 
-
-    def runThePage(self):
-        app = Flask(__name__)   
-
-        lat, lon = get_location()
-        m = folium.Map(location= [lat, lon],tiles= "Cartodb positron",zoom_start=15, overlay = False)
-        icon = folium.CustomIcon(toilet_icon, icon_size=(50,50))
-
-        @app.route('/')
+    def setup_routes(self):
+        @self.app.route('/')
         def fullscreen():
+            self.save_map()
+            return send_from_directory('.', 'map.html')
 
-            m.save('map.html')
-           
+        @self.app.route('/submit', methods=['POST'])
+        def submit():
+            data = request.json
+            userInput = data['userInput']
+            lat, lon = get_coordinates(userInput)
+            if lat and lon:
+                self.markers.append((lat, lon))  # Dodaj marker do listy
+                self.update_map()
+                self.save_map()  
+                return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
+            else:
+                return jsonify({'status': 'error', 'message': 'Nie znaleziono lokalizacji'})
+    def update_map(self):
+        # Usuń wszystkie markery z mapy i dodaj je ponownie
+        self.m = folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
+        for lat, lon in self.markers:
+            folium.Marker(location=[lat, lon], icon=self.iconToilet).add_to(self.m)
+
+    def save_map(self):
+            self.m.save('map.html')
             with open('map.html', 'a', encoding='utf-8') as file:
                 file.write("""
                 <!DOCTYPE html>
@@ -109,9 +122,7 @@ class Server():
                 });
                 function submitModal() {
                     var userInput = document.getElementById('userInput').value;
-                    console.log(userInput); // Wyświetlenie danych w konsoli
-                
-                    // Używanie AJAX do wysłania danych do serwera Flask
+                    console.log(userInput); // Wyświetlenie danych w konsoli                    // Używanie AJAX do wysłania danych do serwera Flask
                     fetch('/submit', {
                         method: 'POST',
                         headers: {
@@ -122,6 +133,12 @@ class Server():
                     .then(response => response.json())
                     .then(data => {
                         console.log('Success:', data);
+                            if (data.status === 'success') {
+                            // Odśwież mapę po dodaniu markera
+                            window.location.reload();
+                        } else {
+                            alert(data.message);
+                        }
                     })
                     .catch((error) => {
                         console.error('Error:', error);
@@ -133,20 +150,10 @@ class Server():
                 </body>
                 </html>
                 """)
-            return send_from_directory('.', 'map.html')
-        
-        @app.route('/submit', methods=['POST'])
-        def submit():
-            data = request.json
-            userInput = data['userInput']
-            lat, lon = get_coordinates(userInput)
-            folium.Marker(location=[lat, lon], icon=icon).add_to(m)
-            return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
-        
-        app.run(host="0.0.0.0", port=8000, debug=True)
-
+                
+    def runThePage(self):
+        self.app.run(host="0.0.0.0", port=8000, debug=True)
 
 if __name__ == "__main__":   
     run = Server()
     run.runThePage()
-
