@@ -25,7 +25,6 @@ class Server():
         self.app = Flask(__name__)
         self.lat, self.lon = get_location()
         self.m = folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
-        self.iconToilet = folium.CustomIcon(toilet_icon, icon_size=(50, 50))
         self.markers=[]
         self.setup_routes()
 
@@ -51,7 +50,8 @@ class Server():
         # Usuń wszystkie markery z mapy i dodaj je ponownie
         self.m = folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
         for lat, lon in self.markers:
-            folium.Marker(location=[lat, lon], icon=self.iconToilet).add_to(self.m)
+            iconToilet = folium.CustomIcon(toilet_icon, icon_size=(50, 50), shadow_size=(50, 50))
+            folium.Marker(location=[lat, lon], icon=iconToilet).add_to(self.m)
 
     def save_map(self):
             self.m.save('map.html')
