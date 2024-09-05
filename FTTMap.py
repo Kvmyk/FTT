@@ -28,13 +28,18 @@ class Server():
         self.markers=self.load_markers()
         self.setup_routes()
 
+    # loading markers from a file
+
     def load_markers(self):
         with open('data/data.json', 'r', encoding='utf-8') as file:
             return json.load(file)
 
+    # setting up routes for the server
+
     def setup_routes(self):
         @self.app.route('/')
         def fullscreen():
+            self.save_markers()
             self.load_markers()
             self.update_map()
             self.save_map()
@@ -49,22 +54,26 @@ class Server():
                 new_marker = {
                     "lat":lat,
                     "lon":lon,
-                    "name`":userInput
+                    "name":userInput
                 }
-                self.markers.append(new_marker)  # Dodaj marker do listy
+                self.markers.append(new_marker)  
                 self.update_map()
                 self.save_map()
                 self.save_markers()  
                 return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
             else:
                 return jsonify({'status': 'error', 'message': 'Nie znaleziono lokalizacji'})
+   
+    # updating map with new markers
+
     def update_map(self):
-        # Usuń wszystkie markery z mapy i dodaj je ponownie
         self.m = folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
         for marker in self.markers:
             iconToilet = folium.CustomIcon(toilet_icon, icon_size=(50, 50), shadow_size=(50, 50))
             name = marker.get('name', 'Unknown')
             folium.Marker(location=[marker['lat'], marker['lon']],popup=name, icon=iconToilet).add_to(self.m)
+
+    # saving map to a file and adding a template to it
 
     def save_map(self):
             self.m.save('map.html')
@@ -73,6 +82,8 @@ class Server():
             with open('map.html', 'a', encoding='utf-8') as file:
                 file.write(template_content)
     
+    # saving markers on a map
+
     def save_markers(self):
         with open('data/data.json', 'w', encoding='utf-8') as file:
             json.dump(self.markers, file, ensure_ascii=False, indent=3)
