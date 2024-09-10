@@ -1,27 +1,26 @@
 [
-   {
-      "lat": 52.2296756,
-      "lon": 21.0122287,
-      "name": "Warszawa"
-   },
-   {
-      "lat": 50.0646501,
-      "lon": 19.9449799,
-      "name": "Rynek Główny"
-   },
-   {
-      "lat": 50.678792900000005,
-      "lon": 17.929884436033525,
-      "name": "Opole"
-   },
-   {
-      "lat": 51.1263106,
-      "lon": 16.97819633051261,
-      "name": "Wrocław"
-   },
-   {
-      "lat": 39.4857592,
-      "lon": 19.9255823,
-      "name": "Moraitika"
-   }
+    {
+        "lat": 50.678792900000005,
+        "lon": 17.929884436033525,
+        "name": "Opole",
+        "description": "Fajna toaleta"
+    },
+    {
+        "lat": 52.2337172,
+        "lon": 21.071432235636493,
+        "name": "Warszawa",
+        "description": "Słaba "
+    },
+    {
+        "lat": 39.4857592,
+        "lon": 19.9255823,
+        "name": "Moraitika",
+        "description": "Gówno w kiblu"
+    },
+    {
+        "lat": 39.4925413,
+        "lon": 19.9057729,
+        "name": "Mesongi",
+        "description": "grzyb"
+    }
 ]
