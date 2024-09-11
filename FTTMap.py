@@ -14,22 +14,15 @@ def get_coordinates(location):
     else:
         return None, None
 
-def get_location():
-    response = requests.get('http://ip-api.com/json/')
-    data = response.json()
-    lat = data['lat']
-    lon = data['lon']
-    return lat, lon
-
 class Server():
     def __init__(self):
         self.data = None
         self.app = Flask(__name__)
-        self.lat, self.lon = get_location()
+        # Initialize with a default location (e.g., center of the map)
+        self.lat, self.lon = 52.2297, 21.0122  # Default location (Warsaw, Poland)
         self.m = folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
         self.markers = self.load_markers()
         self.setup_routes()
-        self.update_map()  # Initial update of the map
 
     def load_markers(self):
         with open('data/data.json', 'r', encoding='utf-8') as file:
@@ -40,7 +33,7 @@ class Server():
         def fullscreen():
             self.save_map()
             return send_from_directory('.', 'map.html')
-        
+
         @self.app.route('/location', methods=['POST'])
         def location():
             data = request.json
@@ -69,7 +62,7 @@ class Server():
                 self.save_markers()
                 return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
             else:
-                return jsonify({'status': 'error', 'message': 'Nie znaleziono lokalizacji'})
+                return jsonify({'status': 'error', 'message': 'Location not found'})
 
     def add_marker_to_map(self, marker):
         iconToilet = folium.CustomIcon(toilet_icon, icon_size=(50, 50), shadow_size=(50, 50))
@@ -78,6 +71,7 @@ class Server():
         folium.Marker(location=[marker['lat'], marker['lon']], popup=wholePopUp, icon=iconToilet).add_to(self.m)
 
     def update_map(self):
+        self.m = folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
         for marker in self.markers:
             self.add_marker_to_map(marker)
 

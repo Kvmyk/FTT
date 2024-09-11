@@ -1,95 +1,222 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<style>
-.circle-plus {
-  width: 40px;
-  height: 40px;
-  background-color: white;
-  border: 3px solid red;
-  border-radius: 50%;
-  color: red;
-  text-align: center;
-  line-height: 34px;
-  font-size: 28px;
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  z-index: 1000;
-}
-.circle-plus:hover {
-  transform: scale(1.1); /* Dodano */
-  background-color: #EEEEEE;    
-}
-#myModal input[type="text"], #myModal textarea {
-    width: 80%;
-    padding: 10px;
-    margin: 10px 0;
-    display: inline-block;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-#myModal button {
-    width: 80%;
-    background-color: red;
-    color: white;
-    padding: 14px 20px;
-    margin: 8px 0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-#myModal button:hover {
-    background-color: #C92704;
-}
-</style>
+    <meta charset="UTF-8">
+    <title>Map</title>
+    <style>
+        .circle-plus {
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            border: 3px solid red;
+            border-radius: 50%;
+            color: red;
+            text-align: center;
+            line-height: 34px;
+            font-size: 28px;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            cursor: pointer; /* Dodaj kursor wskaźnika */
+        }
+        .circle-plus:hover {
+            transform: scale(1.1);
+            background-color: #EEEEEE;    
+        }
+        #myModal input[type="text"], #myModal textarea {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #myModal button {
+            width: 80%;
+            background-color: red;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #myModal button:hover {
+            background-color: #C92704;
+        }
+        #myModal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+    </style>
+    <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(sendPosition, showError, { enableHighAccuracy: true });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function sendPosition(position) {
+            // Save location to localStorage
+            localStorage.setItem('lat', position.coords.latitude);
+            localStorage.setItem('lon', position.coords.longitude);
+
+            fetch('/location', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                // Update the map without reloading the page
+                updateMap(position.coords.latitude, position.coords.longitude);
+                // Set locationUpdated flag and refresh the page if not already updated
+                if (!localStorage.getItem('locationUpdated')) {
+                    localStorage.setItem('locationUpdated', 'true');
+                    window.location.reload();
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function showError(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("User denied the request for Geolocation.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    alert("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("An unknown error occurred.");
+                    break;
+            }
+        }
+
+        function updateMapWithStoredLocation() {
+            const lat = localStorage.getItem('lat');
+            const lon = localStorage.getItem('lon');
+            if (lat && lon) {
+                fetch('/location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        lat: parseFloat(lat),
+                        lon: parseFloat(lon)
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                    // Update the map without reloading the page
+                    updateMap(parseFloat(lat), parseFloat(lon));
+                    // Check if the page has already been refreshed
+                    if (!localStorage.getItem('locationUpdated')) {
+                        localStorage.setItem('locationUpdated', 'true');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        function updateMap(lat, lon) {
+            // Logic to update the map with new coordinates
+            // This could involve re-centering the map and adding markers
+            console.log(`Updating map to new location: ${lat}, ${lon}`);
+            // Example: Assuming you have a global map variable
+            if (window.map) {
+                window.map.setView([lat, lon], 15);
+                // Add marker or other map updates here
+            }
+        }
+
+        window.onload = function() {
+            // Check if location is already saved in localStorage
+            if (!localStorage.getItem('lat') || !localStorage.getItem('lon')) {
+                getLocation();
+            } else {
+                updateMapWithStoredLocation();
+            }
+
+            window.location.reload();
+
+            // Add event listeners after the DOM is fully loaded
+            document.querySelector('.circle-plus').addEventListener('click', function() {
+                document.getElementById('myModal').style.display = 'block';
+            });
+            document.getElementById('closeModal').addEventListener('click', function() {
+                document.getElementById('myModal').style.display = 'none';
+            });
+
+            // Clear locationUpdated flag after the page has loaded
+            localStorage.removeItem('locationUpdated');
+        };
+
+        function submitModal() {
+            var userInput = document.getElementById('userInput').value;
+            var descriptionInput = document.getElementById('descriptionInput').value;
+            console.log(userInput, descriptionInput); // Wyświetlenie danych w konsoli
+            // Używanie AJAX do wysłania danych do serwera Flask
+            fetch('/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userInput: userInput, description: descriptionInput }), // Wysyłanie danych jako JSON
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                if (data.status === 'success') {
+                    // Odśwież mapę po dodaniu markera
+                    window.location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+
+            document.getElementById('myModal').style.display = 'none';
+        }
+    </script>
 </head>
 <body>
-<div class="circle-plus">+</div>
-<!-- Modal -->
-<div id="myModal" style="display:none; position:fixed; z-index:1001; left:50%; top:50%; transform:translate(-50%, -50%); background-color:white; padding:20px; border-radius:5px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
-<span id="closeModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
-<input type="text" id="userInput" placeholder="Wpisz coś...">
-<textarea id="descriptionInput" placeholder="Dodaj opis..."></textarea>
-<button onclick="submitModal()">Gotowe</button>
-</div>
-<script>
-document.querySelector('.circle-plus').addEventListener('click', function() {
-document.getElementById('myModal').style.display = 'block';
-});
-document.getElementById('closeModal').addEventListener('click', function() {
-document.getElementById('myModal').style.display = 'none';
-});
-function submitModal() {
-    var userInput = document.getElementById('userInput').value;
-    var descriptionInput = document.getElementById('descriptionInput').value;
-    console.log(userInput, descriptionInput); // Wyświetlenie danych w konsoli
-    // Używanie AJAX do wysłania danych do serwera Flask
-    fetch('/submit', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userInput: userInput, description: descriptionInput }), // Wysyłanie danych jako JSON
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Success:', data);
-            if (data.status === 'success') {
-            // Odśwież mapę po dodaniu markera
-            window.location.reload();
-        } else {
-            alert(data.message);
-        }
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
-
-    document.getElementById('myModal').style.display = 'none';
-}
-</script>
+    <div class="circle-plus">+</div>
+    <!-- Modal -->
+    <div id="myModal">
+        <span id="closeModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
+        <input type="text" id="userInput" placeholder="Wpisz coś...">
+        <textarea id="descriptionInput" placeholder="Dodaj opis..."></textarea>
+        <button onclick="submitModal()">Gotowe</button>
+    </div>
 </body>
 </html>
