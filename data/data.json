@@ -22,5 +22,11 @@
         "lon": 19.9057729,
         "name": "Mesongi",
         "description": "grzyb"
+    },
+    {
+        "lat": 51.1089776,
+        "lon": 17.0326689,
+        "name": "Wrocław",
+        "description": "git kibel bibel"
     }
 ]

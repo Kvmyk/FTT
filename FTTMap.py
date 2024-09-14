@@ -1,4 +1,9 @@
-import folium, flask, requests, os, geopy, json
+import folium
+import flask
+import requests
+import os
+import geopy
+import json
 from flask import Flask, send_from_directory, jsonify, request
 from geopy.geocoders import Nominatim
 from functools import lru_cache
@@ -14,19 +19,25 @@ def get_coordinates(location):
     else:
         return None, None
 
-class Server():
+class Server:
     def __init__(self):
         self.data = None
         self.app = Flask(__name__)
-        # Initialize with a default location (e.g., center of the map)
         self.lat, self.lon = 52.2297, 21.0122  # Default location (Warsaw, Poland)
-        self.m = folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
+        self.m = self.create_map()
         self.markers = self.load_markers()
         self.setup_routes()
 
+    def create_map(self):
+        return folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
+
     def load_markers(self):
-        with open('data/data.json', 'r', encoding='utf-8') as file:
-            return json.load(file)
+        try:
+            with open('data/data.json', 'r', encoding='utf-8') as file:
+                return json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error loading markers: {e}")
+            return []
 
     def setup_routes(self):
         @self.app.route('/')
@@ -71,7 +82,7 @@ class Server():
         folium.Marker(location=[marker['lat'], marker['lon']], popup=wholePopUp, icon=iconToilet).add_to(self.m)
 
     def update_map(self):
-        self.m = folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
+        self.m = self.create_map()
         for marker in self.markers:
             self.add_marker_to_map(marker)
 

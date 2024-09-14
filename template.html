@@ -88,11 +88,8 @@
                 console.log('Success:', data);
                 // Update the map without reloading the page
                 updateMap(position.coords.latitude, position.coords.longitude);
-                // Set locationUpdated flag and refresh the page if not already updated
-                if (!localStorage.getItem('locationUpdated')) {
-                    localStorage.setItem('locationUpdated', 'true');
-                    window.location.reload();
-                }
+                // Set locationUpdated flag
+                localStorage.setItem('locationUpdated', 'true');
             })
             .catch((error) => {
                 console.error('Error:', error);
@@ -135,10 +132,8 @@
                     console.log('Success:', data);
                     // Update the map without reloading the page
                     updateMap(parseFloat(lat), parseFloat(lon));
-                    // Check if the page has already been refreshed
-                    if (!localStorage.getItem('locationUpdated')) {
-                        localStorage.setItem('locationUpdated', 'true');
-                    }
+                    // Set locationUpdated flag
+                    localStorage.setItem('locationUpdated', 'true');
                 })
                 .catch((error) => {
                     console.error('Error:', error);
@@ -164,8 +159,6 @@
             } else {
                 updateMapWithStoredLocation();
             }
-
-            window.location.reload();
 
             // Add event listeners after the DOM is fully loaded
             document.querySelector('.circle-plus').addEventListener('click', function() {
