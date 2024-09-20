@@ -2,11 +2,14 @@ import folium.plugins
 import pymysql
 import folium
 import requests
+import xyzservices
 from flask import Flask, jsonify, request, send_file, render_template_string
 from markupsafe import escape
+import xyzservices.tests
 from dataService import DataServiceRestaurant as Dsr
 from dbServiceClass import dbService as Dbs
 from folium import plugins
+
 
 def get_location():
     response = requests.get('http://ip-api.com/json/')
@@ -33,15 +36,8 @@ class Server():
             """Simple example of a fullscreen map."""
             lat, lon = get_location()
             mapbox_url = "https://api.mapbox.com/styles/v1/kvmyk9/clwtnakr2010w01qs94q19z35/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1Ijoia3ZteWs5IiwiYSI6ImNsd293eGg4czEyNnEyanFlZ2lnd2Vqd2IifQ.hnwVAUb5V5WKhAKFrd0efA"
-            m = folium.Map(location=[lat, lon], tiles=None, zoom_start=15, control_scale=True)
-            folium.TileLayer(tiles=mapbox_url, attr="Mapbox").add_to(m)
-            folium.TileLayer(
-            tiles=mapbox_url,
-            attr='Mapbox',
-            name='Mapbox',
-            overlay=False,
-            control=False
-            ).add_to(m)
+            m = folium.Map(location=[lat, lon], tiles=mapbox_url, attr="Mapbox", zoom_start=15, control_scale=True)
+            xyzservices.providers.keys()
             return m.get_root().render()
         
         app.run(host="0.0.0.0", port=8000, debug=True)
