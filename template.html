@@ -130,10 +130,10 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('Success:', data);
-                    // Update the map without reloading the page
-                    updateMap(parseFloat(lat), parseFloat(lon));
                     // Set locationUpdated flag
                     localStorage.setItem('locationUpdated', 'true');
+                    // Reload the page to update the map
+                    window.location.reload();
                 })
                 .catch((error) => {
                     console.error('Error:', error);
@@ -141,22 +141,11 @@
             }
         }
 
-        function updateMap(lat, lon) {
-            // Logic to update the map with new coordinates
-            // This could involve re-centering the map and adding markers
-            console.log(`Updating map to new location: ${lat}, ${lon}`);
-            // Example: Assuming you have a global map variable
-            if (window.map) {
-                window.map.setView([lat, lon], 15);
-                // Add marker or other map updates here
-            }
-        }
-
         window.onload = function() {
             // Check if location is already saved in localStorage
             if (!localStorage.getItem('lat') || !localStorage.getItem('lon')) {
                 getLocation();
-            } else {
+            } else if (!localStorage.getItem('locationUpdated')) {
                 updateMapWithStoredLocation();
             }
 
