@@ -29,7 +29,7 @@ class Server:
         self.setup_routes()
 
     def create_map(self):
-        return folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
+        return folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False, min_zoom=15)
 
     def load_markers(self):
         try:
