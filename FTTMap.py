@@ -9,7 +9,7 @@ from geopy.geocoders import Nominatim
 from functools import lru_cache
 
 geolocator = Nominatim(user_agent="test")
-toilet_icon = "C:\\Users\\kubak\\Desktop\\FTT\\toilet_icon.png"
+toilet_icon = "C:\\Users\\Kuba\\Desktop\\FTT\\toilet_icon.png"
 
 @lru_cache(maxsize=100)
 def get_coordinates(location):
@@ -29,7 +29,7 @@ class Server:
         self.setup_routes()
 
     def create_map(self):
-        return folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
+        return folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False, min_zoom=15)
 
     def load_markers(self):
         try:
