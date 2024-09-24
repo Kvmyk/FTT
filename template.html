@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -24,7 +25,7 @@
             transform: scale(1.1);
             background-color: #EEEEEE;    
         }
-        #myModal input[type="text"], #myModal textarea {
+        #myModal input[type="text"], #myModal textarea, #myModal input[type="file"] {
             width: 80%;
             padding: 10px;
             margin: 10px 0;
@@ -32,6 +33,19 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
+        }
+        #myModal input[type="number"] {
+            width: 40%; /* Zmniejszenie szerokości pola oceny */
+            padding: 10px;
+            margin: 10px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #myModal input[type="checkbox"] {
+            margin: 10px 0;
+            display: block; /* Wyświetlanie checkboxów jako blokowe elementy */
         }
         #myModal button {
             width: 80%;
@@ -164,14 +178,24 @@
         function submitModal() {
             var userInput = document.getElementById('userInput').value;
             var descriptionInput = document.getElementById('descriptionInput').value;
-            console.log(userInput, descriptionInput); // Wyświetlenie danych w konsoli
-            // Używanie AJAX do wysłania danych do serwera Flask
+            var ratingInput = document.getElementById('ratingInput').value;
+            var paidInput = document.getElementById('paidInput').checked;
+            var customersOnlyInput = document.getElementById('customersOnlyInput').checked;
+            var photoInput = document.getElementById('photoInput').files;
+
+            var formData = new FormData();
+            formData.append('userInput', userInput);
+            formData.append('description', descriptionInput);
+            formData.append('rating', ratingInput);
+            formData.append('paid', paidInput);
+            formData.append('customersOnly', customersOnlyInput);
+            for (var i = 0; i < photoInput.length; i++) {
+                formData.append('photos', photoInput[i]);
+            }
+
             fetch('/submit', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ userInput: userInput, description: descriptionInput }), // Wysyłanie danych jako JSON
+                body: formData
             })
             .then(response => response.json())
             .then(data => {
@@ -198,7 +222,12 @@
         <span id="closeModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
         <input type="text" id="userInput" placeholder="Wpisz coś...">
         <textarea id="descriptionInput" placeholder="Dodaj opis..."></textarea>
+        <label><input type="checkbox" id="paidInput"> Płatna</label>
+        <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10">
+        <label><input type="checkbox" id="customersOnlyInput"> Tylko dla klientów</label>
+        <input type="file" id="photoInput" multiple>
         <button onclick="submitModal()">Gotowe</button>
     </div>
+>>>>>>> Stashed changes
 </body>
 </html>
