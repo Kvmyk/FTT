@@ -4,12 +4,13 @@ import requests
 import os
 import geopy
 import json
+import base64
 from flask import Flask, send_from_directory, jsonify, request
 from geopy.geocoders import Nominatim
 from functools import lru_cache
 
 geolocator = Nominatim(user_agent="test")
-toilet_icon = "C:\\Users\\Kuba\\Desktop\\FTT\\toilet_icon.png"
+toilet_icon = "C:\\Users\\kubak\\Desktop\\FTT\\toilet_icon.png"
 
 @lru_cache(maxsize=100)
 def get_coordinates(location):
@@ -29,7 +30,7 @@ class Server:
         self.setup_routes()
 
     def create_map(self):
-        return folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False, min_zoom=15)
+        return folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False, min_zoom=5)
 
     def load_markers(self):
         try:
@@ -56,16 +57,27 @@ class Server:
 
         @self.app.route('/submit', methods=['POST'])
         def submit():
-            data = request.json
-            userInput = data['userInput']
-            description = data['description']
+            data = request.form
+            userInput = data.get('userInput', '')
+            description = data.get('description', '')
+            payable = data.get('payable', 'false').lower() == 'true'
+            onlyForClients = data.get('onlyForClients', 'false').lower() == 'true'
+            rating = data.get('rating', '0')
+            photo = request.files.get('photos')
+
+            photo_base64 = base64.b64encode(photo.read()).decode('utf-8') if photo else None
+
             lat, lon = get_coordinates(userInput)
             if lat and lon:
                 new_marker = {
                     "lat": lat,
                     "lon": lon,
                     "name": userInput,
-                    "description": description
+                    "description": description,
+                    "payable": payable,
+                    "onlyForClients": onlyForClients,
+                    "rating": rating, 
+                    "photo": photo_base64 
                 }
                 self.markers.append(new_marker)
                 self.add_marker_to_map(new_marker)
@@ -78,9 +90,24 @@ class Server:
     def add_marker_to_map(self, marker):
         iconToilet = folium.CustomIcon(toilet_icon, icon_size=(50, 50), shadow_size=(50, 50))
         name = marker.get('name', 'Unknown')
-        wholePopUp = f'<h2 style="font-size: 1.5em;">{name}</h2><p style="font-size: 1em;">{marker["description"]}</p>'
+        description = marker.get('description', 'No description')
+        payable = "TAK" if marker.get('payable', True) else "NIE"
+        onlyForClients = "TAK" if marker.get('onlyForClients', True) else "NIE"
+        rating = marker.get('rating', 'Brak oceny')
+        photo_base64 = marker.get('photo', None)
+        photo_html = f'<img src="data:image/png;base64,{photo_base64}" style="width: 100%; height: auto;">' if photo_base64 else ''
+        wholePopUp = f'''
+            <div style="width: 300px;">
+                <h2 style="font-size: 1.5em;">{name}</h2>
+                <p style="font-size: 1em;">{description}</p>
+                <p><strong>Płatna:</strong> {payable}</p>
+                <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                <p><strong>Ocena:</strong> {rating}</p>
+                {photo_html}
+            </div>
+        '''
         folium.Marker(location=[marker['lat'], marker['lon']], popup=wholePopUp, icon=iconToilet).add_to(self.m)
-
+    
     def update_map(self):
         self.m = self.create_map()
         for marker in self.markers:
