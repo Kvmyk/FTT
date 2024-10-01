@@ -19,7 +19,7 @@
             top: 10px;
             right: 10px;
             z-index: 1000;
-            cursor: pointer; /* Dodaj kursor wskaźnika */
+            cursor: pointer; 
         }
         .circle-plus:hover {
             transform: scale(1.1);
@@ -35,7 +35,7 @@
             box-sizing: border-box;
         }
         #myModal input[type="number"] {
-            width: 50%; /* Zmniejszenie szerokości pola oceny */
+            width: 50%; 
             padding: 10px;
             margin: 10px 0;
             display: block;
@@ -45,7 +45,7 @@
         }
         #myModal input[type="checkbox"] {
             margin: 10px 0;
-            display: block; /* Wyświetlanie checkboxów jako blokowe elementy */
+            display: block; 
         }
         #myModal button {
             width: 80%;
@@ -83,7 +83,7 @@
         }
 
         function sendPosition(position) {
-            // Save location to localStorage
+            
             localStorage.setItem('lat', position.coords.latitude);
             localStorage.setItem('lon', position.coords.longitude);
 
@@ -100,9 +100,9 @@
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
-                // Update the map without reloading the page
+                
                 updateMap(position.coords.latitude, position.coords.longitude);
-                // Set locationUpdated flag
+               
                 localStorage.setItem('locationUpdated', 'true');
             })
             .catch((error) => {
@@ -144,9 +144,9 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('Success:', data);
-                    // Set locationUpdated flag
+                    
                     localStorage.setItem('locationUpdated', 'true');
-                    // Reload the page to update the map
+                    
                     window.location.reload();
                 })
                 .catch((error) => {
@@ -156,14 +156,14 @@
         }
 
         window.onload = function() {
-            // Check if location is already saved in localStorage
+            
             if (!localStorage.getItem('lat') || !localStorage.getItem('lon')) {
                 getLocation();
             } else if (!localStorage.getItem('locationUpdated')) {
                 updateMapWithStoredLocation();
             }
 
-            // Add event listeners after the DOM is fully loaded
+            
             document.querySelector('.circle-plus').addEventListener('click', function() {
                 document.getElementById('myModal').style.display = 'block';
             });
@@ -171,7 +171,6 @@
                 document.getElementById('myModal').style.display = 'none';
             });
 
-            // Clear locationUpdated flag after the page has loaded
             localStorage.removeItem('locationUpdated');
         };
 
@@ -201,7 +200,7 @@
             .then(data => {
                 console.log('Success:', data);
                 if (data.status === 'success') {
-                    // Odśwież mapę po dodaniu markera
+                    
                     window.location.reload();
                 } else {
                     alert(data.message);

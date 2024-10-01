@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -18,20 +19,33 @@
             top: 10px;
             right: 10px;
             z-index: 1000;
-            cursor: pointer; /* Dodaj kursor wskaźnika */
+            cursor: pointer; 
         }
         .circle-plus:hover {
             transform: scale(1.1);
             background-color: #EEEEEE;    
         }
-        #myModal input[type="text"], #myModal textarea {
-            width: 80%;
+        #myModal input[type="text"], #myModal textarea, #myModal input[type="file"] {
+            width: 85%;
             padding: 10px;
             margin: 10px 0;
-            display: inline-block;
+            display: block;
             border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
+        }
+        #myModal input[type="number"] {
+            width: 50%; 
+            padding: 10px;
+            margin: 10px 0;
+            display: block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #myModal input[type="checkbox"] {
+            margin: 10px 0;
+            display: block; 
         }
         #myModal button {
             width: 80%;
@@ -69,7 +83,7 @@
         }
 
         function sendPosition(position) {
-            // Save location to localStorage
+            
             localStorage.setItem('lat', position.coords.latitude);
             localStorage.setItem('lon', position.coords.longitude);
 
@@ -86,9 +100,9 @@
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
-                // Update the map without reloading the page
+                
                 updateMap(position.coords.latitude, position.coords.longitude);
-                // Set locationUpdated flag
+               
                 localStorage.setItem('locationUpdated', 'true');
             })
             .catch((error) => {
@@ -130,9 +144,9 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('Success:', data);
-                    // Set locationUpdated flag
+                    
                     localStorage.setItem('locationUpdated', 'true');
-                    // Reload the page to update the map
+                    
                     window.location.reload();
                 })
                 .catch((error) => {
@@ -142,14 +156,14 @@
         }
 
         window.onload = function() {
-            // Check if location is already saved in localStorage
+            
             if (!localStorage.getItem('lat') || !localStorage.getItem('lon')) {
                 getLocation();
             } else if (!localStorage.getItem('locationUpdated')) {
                 updateMapWithStoredLocation();
             }
 
-            // Add event listeners after the DOM is fully loaded
+            
             document.querySelector('.circle-plus').addEventListener('click', function() {
                 document.getElementById('myModal').style.display = 'block';
             });
@@ -157,27 +171,36 @@
                 document.getElementById('myModal').style.display = 'none';
             });
 
-            // Clear locationUpdated flag after the page has loaded
             localStorage.removeItem('locationUpdated');
         };
 
         function submitModal() {
             var userInput = document.getElementById('userInput').value;
             var descriptionInput = document.getElementById('descriptionInput').value;
-            console.log(userInput, descriptionInput); // Wyświetlenie danych w konsoli
-            // Używanie AJAX do wysłania danych do serwera Flask
+            var ratingInput = document.getElementById('ratingInput').value;
+            var paidInput = document.getElementById('paidInput').checked;
+            var customersOnlyInput = document.getElementById('customersOnlyInput').checked;
+            var photoInput = document.getElementById('photoInput').files;
+
+            var formData = new FormData();
+            formData.append('userInput', userInput);
+            formData.append('description', descriptionInput);
+            formData.append('rating', ratingInput);
+            formData.append('payable', paidInput);
+            formData.append('onlyForClients', customersOnlyInput);
+            for (var i = 0; i < photoInput.length; i++) {
+                formData.append('photos', photoInput[i]);
+            }
+
             fetch('/submit', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ userInput: userInput, description: descriptionInput }), // Wysyłanie danych jako JSON
+                body: formData
             })
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
                 if (data.status === 'success') {
-                    // Odśwież mapę po dodaniu markera
+                    
                     window.location.reload();
                 } else {
                     alert(data.message);
@@ -198,6 +221,10 @@
         <span id="closeModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
         <input type="text" id="userInput" placeholder="Wpisz coś...">
         <textarea id="descriptionInput" placeholder="Dodaj opis..."></textarea>
+        <label><input type="checkbox" id="paidInput" name ="payable">Płatna</label>
+        <label><input type="checkbox" id="customersOnlyInput" name ="onlyForClients">Tylko dla klientów</label>
+        <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10">
+        <input type="file" id="photoInput" multiple>
         <button onclick="submitModal()">Gotowe</button>
     </div>
 </body>
