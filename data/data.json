@@ -58,5 +58,15 @@
         "onlyForClients": true,
         "rating": "6",
         "photo": null
+    },
+    {
+        "lat": 50.6745326,
+        "lon": 17.9715366,
+        "name": "User Location",
+        "description": "This is your location",
+        "payable": false,
+        "onlyForClients": false,
+        "rating": "N/A",
+        "photo": null
     }
 ]

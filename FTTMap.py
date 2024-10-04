@@ -10,7 +10,7 @@ from geopy.geocoders import Nominatim
 from functools import lru_cache
 
 geolocator = Nominatim(user_agent="test")
-toilet_icon = "C:\\Users\\kubak\\Desktop\\FTT\\toilet_icon.png"
+toilet_icon = "C:\\Users\\Kuba\\Desktop\\FTT\\toilet_icon.png"
 
 @lru_cache(maxsize=100)
 def get_coordinates(location):
@@ -30,8 +30,8 @@ class Server:
         self.setup_routes()
 
     def create_map(self):
-        return folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False, min_zoom=5)
-
+        return folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False)
+    
     def load_markers(self):
         try:
             with open('data/data.json', 'r', encoding='utf-8') as file:
@@ -51,8 +51,21 @@ class Server:
             data = request.json
             self.lat = data['lat']
             self.lon = data['lon']
+            user_marker = {
+                "lat": self.lat,
+                "lon": self.lon,
+                "name": "User Location",
+                "description": "This is your location",
+                "payable": False,
+                "onlyForClients": False,
+                "rating": "N/A",
+                "photo": None
+             }
+            self.markers.append(user_marker)
             self.update_map()
             self.save_map()
+            self.save_markers()
+            self.markers.remove(user_marker)
             return jsonify({'status': 'success', 'lat': self.lat, 'lon': self.lon})
 
         @self.app.route('/submit', methods=['POST'])
@@ -81,7 +94,7 @@ class Server:
                 }
                 self.markers.append(new_marker)
                 self.add_marker_to_map(new_marker)
-                self.save_map()
+                self.save_map() 
                 self.save_markers()
                 return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
             else:
@@ -121,6 +134,7 @@ class Server:
             file.write(template_content)
 
     def save_markers(self):
+        
         with open('data/data.json', 'w', encoding='utf-8') as file:
             json.dump(self.markers, file, ensure_ascii=False, indent=4)
 

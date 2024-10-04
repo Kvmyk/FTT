@@ -101,9 +101,11 @@
             .then(data => {
                 console.log('Success:', data);
                 
-                updateMap(position.coords.latitude, position.coords.longitude);
-               
                 localStorage.setItem('locationUpdated', 'true');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100);
+
             })
             .catch((error) => {
                 console.error('Error:', error);
@@ -147,7 +149,9 @@
                     
                     localStorage.setItem('locationUpdated', 'true');
                     
-                    window.location.reload();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 100);
                 })
                 .catch((error) => {
                     console.error('Error:', error);
@@ -155,6 +159,7 @@
             }
         }
 
+        
         window.onload = function() {
             
             if (!localStorage.getItem('lat') || !localStorage.getItem('lon')) {
