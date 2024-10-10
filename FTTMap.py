@@ -10,7 +10,7 @@ from geopy.geocoders import Nominatim
 from functools import lru_cache
 
 geolocator = Nominatim(user_agent="test")
-toilet_icon = "C:\\Users\\Kuba\\Desktop\\FTT\\toilet_icon.png"
+toilet_icon = "C:\\Users\\kubak\\Desktop\\FTT\\toilet_icon.png"
 
 @lru_cache(maxsize=100)
 def get_coordinates(location):
@@ -35,7 +35,12 @@ class Server:
     def load_markers(self):
         try:
             with open('data/data.json', 'r', encoding='utf-8') as file:
-                return json.load(file)
+                markers = json.load(file)
+                if isinstance(markers, list):
+                    return markers
+                else:
+                    print("Error: Loaded markers is not a list")
+                    return []
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error loading markers: {e}")
             return []
@@ -51,21 +56,28 @@ class Server:
             data = request.json
             self.lat = data['lat']
             self.lon = data['lon']
-            user_marker = {
-                "lat": self.lat,
-                "lon": self.lon,
-                "name": "User Location",
-                "description": "This is your location",
-                "payable": False,
-                "onlyForClients": False,
-                "rating": "N/A",
-                "photo": None
-             }
-            self.markers.append(user_marker)
+            user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
+    
+            if user_marker:
+                user_marker.update({
+                    "lat": self.lat,
+                    "lon": self.lon,
+                    "description": "This is your updated location"
+                })
+            else:
+                user_marker = {
+                    "lat": self.lat,
+                    "lon": self.lon,
+                    "name": "User Location",
+                    "description": "This is your location",
+                }
+                self.markers.append(user_marker)
+            with open('user_location.json', 'w', encoding='utf-8') as file:
+                json.dump(user_marker, file, ensure_ascii=False, indent=4)
             self.update_map()
             self.save_map()
+            self.markers = [marker for marker in self.markers if marker['name'] != "User Location"]
             self.save_markers()
-            self.markers.remove(user_marker)
             return jsonify({'status': 'success', 'lat': self.lat, 'lon': self.lon})
 
         @self.app.route('/submit', methods=['POST'])
@@ -101,25 +113,35 @@ class Server:
                 return jsonify({'status': 'error', 'message': 'Location not found'})
 
     def add_marker_to_map(self, marker):
-        iconToilet = folium.CustomIcon(toilet_icon, icon_size=(50, 50), shadow_size=(50, 50))
-        name = marker.get('name', 'Unknown')
-        description = marker.get('description', 'No description')
-        payable = "TAK" if marker.get('payable', True) else "NIE"
-        onlyForClients = "TAK" if marker.get('onlyForClients', True) else "NIE"
-        rating = marker.get('rating', 'Brak oceny')
-        photo_base64 = marker.get('photo', None)
-        photo_html = f'<img src="data:image/png;base64,{photo_base64}" style="width: 100%; height: auto;">' if photo_base64 else ''
-        wholePopUp = f'''
-            <div style="width: 300px;">
-                <h2 style="font-size: 1.5em;">{name}</h2>
-                <p style="font-size: 1em;">{description}</p>
-                <p><strong>Płatna:</strong> {payable}</p>
-                <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                <p><strong>Ocena:</strong> {rating}</p>
-                {photo_html}
-            </div>
-        '''
-        folium.Marker(location=[marker['lat'], marker['lon']], popup=wholePopUp, icon=iconToilet).add_to(self.m)
+        if marker['name'] == "User Location":
+            icon = folium.CustomIcon(toilet_icon, icon_size=(50, 50), shadow_size=(50, 50))
+            popup_content = f'''
+                <div style="width: 300px;">
+                    <h2 style="font-size: 1.5em;">User Location</h2>
+                    <p style="font-size: 1em;">{marker['description']}</p>
+                </div>
+            '''
+            folium.Marker(location=[marker['lat'], marker['lon']], popup=popup_content, icon=icon).add_to(self.m)
+        else:
+            iconToilet = folium.CustomIcon(toilet_icon, icon_size=(50, 50), shadow_size=(50, 50))
+            name = marker.get('name', 'Unknown')
+            description = marker.get('description', 'No description')
+            payable = "TAK" if marker.get('payable', True) else "NIE"
+            onlyForClients = "TAK" if marker.get('onlyForClients', True) else "NIE"
+            rating = marker.get('rating', 'Brak oceny')
+            photo_base64 = marker.get('photo', None)
+            photo_html = f'<img src="data:image/png;base64,{photo_base64}" style="width: 100%; height: auto;">' if photo_base64 else ''
+            wholePopUp = f'''
+                <div style="width: 300px;">
+                    <h2 style="font-size: 1.5em;">{name}</h2>
+                    <p style="font-size: 1em;">{description}</p>
+                    <p><strong>Płatna:</strong> {payable}</p>
+                    <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                    <p><strong>Ocena:</strong> {rating}</p>
+                    {photo_html}
+                </div>
+            '''
+            folium.Marker(location=[marker['lat'], marker['lon']], popup=wholePopUp, icon=iconToilet).add_to(self.m)
     
     def update_map(self):
         self.m = self.create_map()
