@@ -8,5 +8,25 @@
         "onlyForClients": false,
         "rating": "",
         "photo": null
+    },
+    {
+        "lat": 50.2869327,
+        "lon": 19.572227802228824,
+        "name": "Olkusz Jasna 24",
+        "description": "",
+        "payable": true,
+        "onlyForClients": true,
+        "rating": "",
+        "photo": null
+    },
+    {
+        "lat": 50.3657432,
+        "lon": 18.87153251609449,
+        "name": "Bytom",
+        "description": "eoeoeoe",
+        "payable": true,
+        "onlyForClients": true,
+        "rating": "",
+        "photo": null
     }
 ]
