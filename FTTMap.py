@@ -10,7 +10,7 @@ from geopy.geocoders import Nominatim
 from functools import lru_cache
 
 geolocator = Nominatim(user_agent="test")
-toilet_icon = "C:\\Users\\Kuba\\Desktop\\FTT\\toilet_icon.png"
+toilet_icon = "C:\\Users\\kubak\\Desktop\\FTT\\toilet_icon.png"
 
 @lru_cache(maxsize=100)
 def get_coordinates(location):

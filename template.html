@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -73,7 +72,7 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
     </style>
-    <script>
+        <script>
         function getLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(sendPosition, showError, { enableHighAccuracy: true });
@@ -82,35 +81,33 @@
             }
         }
 
-        function sendPosition(position) {
-            
-            localStorage.setItem('lat', position.coords.latitude);
-            localStorage.setItem('lon', position.coords.longitude);
+    function sendPosition(position) {
+        localStorage.setItem('lat', position.coords.latitude);
+        localStorage.setItem('lon', position.coords.longitude);
 
-            fetch('/location', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    lat: position.coords.latitude,
-                    lon: position.coords.longitude
-                })
+        fetch('/location', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                lat: position.coords.latitude,
+                lon: position.coords.longitude
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-                
-                localStorage.setItem('locationUpdated', 'true');
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            localStorage.setItem('locationUpdated', 'true');
                 setTimeout(() => {
                     window.location.reload();
                 }, 100);
 
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
 
         function showError(error) {
             switch(error.code) {
@@ -146,7 +143,7 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('Success:', data);
-                    
+
                     localStorage.setItem('locationUpdated', 'true');
                     
                     setTimeout(() => {

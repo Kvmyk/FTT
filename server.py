@@ -6,9 +6,9 @@ import geopy
 import json
 import base64
 from flask import Flask, send_from_directory, jsonify, request
-from utils import get_coordinates
+from utils import get_coordinates, get_route, find_nearest_marker
 
-toilet_icon = "C:\\Users\\Kuba\\Desktop\\FTT\\toilet_icon.png"
+toilet_icon = "C:\\Users\\kubak\\Desktop\\FTT\\toilet_icon.png"
 
 class Server:
     def __init__(self):
@@ -66,8 +66,18 @@ class Server:
                 json.dump(user_marker, file, ensure_ascii=False, indent=4)
             self.update_map()
             self.save_map()
+
+            # Usuwamy user_marker z self.markers przed zapisaniem innych markerów
             self.markers = [marker for marker in self.markers if marker['name'] != "User Location"]
             self.save_markers()
+
+            # Znajdź najbliższy marker i oblicz trasę
+            nearest_marker = find_nearest_marker(user_marker, self.markers)
+            if nearest_marker:
+                route = get_route(self.lat, self.lon, nearest_marker['lat'], nearest_marker['lon'])
+                if route:
+                    self.add_route_to_map(route)
+
             return jsonify({'status': 'success', 'lat': self.lat, 'lon': self.lon})
 
         @self.app.route('/submit', methods=['POST'])
@@ -132,6 +142,14 @@ class Server:
                 </div>
             '''
             folium.Marker(location=[marker['lat'], marker['lon']], popup=wholePopUp, icon=iconToilet).add_to(self.m)
+
+    def add_route_to_map(self, route):
+        folium.PolyLine(
+            locations=[(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']],
+            color='blue',
+            weight=5,
+            opacity=0.7
+        ).add_to(self.m)
 
     def update_map(self):
         self.m = self.create_map()
