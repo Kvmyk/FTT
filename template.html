@@ -72,7 +72,7 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
     </style>
-        <script>
+    <script>
         function getLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(sendPosition, showError, { enableHighAccuracy: true });
@@ -81,33 +81,33 @@
             }
         }
 
-    function sendPosition(position) {
-        localStorage.setItem('lat', position.coords.latitude);
-        localStorage.setItem('lon', position.coords.longitude);
+        function sendPosition(position) {
+            localStorage.setItem('lat', position.coords.latitude);
+            localStorage.setItem('lon', position.coords.longitude);
 
-        fetch('/location', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                lat: position.coords.latitude,
-                lon: position.coords.longitude
+            fetch('/location', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data);
-            localStorage.setItem('locationUpdated', 'true');
-                setTimeout(() => {
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                localStorage.setItem('locationUpdated', 'true');
+                if (!sessionStorage.getItem('reloaded')) {
+                    sessionStorage.setItem('reloaded', 'true');
                     window.location.reload();
-                }, 100);
-
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
-    }
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
 
         function showError(error) {
             switch(error.code) {
@@ -143,12 +143,8 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('Success:', data);
-
                     localStorage.setItem('locationUpdated', 'true');
-                    
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 100);
+                    window.location.reload();
                 })
                 .catch((error) => {
                     console.error('Error:', error);
@@ -156,26 +152,25 @@
             }
         }
 
-        
         window.onload = function() {
-            
-            if (!localStorage.getItem('lat') || !localStorage.getItem('lon')) {
+            if (!sessionStorage.getItem('reloaded')) {
+                sessionStorage.setItem('reloaded', 'true');
+                window.location.reload();
+            } else {
+                // Usuwanie zapisanej lokalizacji z localStorage
+                localStorage.removeItem('lat');
+                localStorage.removeItem('lon');
+                localStorage.removeItem('locationUpdated');
+
                 getLocation();
-            } else if (!localStorage.getItem('locationUpdated')) {
-                updateMapWithStoredLocation();
+                document.querySelector('.circle-plus').addEventListener('click', function() {
+                    document.getElementById('myModal').style.display = 'block';
+                });
+                document.getElementById('closeModal').addEventListener('click', function() {
+                    document.getElementById('myModal').style.display = 'none';
+                });
             }
-
-            
-            document.querySelector('.circle-plus').addEventListener('click', function() {
-                document.getElementById('myModal').style.display = 'block';
-            });
-            document.getElementById('closeModal').addEventListener('click', function() {
-                document.getElementById('myModal').style.display = 'none';
-            });
-
-            localStorage.removeItem('locationUpdated');
         };
-
 
         function submitModal() {
             var userInput = document.getElementById('userInput').value;
@@ -203,7 +198,6 @@
             .then(data => {
                 console.log('Success:', data);
                 if (data.status === 'success') {
-                    
                     window.location.reload();
                 } else {
                     alert(data.message);

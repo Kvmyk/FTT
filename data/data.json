@@ -1,62 +1,22 @@
 [
     {
-        "lat": 50.6668184,
-        "lon": 17.9236408,
-        "name": "Opole",
-        "description": "",
+        "lat": 52.2319581,
+        "lon": 21.0067249,
+        "name": "Warszawa",
+        "description": "ellllllllllo",
+        "payable": false,
+        "onlyForClients": true,
+        "rating": "1",
+        "photo": null
+    },
+    {
+        "lat": 50.65327725,
+        "lon": 17.903487564188218,
+        "name": "Prószkowska 76 Opole",
+        "description": "323232",
         "payable": false,
         "onlyForClients": false,
-        "rating": "",
-        "photo": null
-    },
-    {
-        "lat": 50.2869327,
-        "lon": 19.572227802228824,
-        "name": "Olkusz Jasna 24",
-        "description": "",
-        "payable": true,
-        "onlyForClients": true,
-        "rating": "",
-        "photo": null
-    },
-    {
-        "lat": 50.3657432,
-        "lon": 18.87153251609449,
-        "name": "Bytom",
-        "description": "eoeoeoe",
-        "payable": true,
-        "onlyForClients": true,
-        "rating": "",
-        "photo": null
-    },
-    {
-        "lat": 50.6745398,
-        "lon": 17.9714531,
-        "name": "Opole Kaliska 8",
-        "description": "hfshdfsdhfsd",
-        "payable": true,
-        "onlyForClients": false,
-        "rating": "8",
-        "photo": null
-    },
-    {
-        "lat": 50.09515135,
-        "lon": 19.843238483017338,
-        "name": "Prosta 5 ",
-        "description": "duperele :DD",
-        "payable": false,
-        "onlyForClients": true,
-        "rating": "3",
-        "photo": null
-    },
-    {
-        "lat": 50.64948245,
-        "lon": 17.979846595847107,
-        "name": "Opole Prosta 5",
-        "description": "jfgjsgjfskgfs",
-        "payable": false,
-        "onlyForClients": true,
-        "rating": "3",
+        "rating": "2",
         "photo": null
     }
 ]
