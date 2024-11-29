@@ -48,7 +48,7 @@
             var map_58f8fee7ef301e5b4856d2d6b2fc62e8 = L.map(
                 "map_58f8fee7ef301e5b4856d2d6b2fc62e8",
                 {
-                    center: [50.6745326, 17.9715366],
+                    center: [50.6669395, 17.924342],
                     crs: L.CRS.EPSG3857,
                     zoom: 15,
                     zoomControl: true,
@@ -173,8 +173,7 @@
             tile_layer_e75d1735e8ce39edf169f897af5ec923.addTo(map_58f8fee7ef301e5b4856d2d6b2fc62e8);
         
 </script>
-</html>
-<!DOCTYPE html>
+</html><!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -258,7 +257,6 @@
         }
 
         function sendPosition(position) {
-            
             localStorage.setItem('lat', position.coords.latitude);
             localStorage.setItem('lon', position.coords.longitude);
 
@@ -275,12 +273,11 @@
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
-                
                 localStorage.setItem('locationUpdated', 'true');
-                setTimeout(() => {
+                if (!sessionStorage.getItem('reloaded')) {
+                    sessionStorage.setItem('reloaded', 'true');
                     window.location.reload();
-                }, 100);
-
+                }
             })
             .catch((error) => {
                 console.error('Error:', error);
@@ -321,12 +318,8 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('Success:', data);
-                    
                     localStorage.setItem('locationUpdated', 'true');
-                    
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 100);
+                    window.location.reload();
                 })
                 .catch((error) => {
                     console.error('Error:', error);
@@ -334,26 +327,25 @@
             }
         }
 
-        
         window.onload = function() {
-            
-            if (!localStorage.getItem('lat') || !localStorage.getItem('lon')) {
+            if (!sessionStorage.getItem('reloaded')) {
+                sessionStorage.setItem('reloaded', 'true');
+                window.location.reload();
+            } else {
+                // Usuwanie zapisanej lokalizacji z localStorage
+                localStorage.removeItem('lat');
+                localStorage.removeItem('lon');
+                localStorage.removeItem('locationUpdated');
+
                 getLocation();
-            } else if (!localStorage.getItem('locationUpdated')) {
-                updateMapWithStoredLocation();
+                document.querySelector('.circle-plus').addEventListener('click', function() {
+                    document.getElementById('myModal').style.display = 'block';
+                });
+                document.getElementById('closeModal').addEventListener('click', function() {
+                    document.getElementById('myModal').style.display = 'none';
+                });
             }
-
-            
-            document.querySelector('.circle-plus').addEventListener('click', function() {
-                document.getElementById('myModal').style.display = 'block';
-            });
-            document.getElementById('closeModal').addEventListener('click', function() {
-                document.getElementById('myModal').style.display = 'none';
-            });
-
-            localStorage.removeItem('locationUpdated');
         };
-
 
         function submitModal() {
             var userInput = document.getElementById('userInput').value;
@@ -381,7 +373,6 @@
             .then(data => {
                 console.log('Success:', data);
                 if (data.status === 'success') {
-                    
                     window.location.reload();
                 } else {
                     alert(data.message);
