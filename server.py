@@ -8,7 +8,7 @@ import base64
 from flask import Flask, send_from_directory, jsonify, request
 from utils import get_coordinates, get_route, find_nearest_marker
 
-toilet_icon = "C:\\Users\\Kuba\\Desktop\\FTT\\toilet_icon.png"
+toilet_icon = "toilet_icon.png"
 
 class Server:
     def __init__(self):
