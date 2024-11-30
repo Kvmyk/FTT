@@ -8,7 +8,7 @@ import base64
 from flask import Flask, send_from_directory, jsonify, request
 from utils import get_coordinates, get_route, find_nearest_marker
 
-toilet_icon = "C:\\Users\\kubak\\Desktop\\FTT\\toilet_icon.png"
+toilet_icon = "C:\\Users\\Kuba\\Desktop\\FTT\\toilet_icon.png"
 
 class Server:
     def __init__(self):
@@ -77,6 +77,9 @@ class Server:
                 route = get_route(self.lat, self.lon, nearest_marker['lat'], nearest_marker['lon'])
                 if route:
                     self.add_route_to_map(route)
+                    self.save_map()
+                    self.save_markers()
+
 
             return jsonify({'status': 'success', 'lat': self.lat, 'lon': self.lon})
 
@@ -105,12 +108,18 @@ class Server:
                     "photo": photo_base64
                 }
                 self.markers.append(new_marker)
-                self.add_marker_to_map(new_marker)
+                self.add_marker_to_map(new_marker)  
+
                 self.save_map()
                 self.save_markers()
                 return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
             else:
                 return jsonify({'status': 'error', 'message': 'Location not found'})
+
+        @self.app.after_request
+        def add_header(response):
+            response.headers['Cache-Control'] = 'no-store'
+            return response
 
     def add_marker_to_map(self, marker):
         if marker['name'] == "User Location":
@@ -155,6 +164,7 @@ class Server:
         self.m = self.create_map()
         for marker in self.markers:
             self.add_marker_to_map(marker)
+        self.save_map()
 
     def save_map(self):
         self.m.save('map.html')

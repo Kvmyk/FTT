@@ -1,22 +1,18 @@
 [
     {
-        "lat": 52.2319581,
-        "lon": 21.0067249,
-        "name": "Warszawa",
-        "description": "ellllllllllo",
-        "payable": false,
-        "onlyForClients": true,
-        "rating": "1",
-        "photo": null
+        "lat": 50.6789888,
+        "lon": 17.9699712,
+        "name": "User Location",
+        "description": "This is your updated location"
     },
     {
-        "lat": 50.65327725,
-        "lon": 17.903487564188218,
-        "name": "Prószkowska 76 Opole",
-        "description": "323232",
+        "lat": 52.2337172,
+        "lon": 21.071432235636493,
+        "name": "Warszawa",
+        "description": "",
         "payable": false,
         "onlyForClients": false,
-        "rating": "2",
+        "rating": "",
         "photo": null
     }
 ]

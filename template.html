@@ -152,25 +152,21 @@
             }
         }
 
-        window.onload = function() {
-            if (!sessionStorage.getItem('reloaded')) {
-                sessionStorage.setItem('reloaded', 'true');
-                window.location.reload();
-            } else {
-                // Usuwanie zapisanej lokalizacji z localStorage
-                localStorage.removeItem('lat');
-                localStorage.removeItem('lon');
-                localStorage.removeItem('locationUpdated');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Usuwanie zapisanej lokalizacji
+            localStorage.removeItem('lat');
+            localStorage.removeItem('lon');
+            localStorage.removeItem('locationUpdated');
 
-                getLocation();
-                document.querySelector('.circle-plus').addEventListener('click', function() {
-                    document.getElementById('myModal').style.display = 'block';
-                });
-                document.getElementById('closeModal').addEventListener('click', function() {
-                    document.getElementById('myModal').style.display = 'none';
-                });
-            }
-        };
+            getLocation();
+
+            document.querySelector('.circle-plus').addEventListener('click', function() {
+                document.getElementById('myModal').style.display = 'block';
+            });
+            document.getElementById('closeModal').addEventListener('click', function() {
+                document.getElementById('myModal').style.display = 'none';
+            });
+        });
 
         function submitModal() {
             var userInput = document.getElementById('userInput').value;
@@ -198,7 +194,7 @@
             .then(data => {
                 console.log('Success:', data);
                 if (data.status === 'success') {
-                    window.location.reload();
+                    window.location.reload(true);
                 } else {
                     alert(data.message);
                 }
