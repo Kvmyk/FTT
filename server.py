@@ -84,9 +84,6 @@ class Server:
                 }
                 self.markers.append(user_marker)
 
-            # Nie usuwaj user_marker z self.markers przed obliczeniem trasy
-            # self.markers = [marker for marker in self.markers if marker['name'] != "User Location"]
-
             self.save_markers()
 
             # Aktualizuj mapę
