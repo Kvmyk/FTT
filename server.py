@@ -67,9 +67,30 @@ class Server:
             self.update_map()
             self.save_map()
 
-            # Usuwamy user_marker z self.markers przed zapisaniem innych markerów
-            self.markers = [marker for marker in self.markers if marker['name'] != "User Location"]
+            # Aktualizacja lub dodanie markera lokalizacji użytkownika
+            user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
+            if user_marker:
+                user_marker.update({
+                    "lat": self.lat,
+                    "lon": self.lon,
+                    "description": "This is your updated location"
+                })
+            else:
+                user_marker = {
+                    "lat": self.lat,
+                    "lon": self.lon,
+                    "name": "User Location",
+                    "description": "This is your location",
+                }
+                self.markers.append(user_marker)
+
+            # Nie usuwaj user_marker z self.markers przed obliczeniem trasy
+            # self.markers = [marker for marker in self.markers if marker['name'] != "User Location"]
+
             self.save_markers()
+
+            # Aktualizuj mapę
+            self.update_map()
 
             # Znajdź najbliższy marker i oblicz trasę
             nearest_marker = find_nearest_marker(user_marker, self.markers)
@@ -77,9 +98,9 @@ class Server:
                 route = get_route(self.lat, self.lon, nearest_marker['lat'], nearest_marker['lon'])
                 if route:
                     self.add_route_to_map(route)
-                    self.save_map()
-                    self.save_markers()
 
+            # Zapisz mapę po dodaniu trasy
+            self.save_map()
 
             return jsonify({'status': 'success', 'lat': self.lat, 'lon': self.lon})
 
@@ -104,14 +125,24 @@ class Server:
                     "description": description,
                     "payable": payable,
                     "onlyForClients": onlyForClients,
-                    "rating": rating,
-                    "photo": photo_base64
+                    "rating": rating, 
+                    "photo": photo_base64 
                 }
                 self.markers.append(new_marker)
-                self.add_marker_to_map(new_marker)  
-
-                self.save_map()
                 self.save_markers()
+
+                self.update_map()
+
+                # **Przelicz trasę do najbliższego markera**
+                user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
+                if user_marker:
+                    nearest_marker = find_nearest_marker(user_marker, self.markers)
+                    if nearest_marker:
+                        route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
+                        if route:
+                            self.add_route_to_map(route)
+                self.save_map()
+
                 return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
             else:
                 return jsonify({'status': 'error', 'message': 'Location not found'})
@@ -155,16 +186,18 @@ class Server:
     def add_route_to_map(self, route):
         folium.PolyLine(
             locations=[(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']],
-            color='blue',
+            color='red',
             weight=5,
             opacity=0.7
         ).add_to(self.m)
 
     def update_map(self):
+        # Utwórz nową mapę
         self.m = self.create_map()
+        # Dodaj wszystkie markery
         for marker in self.markers:
             self.add_marker_to_map(marker)
-        self.save_map()
+        # Trasa została już dodana w funkcji submit() (jeśli istnieje)
 
     def save_map(self):
         self.m.save('map.html')

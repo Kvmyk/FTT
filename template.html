@@ -194,7 +194,8 @@
             .then(data => {
                 console.log('Success:', data);
                 if (data.status === 'success') {
-                    window.location.reload(true);
+                    // Dodaj opóźnienie przed odświeżeniem
+                   window.location.reload();
                 } else {
                     alert(data.message);
                 }
