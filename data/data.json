@@ -1,14 +1,14 @@
 [
     {
-        "lat": 50.6745532,
-        "lon": 17.9715647,
+        "lat": 50.6745587,
+        "lon": 17.97156,
         "name": "User Location",
         "description": "This is your updated location"
     },
     {
-        "lat": 51.1263106,
-        "lon": 16.97819633051261,
-        "name": "Wrocław",
+        "lat": 39.4925413,
+        "lon": 19.9057729,
+        "name": "Mesongi",
         "description": "",
         "payable": false,
         "onlyForClients": false,
@@ -16,9 +16,9 @@
         "photo": null
     },
     {
-        "lat": 50.65327725,
-        "lon": 17.903487564188218,
-        "name": "Prószkowska 76 Opole",
+        "lat": 52.2337172,
+        "lon": 21.071432235636493,
+        "name": "Warszawa",
         "description": "",
         "payable": false,
         "onlyForClients": false,
@@ -26,9 +26,19 @@
         "photo": null
     },
     {
-        "lat": 50.6745399,
-        "lon": 17.9701896,
-        "name": "Bielska Opole",
+        "lat": 50.678792900000005,
+        "lon": 17.929884436033525,
+        "name": "Opole",
+        "description": "",
+        "payable": false,
+        "onlyForClients": false,
+        "rating": "",
+        "photo": null
+    },
+    {
+        "lat": 50.6745398,
+        "lon": 17.9714531,
+        "name": "Opole Kaliska 8",
         "description": "",
         "payable": false,
         "onlyForClients": false,
