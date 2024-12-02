@@ -1,7 +1,7 @@
 [
     {
-        "lat": 50.6611616,
-        "lon": 17.9140611,
+        "lat": 50.6534761,
+        "lon": 17.9031073,
         "name": "User Location",
         "description": "This is your updated location"
     },
@@ -39,6 +39,16 @@
         "lat": 50.6745398,
         "lon": 17.9714531,
         "name": "Opole Kaliska 8",
+        "description": "",
+        "payable": false,
+        "onlyForClients": false,
+        "rating": "",
+        "photo": null
+    },
+    {
+        "lat": 50.65327725,
+        "lon": 17.903487564188218,
+        "name": "Prószkowska 76 Opole",
         "description": "",
         "payable": false,
         "onlyForClients": false,
