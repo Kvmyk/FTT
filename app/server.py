@@ -8,7 +8,7 @@ import base64
 from flask import Flask, send_from_directory, jsonify, request
 from utils import get_coordinates, get_route, find_nearest_marker
 
-toilet_icon = "toilet_icon.png"
+toilet_icon = "app/toilet_icon.png"
 
 class Server:
     def __init__(self):
@@ -62,7 +62,7 @@ class Server:
                     "description": "This is your location",
                 }
                 self.markers.append(user_marker)
-            with open('user_location.json', 'w', encoding='utf-8') as file:
+            with open('data/user_location.json', 'w', encoding='utf-8') as file:
                 json.dump(user_marker, file, ensure_ascii=False, indent=4)
             self.update_map()
             self.save_map()
@@ -181,11 +181,34 @@ class Server:
             folium.Marker(location=[marker['lat'], marker['lon']], popup=wholePopUp, icon=iconToilet).add_to(self.m)
 
     def add_route_to_map(self, route):
+        coordinates = [(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']]
+
+        # Oblicz całkowitą długość trasy w metrach
+        distance = route['routes'][0]['distance']  # Długość w metrach
+
+        # Sformatuj odległość do wyświetlenia
+        if distance < 1000:
+            distance_text = f"{int(distance)} m"
+        else:
+            distance_text = f"{distance/1000:.2f} km"
+
+        # Dodaj linię trasy na mapę
         folium.PolyLine(
-            locations=[(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']],
+            locations=coordinates,
             color='red',
             weight=5,
             opacity=0.7
+        ).add_to(self.m)
+
+        # Dodaj znacznik z długością trasy w połowie linii
+        mid_point_index = len(coordinates) // 2
+        mid_point = coordinates[mid_point_index]
+
+        folium.Marker(
+            location=mid_point,
+            icon=folium.DivIcon(
+                html=f'''<div style="font-size: 12px; color: red;"> s{distance_text}</div>'''
+            )
         ).add_to(self.m)
 
     def update_map(self):
@@ -197,10 +220,10 @@ class Server:
         # Trasa została już dodana w funkcji submit() (jeśli istnieje)
 
     def save_map(self):
-        self.m.save('map.html')
-        with open('template.html', 'r', encoding='utf-8') as template_file:
+        self.m.save('app/map.html')
+        with open('app/template.html', 'r', encoding='utf-8') as template_file:
             template_content = template_file.read()
-        with open('map.html', 'a', encoding='utf-8') as file:
+        with open('app/map.html', 'a', encoding='utf-8') as file:
             file.write(template_content)
 
     def save_markers(self):

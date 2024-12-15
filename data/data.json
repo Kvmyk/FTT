@@ -1,7 +1,7 @@
 [
     {
-        "lat": 50.6534761,
-        "lon": 17.9031073,
+        "lat": 50.6789888,
+        "lon": 17.9699712,
         "name": "User Location",
         "description": "This is your updated location"
     },
@@ -52,6 +52,16 @@
         "description": "",
         "payable": false,
         "onlyForClients": false,
+        "rating": "",
+        "photo": null
+    },
+    {
+        "lat": 50.6769606,
+        "lon": 17.970218476223415,
+        "name": "Opole tężnia",
+        "description": "3",
+        "payable": false,
+        "onlyForClients": true,
         "rating": "",
         "photo": null
     }
