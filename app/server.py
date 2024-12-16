@@ -204,10 +204,14 @@ class Server:
         mid_point_index = len(coordinates) // 2
         mid_point = coordinates[mid_point_index]
 
+        # Dodaj przesunięcie do szerokości geograficznej, aby tekst nie nakładał się na linię
+        offset_latitude = 0.0007  # Możesz dostosować tę wartość w zależności od potrzeb
+        mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1]]
+
         folium.Marker(
-            location=mid_point,
+            location=mid_point_with_offset,
             icon=folium.DivIcon(
-                html=f'''<div style="font-size: 12px; color: red;"> s{distance_text}</div>'''
+                html=f'''<div style="font-size: 12px; color: red; width: 100px;">{distance_text}</div>'''
             )
         ).add_to(self.m)
 
@@ -217,7 +221,7 @@ class Server:
         # Dodaj wszystkie markery
         for marker in self.markers:
             self.add_marker_to_map(marker)
-        # Trasa została już dodana w funkcji submit() (jeśli istnieje)
+
 
     def save_map(self):
         self.m.save('app/map.html')

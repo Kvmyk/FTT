@@ -1,68 +1,18 @@
 [
     {
-        "lat": 50.6789888,
-        "lon": 17.9699712,
+        "lat": 50.653822,
+        "lon": 17.9056672,
         "name": "User Location",
         "description": "This is your updated location"
-    },
-    {
-        "lat": 39.4925413,
-        "lon": 19.9057729,
-        "name": "Mesongi",
-        "description": "",
-        "payable": false,
-        "onlyForClients": false,
-        "rating": "",
-        "photo": null
-    },
-    {
-        "lat": 52.2337172,
-        "lon": 21.071432235636493,
-        "name": "Warszawa",
-        "description": "",
-        "payable": false,
-        "onlyForClients": false,
-        "rating": "",
-        "photo": null
-    },
-    {
-        "lat": 50.678792900000005,
-        "lon": 17.929884436033525,
-        "name": "Opole",
-        "description": "",
-        "payable": false,
-        "onlyForClients": false,
-        "rating": "",
-        "photo": null
     },
     {
         "lat": 50.6745398,
         "lon": 17.9714531,
         "name": "Opole Kaliska 8",
         "description": "",
-        "payable": false,
-        "onlyForClients": false,
-        "rating": "",
-        "photo": null
-    },
-    {
-        "lat": 50.65327725,
-        "lon": 17.903487564188218,
-        "name": "Prószkowska 76 Opole",
-        "description": "",
-        "payable": false,
-        "onlyForClients": false,
-        "rating": "",
-        "photo": null
-    },
-    {
-        "lat": 50.6769606,
-        "lon": 17.970218476223415,
-        "name": "Opole tężnia",
-        "description": "3",
-        "payable": false,
+        "payable": true,
         "onlyForClients": true,
-        "rating": "",
+        "rating": "10",
         "photo": null
     }
 ]
