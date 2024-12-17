@@ -1,7 +1,7 @@
 [
     {
-        "lat": 50.653822,
-        "lon": 17.9056672,
+        "lat": 50.6523766,
+        "lon": 17.9056416,
         "name": "User Location",
         "description": "This is your updated location"
     },
@@ -10,9 +10,9 @@
         "lon": 17.9714531,
         "name": "Opole Kaliska 8",
         "description": "",
-        "payable": true,
-        "onlyForClients": true,
-        "rating": "10",
+        "payable": false,
+        "onlyForClients": false,
+        "rating": "",
         "photo": null
     }
 ]

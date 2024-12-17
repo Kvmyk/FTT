@@ -27,7 +27,7 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * c  # Odległość w kilometrach
 
 def get_route(start_lat, start_lon, end_lat, end_lon):
-    url = f"http://router.project-osrm.org/route/v1/driving/{start_lon},{start_lat};{end_lon},{end_lat}?overview=full&geometries=geojson"
+    url = f"http://router.project-osrm.org/route/v1/walking/{start_lon},{start_lat};{end_lon},{end_lat}?overview=full&geometries=geojson"
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()

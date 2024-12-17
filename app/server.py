@@ -6,14 +6,14 @@ import geopy
 import json
 import base64
 from flask import Flask, send_from_directory, jsonify, request
-from utils import get_coordinates, get_route, find_nearest_marker
+from utils import get_coordinates, get_route, find_nearest_marker, haversine
 
 toilet_icon = "app/toilet_icon.png"
 
 class Server:
     def __init__(self):
         self.data = None
-        self.app = Flask(__name__)
+        self.app = Flask(__name__, static_url_path='/static')
         self.lat, self.lon = 52.2297, 21.0122  # Default location (Warsaw, Poland)
         self.m = self.create_map()
         self.markers = self.load_markers()
@@ -39,7 +39,7 @@ class Server:
         @self.app.route('/')
         def fullscreen():
             self.save_map()
-            return send_from_directory('.', 'map.html')
+            return send_from_directory('static/html', 'map.html')
 
         @self.app.route('/location', methods=['POST'])
         def location():
@@ -100,6 +100,21 @@ class Server:
             self.save_map()
 
             return jsonify({'status': 'success', 'lat': self.lat, 'lon': self.lon})
+
+        @self.app.route('/nearest_toilet_distance', methods=['GET'])
+        def nearest_toilet_distance():
+            user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
+            if not user_marker:
+                return jsonify({'status': 'error', 'message': 'User location not found'}), 404
+
+            nearest_marker = find_nearest_marker(user_marker, self.markers)
+            if not nearest_marker:
+                return jsonify({'status': 'error', 'message': 'No toilets found'}), 404
+
+            distance = haversine(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
+            distance_text = f"{int(distance * 1000)} m" if distance < 1 else f"{distance:.2f} km"
+
+            return jsonify({'status': 'success', 'distance': distance_text, 'name': nearest_marker['name']})
 
         @self.app.route('/submit', methods=['POST'])
         def submit():
@@ -222,12 +237,14 @@ class Server:
         for marker in self.markers:
             self.add_marker_to_map(marker)
 
-
     def save_map(self):
-        self.m.save('app/map.html')
-        with open('app/template.html', 'r', encoding='utf-8') as template_file:
+        map_path = 'app/static/html/map.html'
+        template_path = 'app/static/html/template.html'
+
+        self.m.save(map_path)
+        with open(template_path, 'r', encoding='utf-8') as template_file:
             template_content = template_file.read()
-        with open('app/map.html', 'a', encoding='utf-8') as file:
+        with open(map_path, 'a', encoding='utf-8') as file:
             file.write(template_content)
 
     def save_markers(self):
