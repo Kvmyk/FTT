@@ -103,16 +103,26 @@ class Server:
 
         @self.app.route('/nearest_toilet_distance', methods=['GET'])
         def nearest_toilet_distance():
-            user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
+            with open('data/data.json', 'r') as f:
+                markers = json.load(f)
+            
+            user_marker = next((marker for marker in markers if marker['name'] == "User Location"), None)
             if not user_marker:
                 return jsonify({'status': 'error', 'message': 'User location not found'}), 404
 
-            nearest_marker = find_nearest_marker(user_marker, self.markers)
+            nearest_marker = find_nearest_marker(user_marker, markers)
             if not nearest_marker:
                 return jsonify({'status': 'error', 'message': 'No toilets found'}), 404
 
-            distance = haversine(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
-            distance_text = f"{int(distance * 1000)} m" if distance < 1 else f"{distance:.2f} km"
+            route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
+            if not route:
+                return jsonify({'status': 'error', 'message': 'Route not found'}), 404
+
+            distance = route['routes'][0]['distance']  # Długość w metrach
+            if distance < 1000:
+                distance_text = f"{int(distance)} m"
+            else:
+                distance_text = f"{distance/1000:.2f} km"
 
             return jsonify({'status': 'success', 'distance': distance_text, 'name': nearest_marker['name']})
 
