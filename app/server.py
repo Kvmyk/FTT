@@ -8,7 +8,7 @@ import base64
 from flask import Flask, send_from_directory, jsonify, request
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
 
-toilet_icon = os.path.join('app', 'toilet_icon.png')
+toilet_icon = os.path.join('toilet_icon.png')
 
 class Server:
     def __init__(self):
@@ -239,8 +239,8 @@ class Server:
             self.add_marker_to_map(marker)
 
     def save_map(self):
-        map_path = os.path.join('app', 'static', 'html', 'map.html')
-        template_path = os.path.join('app', 'static', 'html', 'template.html')
+        map_path = os.path.join('static', 'html', 'map.html')
+        template_path = os.path.join('static', 'html', 'template.html')
 
         self.m.save(map_path)
         with open(template_path, 'r', encoding='utf-8') as template_file:
