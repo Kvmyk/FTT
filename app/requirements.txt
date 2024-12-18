@@ -1,0 +1,5 @@
+Flask==2.0.1
+folium==0.12.1
+requests==2.25.1
+geopy==2.2.0
+psutil==5.8.0s

@@ -1,0 +1,23 @@
+# Użyj oficjalnego obrazu Python 3.13.1 jako bazowego
+FROM python:3.13.1-slim
+
+# Ustaw zmienną środowiskową, aby Python nie buforował wyjścia (przydatne do debugowania)
+ENV PYTHONUNBUFFERED=1
+
+# Utwórz katalog roboczy
+WORKDIR /app
+
+# Skopiuj plik requirements.txt do katalogu roboczego
+COPY requirements.txt /app/
+
+# Zainstaluj zależności
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Skopiuj resztę kodu aplikacji do katalogu roboczego
+COPY . /app/
+
+# Otwórz port 8000, na którym będzie działać aplikacja
+EXPOSE 8000
+
+# Uruchom aplikację
+CMD ["python", "main.py"]
