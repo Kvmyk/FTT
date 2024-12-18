@@ -6,7 +6,7 @@ import geopy
 import json
 import base64
 from flask import Flask, send_from_directory, jsonify, request
-from utils import get_coordinates, get_route, find_nearest_marker, haversine
+from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
 
 toilet_icon = os.path.join('app', 'toilet_icon.png')
 
@@ -111,11 +111,12 @@ class Server:
             if not nearest_marker:
                 return jsonify({'status': 'error', 'message': 'No toilets found'}), 404
 
-            distance = haversine(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
-            if distance < 1:
-                distance_text = f"{int(distance * 1000)} m"
-            else:
-                distance_text = f"{distance:.2f} km"
+            route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
+            if not route:
+                return jsonify({'status': 'error', 'message': 'Route not found'}), 404
+
+            distance = route['routes'][0]['distance']  # Długość w metrach
+            distance_text = format_distance_text(distance)
 
             return jsonify({'status': 'success', 'distance': distance_text, 'name': nearest_marker['name']})
 
@@ -205,10 +206,7 @@ class Server:
         distance = route['routes'][0]['distance']  # Długość w metrach
 
         # Sformatuj odległość do wyświetlenia
-        if distance < 1000:
-            distance_text = f"{int(distance)} m"
-        else:
-            distance_text = f"{distance/1000:.2f} km"
+        distance_text = format_distance_text(distance)
 
         # Dodaj linię trasy na mapę
         folium.PolyLine(

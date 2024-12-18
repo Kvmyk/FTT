@@ -44,3 +44,9 @@ def find_nearest_marker(user_location, markers):
                 min_distance = distance
                 nearest_marker = marker
     return nearest_marker
+
+def format_distance_text(distance):
+    if distance < 1000:
+        return f"{int(distance)} m"
+    else:
+        return f"{distance/1000:.2f} km"
