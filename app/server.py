@@ -1,14 +1,14 @@
+import os
 import folium
 import flask
 import requests
-import os
 import geopy
 import json
 import base64
 from flask import Flask, send_from_directory, jsonify, request
 from utils import get_coordinates, get_route, find_nearest_marker, haversine
 
-toilet_icon = "app/toilet_icon.png"
+toilet_icon = os.path.join('app', 'toilet_icon.png')
 
 class Server:
     def __init__(self):
@@ -24,7 +24,7 @@ class Server:
 
     def load_markers(self):
         try:
-            with open('data/data.json', 'r', encoding='utf-8') as file:
+            with open(os.path.join('data', 'data.json'), 'r', encoding='utf-8') as file:
                 markers = json.load(file)
                 if isinstance(markers, list):
                     return markers
@@ -39,7 +39,7 @@ class Server:
         @self.app.route('/')
         def fullscreen():
             self.save_map()
-            return send_from_directory('static/html', 'map.html')
+            return send_from_directory(os.path.join('static', 'html'), 'map.html')
 
         @self.app.route('/location', methods=['POST'])
         def location():
@@ -62,7 +62,7 @@ class Server:
                     "description": "This is your location",
                 }
                 self.markers.append(user_marker)
-            with open('data/user_location.json', 'w', encoding='utf-8') as file:
+            with open(os.path.join('data', 'user_location.json'), 'w', encoding='utf-8') as file:
                 json.dump(user_marker, file, ensure_ascii=False, indent=4)
             self.update_map()
             self.save_map()
@@ -103,26 +103,19 @@ class Server:
 
         @self.app.route('/nearest_toilet_distance', methods=['GET'])
         def nearest_toilet_distance():
-            with open('data/data.json', 'r') as f:
-                markers = json.load(f)
-            
-            user_marker = next((marker for marker in markers if marker['name'] == "User Location"), None)
+            user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
             if not user_marker:
                 return jsonify({'status': 'error', 'message': 'User location not found'}), 404
 
-            nearest_marker = find_nearest_marker(user_marker, markers)
+            nearest_marker = find_nearest_marker(user_marker, self.markers)
             if not nearest_marker:
                 return jsonify({'status': 'error', 'message': 'No toilets found'}), 404
 
-            route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
-            if not route:
-                return jsonify({'status': 'error', 'message': 'Route not found'}), 404
-
-            distance = route['routes'][0]['distance']  # Długość w metrach
-            if distance < 1000:
-                distance_text = f"{int(distance)} m"
+            distance = haversine(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
+            if distance < 1:
+                distance_text = f"{int(distance * 1000)} m"
             else:
-                distance_text = f"{distance/1000:.2f} km"
+                distance_text = f"{distance:.2f} km"
 
             return jsonify({'status': 'success', 'distance': distance_text, 'name': nearest_marker['name']})
 
@@ -248,8 +241,8 @@ class Server:
             self.add_marker_to_map(marker)
 
     def save_map(self):
-        map_path = 'app/static/html/map.html'
-        template_path = 'app/static/html/template.html'
+        map_path = os.path.join('app', 'static', 'html', 'map.html')
+        template_path = os.path.join('app', 'static', 'html', 'template.html')
 
         self.m.save(map_path)
         with open(template_path, 'r', encoding='utf-8') as template_file:
@@ -258,8 +251,12 @@ class Server:
             file.write(template_content)
 
     def save_markers(self):
-        with open('data/data.json', 'w', encoding='utf-8') as file:
+        with open(os.path.join('data', 'data.json'), 'w', encoding='utf-8') as file:
             json.dump(self.markers, file, ensure_ascii=False, indent=4)
 
     def runThePage(self):
         self.app.run(host="0.0.0.0", port=8000, debug=True)
+
+if __name__ == "__main__":
+    run = Server()
+    run.runThePage()
