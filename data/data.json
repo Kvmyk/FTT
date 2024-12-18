@@ -1,14 +1,14 @@
 [
     {
-        "lat": 50.6525099,
-        "lon": 17.9045634,
+        "lat": 50.6598262,
+        "lon": 17.9820236,
         "name": "User Location",
         "description": "This is your updated location"
     },
     {
-        "lat": 50.6745398,
-        "lon": 17.9714531,
-        "name": "Opole Kaliska 8",
+        "lat": 50.66338385,
+        "lon": 17.984030532869596,
+        "name": "Opole Nowowiejska 5",
         "description": "",
         "payable": false,
         "onlyForClients": false,
