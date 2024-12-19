@@ -253,5 +253,5 @@ class Server:
             json.dump(self.markers, file, ensure_ascii=False, indent=4)
 
     def runThePage(self):
-        self.app.run(host="0.0.0.0", port=8000, debug=True)
+        self.app.run(host="0.0.0.0", port=21088, debug=True)
 
