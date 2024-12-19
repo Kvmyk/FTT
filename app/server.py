@@ -14,7 +14,7 @@ class Server:
     def __init__(self):
         self.data = None
         self.app = Flask(__name__, static_url_path='/static')
-        self.app.secret_key = 'twoj_tajny_klucz'  # Ustaw swój tajny klucz
+        self.app.secret_key = os.getenv('FLASK_SECRET_KEY', 'domyslny_tajny_klucz')  # Ustaw swój tajny klucz
         self.lat, self.lon = 52.2297, 21.0122  # Default location (Warsaw, Poland)
         self.m = self.create_map()
         self.markers = self.load_markers()
