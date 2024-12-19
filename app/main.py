@@ -10,7 +10,7 @@ def monitor_memory():
         time.sleep(5)  # Sprawdzaj co 5 sekund
 
 if __name__ == "__main__":
-    run = Server()
+    run = Server()  
     import threading
     monitor_thread = threading.Thread(target=monitor_memory)
     monitor_thread.start()

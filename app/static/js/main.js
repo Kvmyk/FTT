@@ -78,6 +78,29 @@ function updateMapWithStoredLocation() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Sprawdź, czy lokalizacja została już przesłana
+    if (!sessionStorage.getItem('locationSent')) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                fetch('/location', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lat: position.coords.latitude,
+                        lon: position.coords.longitude
+                    })
+                }).then(function() {
+                    // Ustaw flagę w sessionStorage
+                    sessionStorage.setItem('locationSent', 'true');
+                    // Przeładuj stronę
+                    window.location.reload();
+                });
+            });
+        } else {
+            alert('Geolokalizacja nie jest wspierana przez tę przeglądarkę.');
+        }
+    }
+
     // Usuwanie zapisanej lokalizacji
     localStorage.removeItem('lat');
     localStorage.removeItem('lon');
