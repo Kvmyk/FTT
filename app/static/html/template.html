@@ -65,6 +65,8 @@
     </div>
     <div id="map"></div>
     <script>
+
+        let polyline;
         // Load the map dynamically
         fetch('/render_map')
             .then(response => response.text())
