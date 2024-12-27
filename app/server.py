@@ -69,6 +69,8 @@ class Server:
             self.lat = data['lat']
             self.lon = data['lon']
             session['user_location'] = {"lat": self.lat, "lon": self.lon}
+            session['lat'] = data['lat']
+            session['lon'] = data['lon']
             user_marker = session.get('user_marker')
 
             if user_marker:
