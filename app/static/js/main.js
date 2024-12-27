@@ -70,7 +70,7 @@ function updateMapWithStoredLocation() {
         .then(data => {
             console.log('Success:', data);
             localStorage.setItem('locationUpdated', 'true');
-            // Zamiast reload, możesz ponownie załadować mapę dynamicznie
+            // Zamiast reload, załaduj mapę dynamicznie
             fetch('/render_map')
                 .then(response => response.text())
                 .then(html => {
