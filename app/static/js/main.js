@@ -126,8 +126,7 @@ function submitModal() {
     .then(data => {
         console.log('Success:', data);
         if (data.status === 'success') {
-            // Dodaj opóźnienie przed odświeżeniem
-           window.location.reload();
+            window.location.reload();
         } else {
             alert(data.message);
         }

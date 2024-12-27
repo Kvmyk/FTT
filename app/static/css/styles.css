@@ -64,6 +64,10 @@
     padding: 20px;
     border-radius: 5px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 500px;
+    margin: 0 auto;
+    box-sizing: border-box;
 }
 #nearestPinInfo {
     position: fixed;
@@ -89,4 +93,42 @@
 }
 body {
     font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Styl dla większych ekranów */
+@media (min-width: 768px) {
+    .container {
+        max-width: 750px;
+        margin: 0 auto;
+    }
+}
+
+/* Styl dla jeszcze większych ekranów */
+@media (min-width: 1024px) {
+    .container {
+        max-width: 1000px;
+    }
+}
+
+/* Styl dla przycisków */
+button {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+}
+
+/* Styl dla inputów */
+input[type="text"], textarea, input[type="file"], input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    box-sizing: border-box;
 }
