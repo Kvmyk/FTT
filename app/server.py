@@ -5,7 +5,7 @@ import requests
 import geopy
 import json
 import base64
-from flask import Flask, send_from_directory, jsonify, request
+from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
 
 toilet_icon = os.path.join('toilet_icon.png')
@@ -14,6 +14,7 @@ class Server:
     def __init__(self):
         self.data = None
         self.app = Flask(__name__, static_url_path='/static')
+        self.app.secret_key = "twoj_sekretny_klucz"
         self.lat, self.lon = 52.2297, 21.0122  # Default location (Warsaw, Poland)
         self.m = self.create_map()
         self.markers = self.load_markers()
@@ -46,6 +47,7 @@ class Server:
             data = request.json
             self.lat = data['lat']
             self.lon = data['lon']
+            session['user_location'] = {"lat": self.lat, "lon": self.lon}
             user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
 
             if user_marker:
@@ -254,4 +256,3 @@ class Server:
 
     def runThePage(self):
         self.app.run(host="0.0.0.0", port=21088, debug=True)
-
