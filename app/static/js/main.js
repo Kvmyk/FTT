@@ -70,7 +70,13 @@ function updateMapWithStoredLocation() {
         .then(data => {
             console.log('Success:', data);
             localStorage.setItem('locationUpdated', 'true');
-            window.location.reload();
+            // Zamiast reload, możesz ponownie załadować mapę dynamicznie
+            fetch('/render_map')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                })
+                .catch(error => console.error('Error loading map:', error));
         })
         .catch((error) => {
             console.error('Error:', error);

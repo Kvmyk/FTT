@@ -7,7 +7,7 @@ import json
 import base64
 import uuid
 import logging
-from flask import Flask, send_from_directory, jsonify, request, session
+from flask import Flask, send_from_directory, jsonify, request, session, render_template
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
 
 logging.basicConfig(level=logging.DEBUG)
@@ -43,8 +43,7 @@ class Server:
     def setup_routes(self):
         @self.app.route('/')
         def fullscreen():
-            self.save_map()
-            return send_from_directory(os.path.join('static', 'html'), 'map.html')
+            return render_template('template.html')  # Upewnij się, że używasz odpowiedniego szablonu
 
         @self.app.route('/location', methods=['POST'])
         def location():
@@ -245,15 +244,8 @@ class Server:
             self.add_marker_to_map(user_marker)
         return self.m._repr_html_()
 
-    def save_map(self):
-        map_path = os.path.join('static', 'html', 'map.html')
-        template_path = os.path.join('static', 'html', 'template.html')
-
-        self.m.save(map_path)
-        with open(template_path, 'r', encoding='utf-8') as template_file:
-            template_content = template_file.read()
-        with open(map_path, 'a', encoding='utf-8') as file:
-            file.write(template_content)
+    # def save_map(self):
+    #     pass
 
     def save_markers(self):
         with open(os.path.join('data', 'data.json'), 'w', encoding='utf-8') as file:
@@ -261,3 +253,4 @@ class Server:
 
     def runThePage(self):
         self.app.run(host="0.0.0.0", port=21088)
+    
