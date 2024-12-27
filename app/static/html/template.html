@@ -62,5 +62,15 @@
     <div id="nearestPinInfo">
         <p id="nearestPinText"></p>
     </div>
+    <div id="map"></div>
+    <script>
+        // Load the map dynamically
+        fetch('/render_map')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('map').innerHTML = html;
+            })
+            .catch(error => console.error('Error loading map:', error));
+    </script>
 </body>
 </html>

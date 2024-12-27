@@ -169,6 +169,10 @@ class Server:
             response.headers['Cache-Control'] = 'no-store'
             return response
 
+        @self.app.route('/render_map', methods=['GET'])
+        def render_map():
+            return self.update_map()
+
     def add_marker_to_map(self, marker):
         if marker['name'] == "User Location":
             icon = folium.CustomIcon(toilet_icon, icon_size=(50, 50), shadow_size=(50, 50))
