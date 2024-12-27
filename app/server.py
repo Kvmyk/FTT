@@ -44,64 +44,10 @@ class Server:
 
         @self.app.route('/location', methods=['POST'])
         def location():
-            data = request.json
-            self.lat = data['lat']
-            self.lon = data['lon']
-            session['user_location'] = {"lat": self.lat, "lon": self.lon}
-            user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
-
-            if user_marker:
-                user_marker.update({
-                    "lat": self.lat,
-                    "lon": self.lon,
-                    "description": "This is your updated location"
-                })
-            else:
-                user_marker = {
-                    "lat": self.lat,
-                    "lon": self.lon,
-                    "name": "User Location",
-                    "description": "This is your location",
-                }
-                self.markers.append(user_marker)
-            with open(os.path.join('data', 'user_location.json'), 'w', encoding='utf-8') as file:
-                json.dump(user_marker, file, ensure_ascii=False, indent=4)
-            self.update_map()
-            self.save_map()
-
-            # Aktualizacja lub dodanie markera lokalizacji użytkownika
-            user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
-            if user_marker:
-                user_marker.update({
-                    "lat": self.lat,
-                    "lon": self.lon,
-                    "description": "This is your updated location"
-                })
-            else:
-                user_marker = {
-                    "lat": self.lat,
-                    "lon": self.lon,
-                    "name": "User Location",
-                    "description": "This is your location",
-                }
-                self.markers.append(user_marker)
-
-            self.save_markers()
-
-            # Aktualizuj mapę
-            self.update_map()
-
-            # Znajdź najbliższy marker i oblicz trasę
-            nearest_marker = find_nearest_marker(user_marker, self.markers)
-            if nearest_marker:
-                route = get_route(self.lat, self.lon, nearest_marker['lat'], nearest_marker['lon'])
-                if route:
-                    self.add_route_to_map(route)
-
-            # Zapisz mapę po dodaniu trasy
-            self.save_map()
-
-            return jsonify({'status': 'success', 'lat': self.lat, 'lon': self.lon})
+            lat = request.json.get('lat')
+            lon = request.json.get('lon')
+            session['user_marker'] = {"lat": lat, "lon": lon, "name": "User Location"}
+            return jsonify({'status': 'success'})
 
         @self.app.route('/nearest_toilet_distance', methods=['GET'])
         def nearest_toilet_distance():
