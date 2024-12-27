@@ -233,13 +233,15 @@ class Server:
         ).add_to(self.m)
 
     def update_map(self):
+        # Utwórz nową mapę
         self.m = self.create_map()
+        # Dodaj wszystkie markery
         for marker in self.markers:
             self.add_marker_to_map(marker)
+        # Dodaj marker lokalizacji użytkownika
         user_marker = session.get('user_marker')
         if user_marker:
             self.add_marker_to_map(user_marker)
-        return self.m._repr_html_()
 
     def save_map(self):
         map_path = os.path.join('static', 'html', 'map.html')
