@@ -216,6 +216,10 @@ class Server:
         # Dodaj wszystkie markery
         for marker in self.markers:
             self.add_marker_to_map(marker)
+        # Dodaj marker lokalizacji użytkownika
+        user_marker = session.get('user_marker')
+        if user_marker:
+            self.add_marker_to_map(user_marker)
 
     def save_map(self):
         map_path = os.path.join('static', 'html', 'map.html')
