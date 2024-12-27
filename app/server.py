@@ -9,7 +9,6 @@ import uuid
 import logging
 from flask import Flask, send_from_directory, jsonify, request, session, render_template
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
-from bs4 import BeautifulSoup
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -241,12 +240,7 @@ class Server:
         user_marker = session.get('user_marker')
         if user_marker:
             self.add_marker_to_map(user_marker)
-        
-        # Renderuj mapę i wyciągnij tylko div z mapą
-        map_html = self.m.get_root().render()
-        soup = BeautifulSoup(map_html, 'html.parser')
-        map_div = soup.find('div', {'class': 'folium-map'})
-        return str(map_div)
+        return self.m._repr_html_()
 
     def save_markers(self):
         with open(os.path.join('data', 'data.json'), 'w', encoding='utf-8') as file:
