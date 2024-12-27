@@ -33,8 +33,6 @@ function sendPosition(position) {
         console.error('Error:', error);
     });
 
-    // js
-    map.setView([position.coords.latitude, position.coords.longitude], 13);
 }
 
 function showError(error) {
