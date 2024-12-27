@@ -5,6 +5,7 @@ import requests
 import geopy
 import json
 import base64
+import uuid
 from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
 
@@ -45,6 +46,19 @@ class Server:
         @self.app.route('/location', methods=['POST'])
         def location():
             data = request.json
+            user_id = session.get('user_id')
+            if not user_id:
+                user_id = str(uuid.uuid4())
+                session['user_id'] = user_id
+
+            user_marker = {
+                "lat": data['lat'],
+                "lon": data['lon'],
+                "name": "User Location",
+                "description": "This is your location",
+            }
+            session[user_id] = user_marker
+
             self.lat = data['lat']
             self.lon = data['lon']
             session['user_location'] = {"lat": self.lat, "lon": self.lon}
@@ -74,9 +88,6 @@ class Server:
                 route = get_route(self.lat, self.lon, nearest_marker['lat'], nearest_marker['lon'])
                 if route:
                     self.add_route_to_map(route)
-
-            # Zapisz mapę po dodaniu trasy
-            self.save_map()
 
             return jsonify({'status': 'success', 'lat': self.lat, 'lon': self.lon})
 
