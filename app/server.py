@@ -24,10 +24,6 @@ class Server:
         self.markers = self.load_markers()
         self.setup_routes()
         self.routes = []
-
-    def add_route(self, route):
-        self.routes.append(route)   
-
     def create_map(self):
         return folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False, min_zoom=2, max_zoom=18)
 
@@ -206,40 +202,7 @@ class Server:
             folium.Marker(location=[marker['lat'], marker['lon']], popup=wholePopUp, icon=iconToilet).add_to(self.m)
 
     def add_route_to_map(self, route):
-        coordinates = [(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']]
-        logging.info(f"Coordinates: {coordinates}")
-
-        # Oblicz całkowitą długość trasy w metrach
-        distance = route['routes'][0]['distance']  # Długość w metrach
-        logging.info(f"Distance: {distance}")
-
-        distance_text = f"{distance / 1000:.2f} km"
-        logging.info(f"Distance Text: {distance_text}")                # Dodaj linię trasy na mapę
-        folium.PolyLine(
-            locations=coordinates,
-            color='red',
-              weight=5,
-              opacity=0.7
-            ).add_to(self.m)
-        logging.info("Route added to map")
-        # Add this line after adding the route to the map
-        self.update_map()
-        # Dodaj znacznik z długością trasy w połowie linii
-        mid_point_index = len(coordinates) // 2
-        mid_point = coordinates[mid_point_index]
-
-        # Dodaj przesunięcie do szerokości geograficznej, aby tekst nie nakładał się na linię
-        offset_latitude = 0.0007  # Możesz dostosować tę wartość w zależności od potrzeb
-        mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1]]
-
-        folium.Marker(
-            location=mid_point_with_offset,
-            icon=folium.DivIcon(
-                html=f'''<div style="font-size: 12px; color: red; width: 100px;">{distance_text}</div>'''
-            )
-        ).add_to(self.m)
-
-        self.update_map()
+        self.routes.append(route)
 
     def update_map(self):
         self.m = self.create_map()
@@ -249,14 +212,27 @@ class Server:
         if user_marker:
             self.add_marker_to_map(user_marker)
         
-        for route in self.routes:
-            coordinates = [(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']]
-            folium.PolyLine(
-                locations=coordinates,
-                color='red',
-                weight=5,
-                opacity=0.7
-            ).add_to(self.m)
+            for route in self.routes:
+                coordinates = [(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']]
+                folium.PolyLine(
+                    locations=coordinates,
+                    color='red',
+                    weight=5,
+                    opacity=0.7
+                ).add_to(self.m)
+
+        # Jeżeli chcesz dodać też znacznik odległości w połowie trasy:
+        distance = route['routes'][0]['distance']  # w metrach
+        distance_text = f"{distance / 1000:.2f} km"
+        mid_point_index = len(coordinates) // 2
+        mid_point = coordinates[mid_point_index]
+        offset_latitude = 0.0007
+        mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1]]
+        folium.Marker(
+            location=mid_point_with_offset,
+            icon=folium.DivIcon(html=f'<div style="font-size: 12px; color: red;">{distance_text}</div>')
+        ).add_to(self.m)
+
 
         return self.m._repr_html_()
 
