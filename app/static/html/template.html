@@ -72,6 +72,28 @@
                 document.getElementById('map').innerHTML = html;
             })
             .catch(error => console.error('Error loading map:', error));
+            function drawRoute(coordinates) {
+            if (polyline) {
+                map.removeLayer(polyline);
+            }
+            polyline = L.polyline(coordinates, {
+                color: 'red',
+                weight: 3,
+                opacity: 0.7
+            }).addTo(map);
+            map.fitBounds(polyline.getBounds());
+        }
+
+        fetch('/nearest_toilet_distance')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Trasa zostanie automatycznie wyrysowana na mapie
+                    // Informacja o dystansie pojawi się w nearestPinInfo
+                    const nearestPinInfo = document.getElementById('nearestPinInfo');
+                    nearestPinInfo.classList.add('show');
+                }
+            });
     </script>
 </body>
 </html>
