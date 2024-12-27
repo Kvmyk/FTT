@@ -203,21 +203,21 @@ class Server:
 
     def add_route_to_map(self, route):
         coordinates = [(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']]
+        logging.info(f"Coordinates: {coordinates}")
 
         # Oblicz całkowitą długość trasy w metrach
         distance = route['routes'][0]['distance']  # Długość w metrach
+        logging.info(f"Distance: {distance}")
 
-        # Sformatuj odległość do wyświetlenia
-        distance_text = format_distance_text(distance)
-
-        # Dodaj linię trasy na mapę
+        distance_text = f"{distance / 1000:.2f} km"
+        logging.info(f"Distance Text: {distance_text}")                # Dodaj linię trasy na mapę
         folium.PolyLine(
             locations=coordinates,
             color='red',
-            weight=5,
-            opacity=0.7
-        ).add_to(self.m)
-
+              weight=5,
+              opacity=0.7
+            ).add_to(self.m)
+        logging.info("Route added to map")
         # Dodaj znacznik z długością trasy w połowie linii
         mid_point_index = len(coordinates) // 2
         mid_point = coordinates[mid_point_index]
@@ -232,6 +232,8 @@ class Server:
                 html=f'''<div style="font-size: 12px; color: red; width: 100px;">{distance_text}</div>'''
             )
         ).add_to(self.m)
+
+        self.update_map()
 
     def update_map(self):
         self.m = self.create_map()
