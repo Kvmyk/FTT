@@ -48,7 +48,7 @@ class Server:
             self.lat = data['lat']
             self.lon = data['lon']
             session['user_location'] = {"lat": self.lat, "lon": self.lon}
-            user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
+            user_marker = session.get('user_marker')
 
             if user_marker:
                 user_marker.update({
@@ -63,33 +63,10 @@ class Server:
                     "name": "User Location",
                     "description": "This is your location",
                 }
-                self.markers.append(user_marker)
-            with open(os.path.join('data', 'user_location.json'), 'w', encoding='utf-8') as file:
-                json.dump(user_marker, file, ensure_ascii=False, indent=4)
+                session['user_marker'] = user_marker
+
             self.update_map()
             self.save_map()
-
-            # Aktualizacja lub dodanie markera lokalizacji użytkownika
-            user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
-            if user_marker:
-                user_marker.update({
-                    "lat": self.lat,
-                    "lon": self.lon,
-                    "description": "This is your updated location"
-                })
-            else:
-                user_marker = {
-                    "lat": self.lat,
-                    "lon": self.lon,
-                    "name": "User Location",
-                    "description": "This is your location",
-                }
-                self.markers.append(user_marker)
-
-            self.save_markers()
-
-            # Aktualizuj mapę
-            self.update_map()
 
             # Znajdź najbliższy marker i oblicz trasę
             nearest_marker = find_nearest_marker(user_marker, self.markers)
@@ -105,7 +82,7 @@ class Server:
 
         @self.app.route('/nearest_toilet_distance', methods=['GET'])
         def nearest_toilet_distance():
-            user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
+            user_marker = session.get('user_marker')
             if not user_marker:
                 return jsonify({'status': 'error', 'message': 'User location not found'}), 404
 
@@ -152,7 +129,7 @@ class Server:
                 self.update_map()
 
                 # **Przelicz trasę do najbliższego markera**
-                user_marker = next((marker for marker in self.markers if marker['name'] == "User Location"), None)
+                user_marker = session.get('user_marker')
                 if user_marker:
                     nearest_marker = find_nearest_marker(user_marker, self.markers)
                     if nearest_marker:
