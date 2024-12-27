@@ -218,6 +218,8 @@ class Server:
               opacity=0.7
             ).add_to(self.m)
         logging.info("Route added to map")
+        # Add this line after adding the route to the map
+        self.update_map()
         # Dodaj znacznik z długością trasy w połowie linii
         mid_point_index = len(coordinates) // 2
         mid_point = coordinates[mid_point_index]
