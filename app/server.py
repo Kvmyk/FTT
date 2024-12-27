@@ -59,6 +59,10 @@ class Server:
             }
             session[user_id] = user_marker
 
+            # Ensure 'ion' is scoped per user session
+            self.ion = {}
+            self.ion[user_id] = user_marker
+
             self.lat = data['lat']
             self.lon = data['lon']
             session['user_location'] = {"lat": self.lat, "lon": self.lon}
