@@ -212,9 +212,9 @@ class Server:
         if user_marker:
             self.add_marker_to_map(user_marker)
         
-            for route in self.routes:
-                coordinates = [(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']]
-                folium.PolyLine(
+        for route in self.routes:
+            coordinates = [(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']]
+            folium.PolyLine(
                     locations=coordinates,
                     color='red',
                     weight=5,
