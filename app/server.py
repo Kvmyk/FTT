@@ -221,17 +221,17 @@ class Server:
                     opacity=0.7
                 ).add_to(self.m)
 
-        # Jeżeli chcesz dodać też znacznik odległości w połowie trasy:
-        distance = route['routes'][0]['distance']  # w metrach
-        distance_text = f"{distance / 1000:.2f} km"
-        mid_point_index = len(coordinates) // 2
-        mid_point = coordinates[mid_point_index]
-        offset_latitude = 0.0007
-        mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1]]
-        folium.Marker(
-            location=mid_point_with_offset,
-            icon=folium.DivIcon(html=f'<div style="font-size: 12px; color: red;">{distance_text}</div>')
-        ).add_to(self.m)
+            # Jeżeli chcesz dodać też znacznik odległości w połowie trasy:
+            distance = route['routes'][0]['distance']  # w metrach
+            distance_text = f"{distance / 1000:.2f} km"
+            mid_point_index = len(coordinates) // 2
+            mid_point = coordinates[mid_point_index]
+            offset_latitude = 0.0007
+            mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1]]
+            folium.Marker(
+                location=mid_point_with_offset,
+                icon=folium.DivIcon(html=f'<div style="font-size: 12px; color: red;">{distance_text}</div>')
+            ).add_to(self.m)
 
 
         return self.m._repr_html_()
