@@ -43,7 +43,7 @@ class Server:
     def setup_routes(self):
         @self.app.route('/')
         def fullscreen():
-            return render_template(os.path.join('static','html','template.html'))  # Upewnij się, że używasz odpowiedniego szablonu
+            return send_from_directory('static/html', 'template.html')
 
         @self.app.route('/location', methods=['POST'])
         def location():
