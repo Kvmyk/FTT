@@ -43,7 +43,7 @@ class Server:
     def setup_routes(self):
         @self.app.route('/')
         def fullscreen():
-            return render_template('template.html')  # Upewnij się, że używasz odpowiedniego szablonu
+            return render_template(os.path.join('static','html','template.html'))  # Upewnij się, że używasz odpowiedniego szablonu
 
         @self.app.route('/location', methods=['POST'])
         def location():
@@ -253,4 +253,3 @@ class Server:
 
     def runThePage(self):
         self.app.run(host="0.0.0.0", port=21088)
-    
