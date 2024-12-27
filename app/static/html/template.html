@@ -65,8 +65,6 @@
     </div>
     <div id="map"></div>
     <script>
-
-        let polyline;
         // Load the map dynamically
         fetch('/render_map')
             .then(response => response.text())
@@ -74,32 +72,6 @@
                 document.getElementById('map').innerHTML = html;
             })
             .catch(error => console.error('Error loading map:', error));
-
-        function drawRoute(coordinates) {
-            if (polyline) {
-                map.removeLayer(polyline);
-            }
-            polyline = L.polyline(coordinates, {
-                color: 'red',
-                weight: 3,
-                opacity: 0.7
-            }).addTo(map);
-            map.fitBounds(polyline.getBounds());
-        }
-
-        fetch('/nearest_toilet_distance')
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // Wywołaj funkcję drawRoute z koordynatami trasy
-                    drawRoute(data.coordinates);
-
-                    // Informacja o dystansie pojawi się w nearestPinInfo
-                    const nearestPinInfo = document.getElementById('nearestPinInfo');
-                    nearestPinInfo.classList.add('show');
-                }
-            })
-            .catch(error => console.error('Error fetching nearest toilet distance:', error));
     </script>
 </body>
 </html>

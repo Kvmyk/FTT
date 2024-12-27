@@ -23,6 +23,10 @@ class Server:
         self.m = self.create_map()
         self.markers = self.load_markers()
         self.setup_routes()
+        self.routes = []
+
+    def add_route(self, route):
+        self.routes.append(route)   
 
     def create_map(self):
         return folium.Map(location=[self.lat, self.lon], tiles="Cartodb positron", zoom_start=15, overlay=False, min_zoom=2, max_zoom=18)
@@ -244,6 +248,16 @@ class Server:
         user_marker = session.get('user_marker')
         if user_marker:
             self.add_marker_to_map(user_marker)
+        
+        for route in self.routes:
+            coordinates = [(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']]
+            folium.PolyLine(
+                locations=coordinates,
+                color='red',
+                weight=5,
+                opacity=0.7
+            ).add_to(self.m)
+
         return self.m._repr_html_()
 
     def save_markers(self):
