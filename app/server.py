@@ -6,8 +6,11 @@ import geopy
 import json
 import base64
 import uuid
+import logging
 from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
+
+logging.basicConfig(level=logging.DEBUG)
 
 toilet_icon = os.path.join('toilet_icon.png')
 
@@ -92,6 +95,8 @@ class Server:
                 route = get_route(self.lat, self.lon, nearest_marker['lat'], nearest_marker['lon'])
                 if route:
                     self.add_route_to_map(route)
+
+            logging.debug(f"Session Data: {session}")
 
             return jsonify({'status': 'success', 'lat': self.lat, 'lon': self.lon})
 
