@@ -8,6 +8,7 @@ import base64
 import uuid
 from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
+from waitress import serve
 
 toilet_icon = os.path.join('toilet_icon.png')
 
@@ -251,4 +252,4 @@ class Server:
             json.dump(self.markers, file, ensure_ascii=False, indent=4)
 
     def runThePage(self):
-        self.app.run(host="0.0.0.0", port=21088)
+        serve(self.app, host="0.0.0.0", port=21088)
