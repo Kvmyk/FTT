@@ -88,7 +88,6 @@ class Server:
                 session['user_marker'] = user_marker
 
             self.update_map()
-            self.save_map()
 
             # Znajdź najbliższy marker i oblicz trasę
             nearest_marker = find_nearest_marker(user_marker, self.markers)
@@ -157,7 +156,6 @@ class Server:
                         route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
                         if route:
                             self.add_route_to_map(route)
-                self.save_map()
 
                 return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
             else:
@@ -243,9 +241,6 @@ class Server:
         if user_marker:
             self.add_marker_to_map(user_marker)
         return self.m._repr_html_()
-
-    # def save_map(self):
-    #     pass
 
     def save_markers(self):
         with open(os.path.join('data', 'data.json'), 'w', encoding='utf-8') as file:
