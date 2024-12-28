@@ -39,26 +39,27 @@
                     const mapIframe = mapContainer.querySelector('iframe');
                     if (mapIframe) {
                         mapIframe.style.width = '100%';
-                        mapIframe.style.height = '100vh'; // Dopasuj do 60% wysokości okna przeglądarki
+                        mapIframe.style.height = '100vh'; // Dopasuj do 100% wysokości okna przeglądarki
                         mapIframe.style.border = 'none'; // Usuń obramowanie, jeśli niepotrzebne
-                    }
 
-                    // Dodaj nasłuchiwanie po wyrenderowaniu mapy
-                    const mapElement = document.getElementById('map');
-                    mapElement.addEventListener('mouseover', (event) => {
-                        if (event.target && event.target.tagName.toLowerCase() === 'path') {
-                            const nearestPinInfo = document.getElementById('nearestPinInfo');
-                            nearestPinInfo.classList.remove('hide');
-                            nearestPinInfo.classList.add('show');
-                        }
-                    });
-                    mapElement.addEventListener('mouseout', (event) => {
-                        if (event.target && event.target.tagName.toLowerCase() === 'path') {
-                            const nearestPinInfo = document.getElementById('nearestPinInfo');
-                            nearestPinInfo.classList.remove('show');
-                            nearestPinInfo.classList.add('hide');
-                        }
-                    });
+                        // Dodaj nasłuchiwanie po załadowaniu zawartości iframe
+                        mapIframe.onload = function() {
+                            const iframeDocument = mapIframe.contentDocument || mapIframe.contentWindow.document;
+                            const paths = iframeDocument.querySelectorAll('path');
+                            paths.forEach(path => {
+                                path.addEventListener('mouseover', () => {
+                                    const nearestPinInfo = document.getElementById('nearestPinInfo');
+                                    nearestPinInfo.classList.remove('hide');
+                                    nearestPinInfo.classList.add('show');
+                                });
+                                path.addEventListener('mouseout', () => {
+                                    const nearestPinInfo = document.getElementById('nearestPinInfo');
+                                    nearestPinInfo.classList.remove('show');
+                                    nearestPinInfo.classList.add('hide');
+                                });
+                            });
+                        };
+                    }
                 })
                 .catch(err => console.error('Error fetching map:', err));
         });
