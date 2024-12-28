@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Map</title>
+    <!-- Załadowanie stylów -->
     <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Załadowanie skryptów -->
     <script src="/static/js/main.js"></script> 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -27,18 +29,18 @@
                 .catch(error => console.error('Error:', error));
         });
 
-        // Pokaż blok, gdy użytkownik najedzie kursorem na trasę
+        // Pokazujemy bloczek, gdy użytkownik najedzie kursorem na trasę
         document.addEventListener('mouseover', function(event) {
-            if (event.target.tagName === 'path') { // Zakładając, że trasa jest rysowana jako element <path>
+            if (event.target.tagName === 'path') { 
                 const nearestPinInfo = document.getElementById('nearestPinInfo');
                 nearestPinInfo.classList.remove('hide');
                 nearestPinInfo.classList.add('show');
             }
         });
 
-        // Ukryj blok, gdy użytkownik opuści trasę
+        // Ukrywamy bloczek, gdy użytkownik opuści trasę
         document.addEventListener('mouseout', function(event) {
-            if (event.target.tagName === 'path') { // Zakładając, że trasa jest rysowana jako element <path>
+            if (event.target.tagName === 'path') {
                 const nearestPinInfo = document.getElementById('nearestPinInfo');
                 nearestPinInfo.classList.remove('show');
                 nearestPinInfo.classList.add('hide');
@@ -46,26 +48,37 @@
         });
     </script>
 </head>
+
 <body>
-    <div class="circle-plus">+</div>
+    <!-- Przyciski, modale, itp. -->
+    <div class="circle-plus" id="openModalBtn">+</div>
+
     <!-- Modal -->
     <div id="myModal">
         <span id="closeModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
         <input type="text" id="userInput" placeholder="Wpisz coś...">
         <textarea id="descriptionInput" placeholder="Dodaj opis..."></textarea>
-        <label><input type="checkbox" id="paidInput" name ="payable">Płatna</label>
-        <label><input type="checkbox" id="customersOnlyInput" name ="onlyForClients">Tylko dla klientów</label>
+        <label>
+            <input type="checkbox" id="paidInput" name="payable"> Płatna
+        </label>
+        <label>
+            <input type="checkbox" id="customersOnlyInput" name="onlyForClients"> Tylko dla klientów
+        </label>
         <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10">
         <input type="file" id="photoInput" multiple>
         <button onclick="submitModal()">Gotowe</button>
     </div>
+
     <!-- Nearest Pin Info -->
     <div id="nearestPinInfo">
         <p id="nearestPinText"></p>
     </div>
+
+    <!-- Kontener na mapę (zajmuje całą przestrzeń) -->
     <div id="map"></div>
+
     <script>
-        // Load the map dynamically
+        // Ładujemy mapę dynamicznie
         fetch('/render_map')
             .then(response => response.text())
             .then(html => {

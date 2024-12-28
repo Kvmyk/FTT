@@ -7,7 +7,7 @@ import json
 import base64
 import uuid
 import logging
-from flask import Flask, send_from_directory, jsonify, request, session, render_template
+from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
 
 logging.basicConfig(level=logging.DEBUG)
@@ -22,14 +22,12 @@ class Server:
         # Domyślna lokalizacja (Warszawa)
         self.lat, self.lon = 52.2297, 21.0122
 
-        # Ta mapa będzie generowana w update_map(). Tworzymy ją raz tu,
-        # aby nie było błędów przy pierwszym wywołaniu:
+        # Inicjujemy mapę (na start)
         self.m = self.create_map()
 
-        # Globalne markery (np. z pliku data.json) – wspólne dla wszystkich
+        # Globalne markery (z pliku data.json)
         self.markers = self.load_markers()
 
-        # Konfiguracja ścieżek Flask
         self.setup_routes()
 
     def create_map(self):
@@ -66,22 +64,20 @@ class Server:
         def location():
             """
             Ustawia aktualną pozycję użytkownika oraz wylicza trasę
-            do najbliższej toalety (opcjonalnie).
+            do najbliższej toalety.
             """
             data = request.json
-
-            # Pobierz lub stwórz user_id (klucz w sesji)
             user_id = session.get('user_id')
             if not user_id:
                 user_id = str(uuid.uuid4())
                 session['user_id'] = user_id
 
-            # Inicjalizacja słownika w sesji dla tego user_id (jeśli go nie ma)
+            # Wczytujemy / tworzymy słownik dla danego user_id
             user_data = session.get(user_id, {})
             if not user_data:
-                user_data = {"marker": None, "routes": []}
+                user_data = {"marker": None, "current_route": None}
 
-            # Zapisz / zaktualizuj marker użytkownika
+            # Zapiszmy nowy marker użytkownika
             user_marker = {
                 "lat": data['lat'],
                 "lon": data['lon'],
@@ -89,21 +85,21 @@ class Server:
                 "description": "This is your location"
             }
             user_data["marker"] = user_marker
-            session[user_id] = user_data  # Zapisz w sesji
+            session[user_id] = user_data
 
-            # Zaktualizuj domyślne współrzędne serwera (niekoniecznie potrzebne)
+            # Zaktualizuj domyślne współrzędne serwera
             self.lat = data['lat']
             self.lon = data['lon']
 
-            # Opcjonalnie, policz trasę do najbliższej toalety
+            # Oblicz najkrótszą trasę do najbliższej toalety
             nearest_marker = find_nearest_marker(user_marker, self.markers)
             if nearest_marker:
                 route = get_route(self.lat, self.lon,
                                   nearest_marker['lat'], nearest_marker['lon'])
                 if route:
+                    # Dodajemy / nadpisujemy JEDYNĄ trasę dla tego użytkownika
                     self.add_route_to_map(route)
 
-            # Debug
             logging.debug(f"Session Data: {session}")
 
             return jsonify({'status': 'success', 'lat': self.lat, 'lon': self.lon})
@@ -142,7 +138,7 @@ class Server:
         def submit():
             """
             Dodaje nową toaletę na podstawie danych z formularza
-            i (opcjonalnie) wylicza trasę do najbliższej toalety.
+            i (opcjonalnie) wylicza trasę do najbliższego markera.
             """
             data = request.form
             userInput = data.get('userInput', '')
@@ -156,7 +152,7 @@ class Server:
 
             lat, lon = get_coordinates(userInput)
             if lat and lon:
-                # Dodajemy do "globalnej" listy markerów (toalety)
+                # Dodaj do "globalnej" listy markerów (toalety)
                 new_marker = {
                     "lat": lat,
                     "lon": lon,
@@ -170,7 +166,7 @@ class Server:
                 self.markers.append(new_marker)
                 self.save_markers()
 
-                # Odśwież mapę (doda marker globalny)
+                # Odśwież mapę (doda globalny marker)
                 self.update_map()
 
                 # Przelicz trasę do najbliższego markera
@@ -246,52 +242,49 @@ class Server:
 
     def add_route_to_map(self, route):
         """
-        Zamiast rysować trasę od razu na mapie (co spowoduje, że wszyscy ją zobaczą),
-        zapisujemy ją w sesji dla konkretnego użytkownika.
+        Zamiast przechowywać listę tras, przechowujemy tylko JEDNĄ trasę
+        w polu 'current_route' w sesji. Będzie to zawsze najbliższa / aktualna.
         """
         user_id = session.get('user_id')
         if not user_id:
-            # Brak user_id = brak możliwości zapisu per użytkownik
             logging.warning("No user_id in session – cannot store route.")
             return
 
         user_data = session.get(user_id, {})
-        if 'routes' not in user_data:
-            user_data['routes'] = []
-
-        user_data['routes'].append(route)
+        # Nadpisujemy poprzednią trasę:
+        user_data['current_route'] = route
         session[user_id] = user_data
 
-        # Na koniec można wywołać update_map(), by od razu zaktualizować widok
+        # Opcjonalnie zaktualizuj mapę od razu
         self.update_map()
 
     def update_map(self):
         """
-        Tworzy nowy obiekt mapy (czyści poprzedni stan).
-        Dodaje:
+        Tworzy nowy obiekt mapy (czyści poprzedni stan),
+        a następnie dodaje:
           - Globalne markery (self.markers)
           - Marker użytkownika (z sesji)
-          - Trasy użytkownika (z sesji)
+          - JEDNĄ aktualną trasę (user_data['current_route'])
         Zwraca wygenerowany kod HTML.
         """
         self.m = self.create_map()
 
-        # 1. Dodajemy "globalne" markery (toalety z pliku data.json)
+        # 1. Dodaj "globalne" markery (toalety z data.json)
         for marker in self.markers:
             self.add_marker_to_map(marker)
 
-        # 2. Dodajemy marker i trasy aktualnego użytkownika
+        # 2. Dodaj marker i ewentualną trasę aktualnego użytkownika
         user_id = session.get('user_id')
         if user_id:
             user_data = session.get(user_id, {})
-
-            # a) Marker użytkownika
+            # Marker
             user_marker = user_data.get('marker')
             if user_marker:
                 self.add_marker_to_map(user_marker)
 
-            # b) Trasy użytkownika
-            for route in user_data.get('routes', []):
+            # Trasa (tylko jedna)
+            route = user_data.get('current_route')
+            if route:
                 coordinates = [
                     (coord[1], coord[0])
                     for coord in route['routes'][0]['geometry']['coordinates']
@@ -329,7 +322,6 @@ class Server:
                     )
                 ).add_to(self.m)
 
-        # Zwróć wygenerowany HTML
         return self.m._repr_html_()
 
     def save_markers(self):

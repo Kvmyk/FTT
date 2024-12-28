@@ -1,3 +1,35 @@
+/* Reset podstawowy */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Używamy fontu Roboto */
+body {
+    font-family: 'Roboto', sans-serif;
+    width: 100%;
+    height: 100%;
+}
+
+/* Przyciski, inputy itp. */
+button {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+input[type="text"],
+textarea,
+input[type="file"],
+input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+/* Przycisk „+” w rogu */
 .circle-plus {
     width: 40px;
     height: 40px;
@@ -12,47 +44,15 @@
     top: 10px;
     right: 10px;
     z-index: 1000;
-    cursor: pointer; 
+    cursor: pointer;
+    transition: transform 0.2s ease;
 }
 .circle-plus:hover {
     transform: scale(1.1);
-    background-color: #EEEEEE;    
+    background-color: #EEEEEE;
 }
-#myModal input[type="text"], #myModal textarea, #myModal input[type="file"] {
-    width: 85%;
-    padding: 10px;
-    margin: 10px 0;
-    display: block;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-#myModal input[type="number"] {
-    width: 50%; 
-    padding: 10px;
-    margin: 10px 0;
-    display: block;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-#myModal input[type="checkbox"] {
-    margin: 10px 0;
-    display: block; 
-}
-#myModal button {
-    width: 80%;
-    background-color: red;
-    color: white;
-    padding: 14px 20px;
-    margin: 8px 0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-#myModal button:hover {
-    background-color: #C92704;
-}
+
+/* Modal (formularz) */
 #myModal {
     display: none;
     position: fixed;
@@ -67,8 +67,35 @@
     width: 90%;
     max-width: 500px;
     margin: 0 auto;
-    box-sizing: border-box;
 }
+#myModal input[type="text"],
+#myModal textarea,
+#myModal input[type="file"] {
+    width: 85%;
+    margin: 10px 0;
+}
+#myModal input[type="number"] {
+    width: 50%;
+    margin: 10px 0;
+}
+#myModal input[type="checkbox"] {
+    margin: 10px 0;
+    display: block;
+}
+#myModal button {
+    width: 80%;
+    background-color: red;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 4px;
+}
+#myModal button:hover {
+    background-color: #C92704;
+}
+
+/* Blok z informacją o najbliższej toalecie */
 #nearestPinInfo {
     position: fixed;
     bottom: 10px;
@@ -81,7 +108,7 @@
     z-index: 1001;
     display: none;
     opacity: 0;
-    transition: opacity 1s ease-in-out; /* Zwiększ czas trwania przejścia */
+    transition: opacity 1s ease-in-out;
 }
 #nearestPinInfo.show {
     display: block;
@@ -89,46 +116,50 @@
 }
 #nearestPinInfo.hide {
     opacity: 0;
-    transition: opacity 1s ease-in-out;;
-}
-body {
-    font-family: 'Roboto', sans-serif;
-    margin: 0;
-    padding: 0;
+    transition: opacity 1s ease-in-out;
 }
 
+/* Mapa na pełnej wysokości widoku */
+html, body {
+    height: 100%;
+}
+#map {
+    width: 100%;
+    height: 100%;
+    min-height: 400px; /* zapas, żeby na mniejszych ekranach nie było za małe */
+}
+
+/* Kontener, jeśli potrzebujemy go do innej zawartości */
 .container {
     width: 100%;
+    max-width: 1000px;
+    margin: 0 auto; /* wyśrodkuj dla większych ekranów */
     padding: 20px;
-    box-sizing: border-box;
 }
 
-/* Styl dla większych ekranów */
-@media (min-width: 768px) {
-    .container {
-        max-width: 750px;
-        margin: 0 auto;
+/* Media queries dla bardzo małych ekranów (np. telefony) */
+@media (max-width: 480px) {
+    .circle-plus {
+        width: 36px;
+        height: 36px;
+        line-height: 30px;
+        font-size: 24px;
+        top: 8px;
+        right: 8px;
+    }
+    #myModal {
+        width: 90%;
+        max-width: 350px;
+    }
+    #myModal button {
+        width: 100%;
     }
 }
 
-/* Styl dla jeszcze większych ekranów */
-@media (min-width: 1024px) {
-    .container {
-        max-width: 1000px;
+/* Dla średnich ekranów (tablety) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    #myModal {
+        width: 80%;
+        max-width: 450px;
     }
-}
-
-/* Styl dla przycisków */
-button {
-    width: 100%;
-    padding: 10px;
-    font-size: 1em;
-}
-
-/* Styl dla inputów */
-input[type="text"], textarea, input[type="file"], input[type="number"] {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    box-sizing: border-box;
 }
