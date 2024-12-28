@@ -1,242 +1,240 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>Map</title>
-    <!-- Kluczowe dla responsywności! -->
+    <!-- To jest kluczowe dla responsywności! -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Wczytanie fontu Roboto -->
+    <!-- Załadowanie stylów -->
+    <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-
-    <!-- ========== STYLE ========== -->
-    <style>
-    /* Reset / Ujednolicenie */
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box; /* ważne dla responsywnego layoutu */
-    }
-    html, body {
-        width: 100%;
-        height: 100%;
-        font-family: 'Roboto', sans-serif;
-    }
-
-    /* Elastyczny układ strony */
-    body {
-        display: flex;
-        flex-direction: column;
-        /* Możesz dodać min-height zamiast height: 100%, jeśli wolisz scroll */
-    }
-
-    /* Kontener na mapę – wypełnia dostępną przestrzeń ciała */
-    .map-container {
-        flex: 1; /* rośnie, by wypełnić przestrzeń */
-        position: relative;
-    }
-
-    /* Mapa sama w sobie */
-    #map {
-        width: 100%;
-        height: 100%; 
-        /* 100% -> wypełnia rodzica (.map-container) */
-    }
-
-    /* ========== Najbliższa toaleta – info box ========== */
-    #nearestPinInfo {
-        position: fixed;
-        bottom: 10px;
-        left: 10px;
-        background-color: white;
-        padding: 10px;
-        border: 1px solid black;
-        border-radius: 5px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        z-index: 1001;
-        display: none; /* początkowo ukryty */
-        opacity: 0;
-        transition: opacity 1s ease-in-out;
-        max-width: 300px; /* zapobiega zbyt szerokiemu 'rozlaniu' */
-    }
-    #nearestPinInfo.show {
-        display: block;
-        opacity: 1;
-    }
-    #nearestPinInfo.hide {
-        opacity: 0;
-        transition: opacity 1s ease-in-out;
-    }
-
-    /* ========== Przycisk plus (otwiera modal) ========== */
-    .circle-plus {
-        width: 40px;
-        height: 40px;
-        background-color: white;
-        border: 3px solid red;
-        border-radius: 50%;
-        color: red;
-        text-align: center;
-        line-height: 34px;
-        font-size: 28px;
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        z-index: 1000;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-    }
-    .circle-plus:hover {
-        transform: scale(1.1);
-        background-color: #EEEEEE;
-    }
-
-    /* ========== Modal ========== */
-    .modal-overlay {
-        position: fixed;
-        top: 0; 
-        left: 0; 
-        right: 0; 
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 2000;
-        display: none; /* ukrywamy domyślnie */
-        align-items: center;
-        justify-content: center;
-    }
-    .modal-overlay.show {
-        display: flex; /* w momencie pokazania -> flex (wycentrowanie w pionie i poziomie) */
-    }
-
-    .modal-window {
-        background-color: #fff;
-        width: 90%;
-        max-width: 500px;
-        border-radius: 5px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        overflow: hidden; /* dla ładnych zaokrągleń */
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        max-height: 90vh; /* żeby nie wychodził poza ekran mobilny */
-    }
-
-    /* Nagłówek modala */
-    .modal-header {
-        background-color: #f5f5f5;
-        padding: 10px 15px;
-        border-bottom: 1px solid #ddd;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .modal-header h2 {
-        margin: 0;
-        font-size: 1.2em;
-    }
-    .modal-close {
-        font-size: 1.4em;
-        cursor: pointer;
-    }
-
-    /* Część główna (body) */
-    .modal-body {
-        padding: 15px;
-        overflow-y: auto; /* w razie gdy treści jest dużo */
-        flex: 1; /* rośnie w pionie */
-    }
-    .modal-body label {
-        display: block;
-        margin-top: 10px;
-    }
-    .modal-body input[type="text"],
-    .modal-body textarea,
-    .modal-body input[type="file"],
-    .modal-body input[type="number"] {
-        width: 100%;
-        padding: 10px;
-        margin-top: 5px;
-    }
-    .responsive-textarea {
-        min-height: 70px;
-    }
-    /* Checkboxy */
-    .checkbox-group {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-top: 5px;
-    }
-    .checkbox-group label {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 0.95em;
-    }
-
-    /* Stopka modala */
-    .modal-footer {
-        border-top: 1px solid #ddd;
-        background-color: #f5f5f5;
-        padding: 10px 15px;
-        text-align: right;
-    }
-    .modal-footer button {
-        background-color: red;
-        color: #fff;
-        font-size: 1em;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-    .modal-footer button:hover {
-        background-color: #C92704;
-    }
-
-    /* ========== Media Queries dla urządzeń mobilnych ========== */
-    @media (max-width: 768px) {
-        /* Mapa ciut mniejsza, jeśli ktoś chce dodać np. nagłówek */
-        .map-container {
-            height: 60vh; 
-        }
-        #map {
-            height: 100%; 
-        }
-    }
-    </style>
-
-    <!-- ========== SCRIPTS ========== -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 1. Pobranie danych o najbliższej toalecie
-        fetch('/nearest_toilet_distance')
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    const nearestPinInfo = document.getElementById('nearestPinInfo');
-                    const nearestPinText = document.getElementById('nearestPinText');
-                    nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}`;
-                    nearestPinInfo.classList.add('show');
-
-                    // Ukryj bloczek po 3 sekundach
-                    setTimeout(() => {
-                        nearestPinInfo.classList.remove('show');
-                        nearestPinInfo.classList.add('hide');
-                    }, 3000);
+    <!-- Załadowanie skryptów (jeśli nie wymagają <body> onload, można tu) -->
+        <style>
+            /* Reset / Ujednolicenie */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box; /* ważne dla responsywnego layoutu */
+            }
+            html, body {
+                width: 100%;
+                height: 100%;
+                font-family: 'Roboto', sans-serif;
+            }
+        
+            /* Elastyczny układ strony */
+            body {
+                display: flex;
+                flex-direction: column;
+                /* Możesz dodać min-height zamiast height: 100%, jeśli wolisz scroll */
+            }
+        
+            /* Kontener na mapę – wypełnia dostępną przestrzeń ciała */
+            .map-container {
+                flex: 1; /* rośnie, by wypełnić przestrzeń */
+                position: relative;
+            }
+        
+            /* Mapa sama w sobie */
+            #map {
+                width: 100%;
+                height: 100%; 
+                /* 100% -> wypełnia rodzica (.map-container) */
+            }
+        
+            /* ========== Najbliższa toaleta – info box ========== */
+            #nearestPinInfo {
+                position: fixed;
+                bottom: 10px;
+                left: 10px;
+                background-color: white;
+                padding: 10px;
+                border: 1px solid black;
+                border-radius: 5px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                z-index: 1001;
+                display: none; /* początkowo ukryty */
+                opacity: 0;
+                transition: opacity 1s ease-in-out;
+                max-width: 300px; /* zapobiega zbyt szerokiemu 'rozlaniu' */
+            }
+            #nearestPinInfo.show {
+                display: block;
+                opacity: 1;
+            }
+            #nearestPinInfo.hide {
+                opacity: 0;
+                transition: opacity 1s ease-in-out;
+            }
+        
+            /* ========== Przycisk plus (otwiera modal) ========== */
+            .circle-plus {
+                width: 40px;
+                height: 40px;
+                background-color: white;
+                border: 3px solid red;
+                border-radius: 50%;
+                color: red;
+                text-align: center;
+                line-height: 34px;
+                font-size: 28px;
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                z-index: 1000;
+                cursor: pointer;
+                transition: transform 0.2s ease;
+            }
+            .circle-plus:hover {
+                transform: scale(1.1);
+                background-color: #EEEEEE;
+            }
+        
+            /* ========== Modal ========== */
+            .modal-overlay {
+                position: fixed;
+                top: 0; 
+                left: 0; 
+                right: 0; 
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 2000;
+                display: none; /* ukrywamy domyślnie */
+                align-items: center;
+                justify-content: center;
+            }
+            .modal-overlay.show {
+                display: flex; /* w momencie pokazania -> flex (wycentrowanie w pionie i poziomie) */
+            }
+        
+            .modal-window {
+                background-color: #fff;
+                width: 90%;
+                max-width: 500px;
+                border-radius: 5px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                overflow: hidden; /* dla ładnych zaokrągleń */
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                max-height: 90vh; /* żeby nie wychodził poza ekran mobilny */
+            }
+        
+            /* Nagłówek modala */
+            .modal-header {
+                background-color: #f5f5f5;
+                padding: 10px 15px;
+                border-bottom: 1px solid #ddd;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .modal-header h2 {
+                margin: 0;
+                font-size: 1.2em;
+            }
+            .modal-close {
+                font-size: 1.4em;
+                cursor: pointer;
+            }
+        
+            /* Część główna (body) */
+            .modal-body {
+                padding: 15px;
+                overflow-y: auto; /* w razie gdy treści jest dużo */
+                flex: 1; /* rośnie w pionie */
+            }
+            .modal-body label {
+                display: block;
+                margin-top: 10px;
+            }
+            .modal-body input[type="text"],
+            .modal-body textarea,
+            .modal-body input[type="file"],
+            .modal-body input[type="number"] {
+                width: 100%;
+                padding: 10px;
+                margin-top: 5px;
+            }
+            .responsive-textarea {
+                min-height: 70px;
+            }
+            /* Checkboxy */
+            .checkbox-group {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-top: 5px;
+            }
+            .checkbox-group label {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                font-size: 0.95em;
+            }
+        
+            /* Stopka modala */
+            .modal-footer {
+                border-top: 1px solid #ddd;
+                background-color: #f5f5f5;
+                padding: 10px 15px;
+                text-align: right;
+            }
+            .modal-footer button {
+                background-color: red;
+                color: #fff;
+                font-size: 1em;
+                padding: 10px 15px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            .modal-footer button:hover {
+                background-color: #C92704;
+            }
+        
+            /* ========== Media Queries dla urządzeń mobilnych ========== */
+            @media (max-width: 768px) {
+                /* Mapa ciut mniejsza, jeśli ktoś chce dodać np. nagłówek */
+                .map-container {
+                    height: 60vh; 
                 }
-            })
-            .catch(error => console.error('Error:', error));
+                #map {
+                    height: 100%; 
+                }
+            }
+            </style>
+    <script src="/static/js/main.js"></script> 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/nearest_toilet_distance')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const nearestPinInfo = document.getElementById('nearestPinInfo');
+                        const nearestPinText = document.getElementById('nearestPinText');
+                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}`;
+                        nearestPinInfo.classList.add('show');
 
-        // 2. Render mapy
-        fetch('/render_map')
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('map').innerHTML = html;
-            })
-            .catch(error => console.error('Error loading map:', error));
+                        // Ukryj bloczek po 3 sekundach
+                        setTimeout(() => {
+                            nearestPinInfo.classList.remove('show');
+                            nearestPinInfo.classList.add('hide');
+                        }, 3000);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
 
-        // 3. Obsługa pojawiania się bloczku najechania na path
+            fetch('/render_map')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                })
+                .catch(error => console.error('Error loading map:', error));
+        });
+
+        // Pokazujemy bloczek, gdy użytkownik najedzie kursorem na trasę (path w SVG)
         document.addEventListener('mouseover', function(event) {
             if (event.target.tagName === 'path') { 
                 const nearestPinInfo = document.getElementById('nearestPinInfo');
@@ -244,6 +242,8 @@
                 nearestPinInfo.classList.add('show');
             }
         });
+
+        // Ukrywamy bloczek, gdy użytkownik opuści trasę
         document.addEventListener('mouseout', function(event) {
             if (event.target.tagName === 'path') {
                 const nearestPinInfo = document.getElementById('nearestPinInfo');
@@ -251,64 +251,39 @@
                 nearestPinInfo.classList.add('hide');
             }
         });
-    });
-
     </script>
 </head>
-<body>
 
-    <!-- Przycisk dodawania nowego miejsca ("+") -->
+<body>
+    <!-- Przyciski, modale, itp. -->
     <div class="circle-plus" id="openModalBtn">+</div>
 
-    <!-- Informacja o najbliższej toalecie -->
+    <!-- Upewniamy się, że modal jest responsywny -->
+    <div id="myModal" class="responsive-modal">
+        <span id="closeModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
+        <input type="text" id="userInput" placeholder="Wpisz coś...">
+        <textarea id="descriptionInput" placeholder="Dodaj opis..." class="responsive-textarea"></textarea>
+        <label>
+            <input type="checkbox" id="paidInput" name="payable">
+            <span>Płatna</span>
+        </label>
+        <label>
+            <input type="checkbox" id="customersOnlyInput" name="onlyForClients">
+            <span>Tylko dla klientów</span>
+        </label>
+        <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10">
+        <input type="file" id="photoInput" multiple>
+        <button onclick="submitModal()">Gotowe</button>
+    </div>
+
+    <!-- Nearest Pin Info -->
     <div id="nearestPinInfo">
         <p id="nearestPinText"></p>
     </div>
 
-    <!-- Kontener na mapę -->
+    <!-- Opakowujemy mapę w kontener -->
     <div class="map-container">
         <div id="map"></div>
     </div>
-
-    <!-- Modal - overlay -->
-    <div id="modalOverlay" class="modal-overlay">
-      <div class="modal-window">
-        <!-- HEADER -->
-        <div class="modal-header">
-          <h2>Dodaj lokalizację</h2>
-          <span id="closeModal" class="modal-close">&times;</span>
-        </div>
-        <!-- BODY -->
-        <div class="modal-body">
-          <label for="userInput">Nazwa miejsca</label>
-          <input type="text" id="userInput" placeholder="Wpisz coś...">
-
-          <label for="descriptionInput">Opis</label>
-          <textarea id="descriptionInput" placeholder="Dodaj opis..." class="responsive-textarea"></textarea>
-
-          <div class="checkbox-group">
-            <label>
-              <input type="checkbox" id="paidInput" name="payable">
-              Płatna
-            </label>
-            <label>
-              <input type="checkbox" id="customersOnlyInput" name="onlyForClients">
-              Tylko dla klientów
-            </label>
-          </div>
-
-          <label for="ratingInput">Ocena (1-10)</label>
-          <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10">
-
-          <label for="photoInput">Zdjęcia</label>
-          <input type="file" id="photoInput" multiple>
-        </div>
-        <!-- FOOTER -->
-        <div class="modal-footer">
-          <button onclick="submitModal()">Gotowe</button>
-        </div>
-      </div>
-    </div>
-
 </body>
 </html>
