@@ -1,8 +1,6 @@
 html, body {
     font-family: 'Roboto', sans-serif;
     height: 100%;
-    margin: 0;
-    padding: 0;
     overflow: hidden; /* Ukryj pasek przewijania */
 }
 
