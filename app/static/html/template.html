@@ -55,7 +55,11 @@
 </head>
 <body>
     <div class="circle-plus">+</div>
+    <div id="nearestPinInfo">
+        <p id="nearestPinText"></p>
+    </div>
     <!-- Modal -->
+    <div id="map"></div>
     <div id="myModal">
         <span id="closeModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
         <input type="text" id="userInput" placeholder="Wpisz coś...">
@@ -66,10 +70,5 @@
         <input type="file" id="photoInput" multiple>
         <button onclick="submitModal()">Gotowe</button>
     </div>
-    <!-- Nearest Pin Info -->
-    <div id="nearestPinInfo">
-        <p id="nearestPinText"></p>
-    </div>
-    <div id="map"></div>
 </body>
 </html>
