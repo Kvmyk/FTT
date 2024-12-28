@@ -49,7 +49,9 @@ class Server:
             zoom_start=15,
             overlay=False,
             min_zoom=2,
-            max_zoom=18
+            max_zoom=18,
+            height='100%',
+            width='100%'
         )
 
     def load_markers(self):
