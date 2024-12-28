@@ -95,3 +95,7 @@ body{
     opacity: 0;
     transition: opacity 1s ease-in-out;;
 }
+#map{
+    height: 100%;
+    width: 100%;
+}
