@@ -1,3 +1,8 @@
+#map iframe{
+    height: 100%;
+    width: 100%;
+}
+
 html{
     height: 100%;
 }
@@ -95,8 +100,4 @@ body{
 #nearestPinInfo.hide {
     opacity: 0;
     transition: opacity 1s ease-in-out;;
-}
-#map{
-    height: 100%;
-    width: 100%;
 }
