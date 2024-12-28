@@ -1,15 +1,19 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+    position: relative;
+}
+
 #map iframe{
     height: 100%;
     width: 100%;
-}
-
-html{
-    height: 100%;
-}
-
-body{
-    font-family: 'Roboto', sans-serif;
-    height: 100%;
+    border: none;
 }
 
 .circle-plus {
@@ -100,4 +104,31 @@ body{
 #nearestPinInfo.hide {
     opacity: 0;
     transition: opacity 1s ease-in-out;;
+}
+
+/* Dodaj media queries dla trybu responsywnego */
+@media (max-width: 768px) {
+    #map {
+        height: 50vh; /* Ustaw wysokość na 50% wysokości widoku dla mniejszych ekranów */
+    }
+
+    .circle-plus {
+        width: 30px;
+        height: 30px;
+        line-height: 26px;
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    #map {
+        height: 40vh; /* Ustaw wysokość na 40% wysokości widoku dla jeszcze mniejszych ekranów */
+    }
+
+    .circle-plus {
+        width: 25px;
+        height: 25px;
+        line-height: 21px;
+        font-size: 18px;
+    }
 }
