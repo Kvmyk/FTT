@@ -386,8 +386,4 @@ class Server:
         return self.m._repr_html_()
 
     def runThePage(self):
-        """
-        Uruchamia serwer Flask. 
-        Domyślnie 0.0.0.0:21088, ale możesz zmienić port czy host wedle potrzeb.
-        """
-        self.app.run(host="0.0.0.0", port=21088)
+        self.app.run(host="0.0.0.0", port=80)
