@@ -154,6 +154,10 @@ html, body {
     #myModal button {
         width: 100%;
     }
+    #map {
+        height: 80vh; /* Zmniejszona wysokość dla większej widoczności innych elementów */
+        margin-top: 10px; /* Zapewnia margines dla lepszej czytelności */
+    }
 }
 
 /* Dla tabletów: szerokość od 768 do 1024 */
