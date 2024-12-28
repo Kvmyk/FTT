@@ -84,7 +84,7 @@ input[type="number"] {
 }
 
 #myModal input[type="checkbox"] {
-    margin: 5px 0;
+    margin: 10px 0;
     display: block;
 }
 
@@ -140,6 +140,12 @@ html, body {
     height: 100vh;
 }
 
+/* Poprawa responsywności mapy */
+.map-container {
+    height: 100vh; /* Mapa zajmuje całą wysokość ekranu */
+}
+
+
 /* Responsywne ustawienia modala i pola tekstowego */
 .responsive-modal {
     width: 90%;
@@ -162,6 +168,10 @@ html, body {
     .responsive-textarea {
         min-height: 80px;
     }
+    .map-container {
+        height: calc(100vh - 60px); /* Wyrównanie w mobilnym widoku, np. dla nagłówków */
+    }
+
 }
 
 /* Media Queries dla urządzeń mobilnych */
