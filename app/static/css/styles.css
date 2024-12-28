@@ -8,8 +8,8 @@
 /* Używamy fontu Roboto */
 body {
     font-family: 'Roboto', sans-serif;
-    width: 100%;
-    height: 100%;
+    /* width: 100%;  usunięte, bo nie jest konieczne */
+    /* height: 100%; usunięte, bo nie jest konieczne */
 }
 
 /* Przyciski, inputy itp. */
@@ -47,6 +47,7 @@ input[type="number"] {
     cursor: pointer;
     transition: transform 0.2s ease;
 }
+
 .circle-plus:hover {
     transform: scale(1.1);
     background-color: #EEEEEE;
@@ -54,8 +55,8 @@ input[type="number"] {
 
 /* Modal (formularz) */
 #myModal {
-    display: none;
-    position: fixed;
+    display: none; /* ukryty domyślnie */
+    position: fixed; 
     z-index: 1001;
     left: 50%;
     top: 50%;
@@ -67,21 +68,28 @@ input[type="number"] {
     width: 90%;
     max-width: 500px;
     margin: 0 auto;
+    /* Dodajemy maksymalną wysokość i przewijanie w pionie, jeśli potrzeba */
+    max-height: 80vh;
+    overflow-y: auto;
 }
+
 #myModal input[type="text"],
 #myModal textarea,
 #myModal input[type="file"] {
     width: 85%;
     margin: 10px 0;
 }
+
 #myModal input[type="number"] {
     width: 50%;
     margin: 10px 0;
 }
+
 #myModal input[type="checkbox"] {
     margin: 10px 0;
     display: block;
 }
+
 #myModal button {
     width: 80%;
     background-color: red;
@@ -91,6 +99,7 @@ input[type="number"] {
     border: none;
     border-radius: 4px;
 }
+
 #myModal button:hover {
     background-color: #C92704;
 }
@@ -110,31 +119,33 @@ input[type="number"] {
     opacity: 0;
     transition: opacity 1s ease-in-out;
 }
+
 #nearestPinInfo.show {
     display: block;
     opacity: 1;
 }
+
 #nearestPinInfo.hide {
     opacity: 0;
     transition: opacity 1s ease-in-out;
 }
 
+/* Domyślnie nie blokujmy przewijania całej strony */
 html, body {
     margin: 0;
     padding: 0;
-    height: 100%;
-    overflow: hidden; /* Usuń przewijanie, jeśli jest niepotrzebne */
+    /* height: 100%;  NIE wymuszajmy */
+    /* overflow: hidden; USUNIĘTE – żeby można było przewijać stronę */
 }
 
+/* Mapa – zamiast 100vh dajemy 100%, a w media queries możemy to dostosować */
 #map {
-    width: 100%; /* Pełna szerokość */
-    height: 100vh; /* Pełna wysokość widoku */
-    min-height: 100%; /* Zapewnia odpowiednią wysokość na różnych ekranach */
+    width: 100%;
+    height: 100vh; /* Możesz zastąpić 100vh inną wartością – w zależności od potrzeb */
     margin: 0;
     padding: 0;
-    display: block; /* Usuń wszelkie niechciane właściwości inline-block */
+    display: block;
 }
-
 
 /* Media queries */
 /* Dla telefonów do 480px */
@@ -147,23 +158,21 @@ html, body {
         top: 8px;
         right: 8px;
     }
+
     #myModal {
         width: 90%;
         max-width: 350px;
     }
+
     #myModal button {
         width: 100%;
     }
+
+    /* Zmniejszamy mapę, żeby był też widoczny przycisk + i ewentualne info */
     #map {
-        height: 80vh; /* Zmniejszona wysokość dla większej widoczności innych elementów */
-        margin-top: 10px; /* Zapewnia margines dla lepszej czytelności */
+        height: 70vh;
+        margin-top: 10px;
     }
 }
 
-/* Dla tabletów: szerokość od 768 do 1024 */
-@media (min-width: 768px) and (max-width: 1024px) {
-    #myModal {
-        width: 80%;
-        max-width: 450px;
-    }
-}
+
