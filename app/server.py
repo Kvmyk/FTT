@@ -386,4 +386,4 @@ class Server:
         return self.m._repr_html_()
 
     def runThePage(self):
-        self.app.run(host="0.0.0.0", port=80)
+        self.app.run(port=80)
