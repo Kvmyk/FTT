@@ -119,22 +119,22 @@ input[type="number"] {
     transition: opacity 1s ease-in-out;
 }
 
-/* Mapa na pełnej wysokości widoku */
 html, body {
+    margin: 0;
+    padding: 0;
     height: 100%;
-}
-#map {
-    width: 100%;
-    height: 100%;
+    overflow: hidden; /* Usuń przewijanie, jeśli jest niepotrzebne */
 }
 
-/* Kontener, jeśli potrzebny */
-.container {
-    width: 100%;
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 20px;
+#map {
+    width: 100%; /* Pełna szerokość */
+    height: 100vh; /* Pełna wysokość widoku */
+    min-height: 100%; /* Zapewnia odpowiednią wysokość na różnych ekranach */
+    margin: 0;
+    padding: 0;
+    display: block; /* Usuń wszelkie niechciane właściwości inline-block */
 }
+
 
 /* Media queries */
 /* Dla telefonów do 480px */
