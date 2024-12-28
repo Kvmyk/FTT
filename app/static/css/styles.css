@@ -1,15 +1,3 @@
-/* Reset podstawowy */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Roboto', sans-serif;
-    /* Usuń lub zmień poniższe linie tak, aby nie nadawać każdemu elementowi flex */
-    /* height: 100%; */
-    /* display: flex; */
-    /* flex-direction: column; */
-}
-
 /* Używamy fontu Roboto */
 body {
     font-family: 'Roboto', sans-serif;
@@ -96,7 +84,7 @@ input[type="number"] {
 }
 
 #myModal input[type="checkbox"] {
-    margin: 10px 0;
+    margin: 5px 0;
     display: block;
 }
 
@@ -142,8 +130,6 @@ input[type="number"] {
 
 /* Domyślnie nie blokujmy przewijania całej strony */
 html, body {
-    margin: 0;
-    padding: 0;
     height: 100%;
     /* overflow: hidden; USUNIĘTE – żeby można było przewijać stronę */
 }
@@ -151,8 +137,7 @@ html, body {
 /* Mapa – dostosowana do Flexbox */
 #map {
     width: 100%;
-    height: auto;
-    flex: 1;
+    height: 100vh;
 }
 
 /* Responsywne ustawienia modala i pola tekstowego */
@@ -160,6 +145,8 @@ html, body {
     width: 90%;
     max-width: 600px;
     margin: 0 auto;
+    overflow: visible;
+    max-height: none;
 }
 
 .responsive-textarea {
