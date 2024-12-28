@@ -29,26 +29,24 @@
                 .then(response => response.text())
                 .then(mapHtml => {
                     document.getElementById('map').innerHTML = mapHtml;
+                    // Dodaj nasłuchiwanie po wyrenderowaniu mapy
+                    const mapElement = document.getElementById('map');
+                    mapElement.addEventListener('mouseover', (event) => {
+                        if (event.target && event.target.tagName.toLowerCase() === 'path') {
+                            const nearestPinInfo = document.getElementById('nearestPinInfo');
+                            nearestPinInfo.classList.remove('hide');
+                            nearestPinInfo.classList.add('show');
+                        }
+                    });
+                    mapElement.addEventListener('mouseout', (event) => {
+                        if (event.target && event.target.tagName.toLowerCase() === 'path') {
+                            const nearestPinInfo = document.getElementById('nearestPinInfo');
+                            nearestPinInfo.classList.remove('show');
+                            nearestPinInfo.classList.add('hide');
+                        }
+                    });
                 })
                 .catch(err => console.error('Error fetching map:', err));
-        });
-
-        // Pokaż blok, gdy użytkownik najedzie kursorem na trasę
-        document.addEventListener('mouseover', function(event) {
-            if (event.target.tagName === 'path') { // Zakładając, że trasa jest rysowana jako element <path>
-                const nearestPinInfo = document.getElementById('nearestPinInfo');
-                nearestPinInfo.classList.remove('hide');
-                nearestPinInfo.classList.add('show');
-            }
-        });
-
-        // Ukryj blok, gdy użytkownik opuści trasę
-        document.addEventListener('mouseout', function(event) {
-            if (event.target.tagName === 'path') { // Zakładając, że trasa jest rysowana jako element <path>
-                const nearestPinInfo = document.getElementById('nearestPinInfo');
-                nearestPinInfo.classList.remove('show');
-                nearestPinInfo.classList.add('hide');
-            }
         });
     </script>
 </head>
