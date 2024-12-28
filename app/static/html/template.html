@@ -24,6 +24,13 @@
                     }
                 })
                 .catch(error => console.error('Error:', error));
+
+            fetch('/render_map')
+                .then(response => response.text())
+                .then(mapHtml => {
+                    document.getElementById('map').innerHTML = mapHtml;
+                })
+                .catch(err => console.error('Error fetching map:', err));
         });
 
         // Pokaż blok, gdy użytkownik najedzie kursorem na trasę
@@ -62,5 +69,6 @@
     <div id="nearestPinInfo">
         <p id="nearestPinText"></p>
     </div>
+    <div id="map"></div>
 </body>
 </html>
