@@ -251,36 +251,8 @@
                 nearestPinInfo.classList.add('hide');
             }
         });
-
-        // 4. Otwarcie modala
-        const openModalBtn = document.getElementById('openModalBtn');
-        const modalOverlay = document.getElementById('modalOverlay');
-        openModalBtn.addEventListener('click', () => {
-            modalOverlay.classList.add('show');
-        });
-
-        // 5. Zamknięcie modala
-        const closeModalBtn = document.getElementById('closeModal');
-        closeModalBtn.addEventListener('click', () => {
-            modalOverlay.classList.remove('show');
-        });
     });
 
-    // Funkcja wysyłająca dane z modala – Twój dotychczasowy submit
-    function submitModal() {
-        const userInput = document.getElementById('userInput').value;
-        const descriptionInput = document.getElementById('descriptionInput').value;
-        const paidInput = document.getElementById('paidInput').checked;
-        const customersOnlyInput = document.getElementById('customersOnlyInput').checked;
-        const ratingInput = document.getElementById('ratingInput').value;
-        const photoInput = document.getElementById('photoInput').files;
-
-        // tu umieść logikę np. fetch do serwera z danymi...
-        console.log("Wysyłam:", { userInput, descriptionInput, paidInput, customersOnlyInput, ratingInput, photoInput });
-        
-        // Zamknięcie modala po wysłaniu
-        document.getElementById('modalOverlay').classList.remove('show');
-    }
     </script>
 </head>
 <body>
