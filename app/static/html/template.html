@@ -9,8 +9,8 @@
     <!-- Załadowanie stylów -->
     <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Załadowanie skryptów (jeśli nie wymagają <body> onload, można tu) -->
 
+    <!-- Załadowanie skryptów (jeśli nie wymagają <body> onload, można tu) -->
     <script src="/static/js/main.js"></script> 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -31,13 +31,6 @@
                     }
                 })
                 .catch(error => console.error('Error:', error));
-
-            fetch('/render_map')
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('map').innerHTML = html;
-                })
-                .catch(error => console.error('Error loading map:', error));
         });
 
         // Pokazujemy bloczek, gdy użytkownik najedzie kursorem na trasę (path w SVG)
@@ -64,18 +57,16 @@
     <!-- Przyciski, modale, itp. -->
     <div class="circle-plus" id="openModalBtn">+</div>
 
-    <!-- Upewniamy się, że modal jest responsywny -->
-    <div id="myModal" class="responsive-modal">
+    <!-- Modal -->
+    <div id="myModal">
         <span id="closeModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
         <input type="text" id="userInput" placeholder="Wpisz coś...">
-        <textarea id="descriptionInput" placeholder="Dodaj opis..." class="responsive-textarea"></textarea>
+        <textarea id="descriptionInput" placeholder="Dodaj opis..."></textarea>
         <label>
-            <input type="checkbox" id="paidInput" name="payable">
-            <span>Płatna</span>
+            <input type="checkbox" id="paidInput" name="payable"> Płatna
         </label>
         <label>
-            <input type="checkbox" id="customersOnlyInput" name="onlyForClients">
-            <span>Tylko dla klientów</span>
+            <input type="checkbox" id="customersOnlyInput" name="onlyForClients"> Tylko dla klientów
         </label>
         <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10">
         <input type="file" id="photoInput" multiple>
@@ -87,9 +78,17 @@
         <p id="nearestPinText"></p>
     </div>
 
-    <!-- Opakowujemy mapę w kontener -->
-    <div class="map-container">
-        <div id="map"></div>
-    </div>
+    <!-- Kontener na mapę (zajmuje całą przestrzeń) -->
+    <div id="map"></div>
+
+    <!-- Skrypt do załadowania mapy -->
+    <script>
+        fetch('/render_map')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('map').innerHTML = html;
+            })
+            .catch(error => console.error('Error loading map:', error));
+    </script>
 </body>
 </html>
