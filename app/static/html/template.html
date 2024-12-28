@@ -31,7 +31,18 @@
             fetch('/render_map')
                 .then(response => response.text())
                 .then(mapHtml => {
-                    document.getElementById('map').innerHTML = mapHtml;
+                    // Wstaw wygenerowany HTML mapy
+                    const mapContainer = document.getElementById('map');
+                    mapContainer.innerHTML = mapHtml;
+
+                    // Znajdź `iframe` i ustaw odpowiednie style
+                    const mapIframe = mapContainer.querySelector('iframe');
+                    if (mapIframe) {
+                        mapIframe.style.width = '100%';
+                        mapIframe.style.height = '60vh'; // Dopasuj do 60% wysokości okna przeglądarki
+                        mapIframe.style.border = 'none'; // Usuń obramowanie, jeśli niepotrzebne
+                    }
+
                     // Dodaj nasłuchiwanie po wyrenderowaniu mapy
                     const mapElement = document.getElementById('map');
                     mapElement.addEventListener('mouseover', (event) => {
