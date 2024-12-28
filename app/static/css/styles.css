@@ -12,6 +12,12 @@ html, body {
     height: 100%;
     padding-bottom: 1000%; /* Dodaj padding-bottom, aby wymusić wysokość */
 }
+iframe {
+    width: 100%;
+    height: 100vh; /* Wysokość ustawiona na 60% widocznego okna */
+    border: none; /* Opcjonalnie usuń obramowanie */
+}
+
 
 .circle-plus {
     width: 40px;
