@@ -41,6 +41,13 @@
                     }
                 })
                 .catch(error => console.error('Error:', error));
+
+            fetch('/render_map')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                })
+                .catch(error => console.error('Error loading map:', error));
         });
 
         // Pokazujemy bloczek, gdy użytkownik najedzie kursorem na trasę (path w SVG)
@@ -92,15 +99,5 @@
     <div class="map-container">
         <div id="map"></div>
     </div>
-
-    <!-- Skrypt do załadowania mapy -->
-    <script>
-        fetch('/render_map')
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('map').innerHTML = html;
-            })
-            .catch(error => console.error('Error loading map:', error));
-    </script>
 </body>
 </html>
