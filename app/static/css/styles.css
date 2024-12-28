@@ -3,6 +3,11 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    /* Usuń lub zmień poniższe linie tak, aby nie nadawać każdemu elementowi flex */
+    /* height: 100%; */
+    /* display: flex; */
+    /* flex-direction: column; */
 }
 
 /* Używamy fontu Roboto */
