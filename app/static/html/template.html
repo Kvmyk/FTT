@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Map</title>
+    <!-- To jest kluczowe dla responsywności! -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <!-- Załadowanie stylów -->
     <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Załadowanie skryptów -->
+
+    <!-- Załadowanie skryptów (jeśli nie wymagają <body> onload, można tu) -->
     <script src="/static/js/main.js"></script> 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -19,7 +23,7 @@
                         nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}`;
                         nearestPinInfo.classList.add('show');
 
-                        // Ukryj blok po 3 sekundach
+                        // Ukryj bloczek po 3 sekundach
                         setTimeout(() => {
                             nearestPinInfo.classList.remove('show');
                             nearestPinInfo.classList.add('hide');
@@ -29,7 +33,7 @@
                 .catch(error => console.error('Error:', error));
         });
 
-        // Pokazujemy bloczek, gdy użytkownik najedzie kursorem na trasę
+        // Pokazujemy bloczek, gdy użytkownik najedzie kursorem na trasę (path w SVG)
         document.addEventListener('mouseover', function(event) {
             if (event.target.tagName === 'path') { 
                 const nearestPinInfo = document.getElementById('nearestPinInfo');
@@ -77,8 +81,8 @@
     <!-- Kontener na mapę (zajmuje całą przestrzeń) -->
     <div id="map"></div>
 
+    <!-- Skrypt do załadowania mapy -->
     <script>
-        // Ładujemy mapę dynamicznie
         fetch('/render_map')
             .then(response => response.text())
             .then(html => {
