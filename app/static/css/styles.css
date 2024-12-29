@@ -45,6 +45,10 @@ html, body {
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300; /* Light */
+
+
 }
 
 #myModal input[type="number"] {
@@ -55,6 +59,9 @@ html, body {
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300; /* Light */
+
 }
 
 #myModal input[type="checkbox"] {
@@ -71,6 +78,8 @@ html, body {
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300; /* Light */
 }
 
 #myModal button:hover {
@@ -88,6 +97,8 @@ html, body {
     padding: 20px;
     border-radius: 5px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300; /* Light */
 }
 
 #nearestPinInfo {
@@ -103,6 +114,8 @@ html, body {
     display: none;
     opacity: 0;
     transition: opacity 1s ease-in-out; /* Zwiększ czas trwania przejścia */
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300; /* Light */
 }
 
 #nearestPinInfo.show {
