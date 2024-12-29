@@ -130,7 +130,7 @@ html, body {
   width: 60px;
   height: 60px;
   border: 8px solid #ddd;
-  border-top: 8px solid #666;
+  border-top: 8px solid red;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
