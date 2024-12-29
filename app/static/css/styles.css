@@ -70,8 +70,8 @@ html, body {
 }
 
 #myModal input[type="checkbox"] {
-    margin: 10px 0;
-    display: block; 
+    display: inline-block;
+    margin-right: 5px; /* Optional: Adds space between checkbox and label */
 }
 
 #myModal button {
@@ -165,4 +165,9 @@ html, body {
 @keyframes spin {
   0%   { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+label {
+    display: inline-block;
+    margin-bottom: 0; /* Ensures label is aligned with checkbox */
 }
