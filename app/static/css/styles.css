@@ -111,3 +111,17 @@ html, body {
     opacity: 0;
     transition: opacity 1s ease-in-out;;
 }
+
+#loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.9);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2em;
+}

@@ -28,6 +28,7 @@ function sendPosition(position) {
             sessionStorage.setItem('reloaded', 'true');
             window.location.reload();
         }
+        document.getElementById('loadingOverlay').style.display = 'none';
     })
     .catch((error) => {
         console.error('Error:', error);
