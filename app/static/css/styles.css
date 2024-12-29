@@ -1,7 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+
 html, body {
     font-family: 'Roboto', sans-serif;
     height: 100%;
     overflow: hidden; /* Ukryj pasek przewijania */
+    font-weight: 300; /* Light */
 }
 
 #map {
