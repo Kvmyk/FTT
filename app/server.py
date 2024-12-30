@@ -370,15 +370,14 @@ class Server:
                 # Znacznik z odległością w połowie trasy
                 mid_point_index = len(coordinates) // 2
                 mid_point = coordinates[mid_point_index]
-                offset_latitude = 0.001  # zwiększamy przesunięcie, aby uniknąć nakładania się na linię
+                offset_latitude = 0.0007  # przesuwamy napis troszkę do góry
                 mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1]]
 
                 folium.Marker(
                     location=mid_point_with_offset,
                     icon=folium.DivIcon(
                         html=f"""
-                            <div style="font-size: 14px; color: black; background-color: white; 
-                                        padding: 5px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.5);">
+                            <div style="font-size: 12px; color: red; width: 100px;">
                                 {distance_text}
                             </div>
                         """
