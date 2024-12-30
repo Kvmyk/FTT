@@ -168,6 +168,8 @@ class Server:
         def submit():
             """
             Dodaje nową toaletę do globalnej listy i zapisuje do data.json.
+            Następnie, jeśli user ma swój marker, przeliczamy trasę do nowego 
+            (albo najbliższego) markera.
             """
             data = request.form
             userInput = data.get('userInput', '')
@@ -175,18 +177,13 @@ class Server:
             payable = data.get('payable', 'false').lower() == 'true'
             onlyForClients = data.get('onlyForClients', 'false').lower() == 'true'
             rating = data.get('rating', '0')
-            
-            # Obsługa wielu zdjęć
-            photos = request.files.getlist('photos[]')  # Zmiana z 'photos' na 'photos[]'
-            photos_base64 = []
-            
-            # Przetwarzamy maksymalnie 3 zdjęcia
-            for photo in photos[:3]:
-                if photo and photo.filename:
-                    photo_base64 = base64.b64encode(photo.read()).decode('utf-8')
-                    photos_base64.append(photo_base64)
+            photo = request.files.get('photos')  # może być None
 
-            # Ustalenie współrzędnych na podstawie userInput
+            photo_base64 = None
+            if photo:
+                photo_base64 = base64.b64encode(photo.read()).decode('utf-8')
+
+            # Ustalenie współrzędnych na podstawie userInput (np. nazwy miejsca)
             lat, lon = get_coordinates(userInput)
             if lat and lon:
                 new_marker = {
@@ -197,7 +194,7 @@ class Server:
                     "payable": payable,
                     "onlyForClients": onlyForClients,
                     "rating": rating,
-                    "photos": photos_base64  # Zmiana z pojedynczego photo na listę photos
+                    "photo": photo_base64
                 }
 
                 # Dodajemy do globalnej listy
@@ -277,12 +274,11 @@ class Server:
             payable = "TAK" if marker.get('payable', False) else "NIE"
             onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
             rating = marker.get('rating', 'Brak oceny')
-            photos = marker.get('photos', [])
+            photo_base64 = marker.get('photo', None)
 
-            # Generowanie HTML dla zdjęć
-            photos_html = ""
-            for photo_base64 in photos:
-                photos_html += f"""
+            photo_html = ""
+            if photo_base64:
+                photo_html = f"""
                     <img src="data:image/jpeg;base64,{photo_base64}" 
                          style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
                                 object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
@@ -296,7 +292,7 @@ class Server:
                     <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
                     <p><strong>Ocena:</strong> {rating}</p>
                     <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
-                        {photos_html}
+                        {photo_html}
                     </div>
                 </div>
             """
