@@ -371,7 +371,8 @@ class Server:
                 mid_point_index = len(coordinates) // 2
                 mid_point = coordinates[mid_point_index]
                 offset_latitude = 0.0007  # przesuwamy napis troszkę do góry
-                mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1]]
+                offset_longitude = 0.0007  # przesuwamy napis troszkę w bok
+                mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
 
                 folium.Marker(
                     location=mid_point_with_offset,
