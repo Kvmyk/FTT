@@ -279,8 +279,9 @@ class Server:
             photo_html = ""
             if photo_base64:
                 photo_html = f"""
-                    <img src="data:image/png;base64,{photo_base64}"
-                         style="width: 100%; height: auto;">
+                    <img src="data:image/jpeg;base64,{photo_base64}" 
+                         style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
+                                object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
                 """
 
             wholePopUp = f"""
