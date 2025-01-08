@@ -391,7 +391,8 @@ class Server:
                                 text-align: center;
                                 font-family: Arial, sans-serif;
                                 box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
-                                width: auto;
+                                display: inline-block;
+                                min-width: max-content;
                                 white-space: nowrap;
                             ">
                                 {distance_text}
