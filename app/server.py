@@ -381,7 +381,19 @@ class Server:
                     location=mid_point_with_offset,
                     icon=folium.DivIcon(
                         html=f"""
-                            <div style="font-size: 12px; color: red; width: 100px; white-space: nowrap;">
+                            <div style="
+                                font-size: 14px; 
+                                color: #D32F2F;
+                                font-weight: bold;
+                                background-color: rgba(255, 255, 255, 0.9);
+                                padding: 4px 8px;
+                                border-radius: 4px;
+                                text-align: center;
+                                font-family: Arial, sans-serif;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                width: auto;
+                                white-space: nowrap;
+                            ">
                                 {distance_text}
                             </div>
                         """
