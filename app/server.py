@@ -386,11 +386,11 @@ class Server:
                                 color: #D32F2F;
                                 font-weight: bold;
                                 background-color: rgba(255, 255, 255, 0.9);
-                                padding: 4px 8px;
-                                border-radius: 4px;
+                                padding: 0.4em 0.8em;
+                                border-radius: 0.3em;
                                 text-align: center;
                                 font-family: Arial, sans-serif;
-                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
                                 width: auto;
                                 white-space: nowrap;
                             ">
