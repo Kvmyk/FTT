@@ -237,7 +237,8 @@ class Server:
         """
         Dodaje POJEDYNCZY marker do mapy self.m.
         """
-        if marker.get('name') == "User Location":
+        marker_name = marker.get('name') or 'Unknown'
+        if marker_name == "User Location":
             # Marker użytkownika
             icon = folium.CustomIcon(
                 toilet_icon,
@@ -278,7 +279,7 @@ class Server:
 
             popup_content = f"""
             <div style="width: 300px;">
-                <h2>{marker.get('name','Unknown')}</h2>
+                <h2>{marker_name}</h2>
                 <div class="reviews-section">
                     {reviews_html}
                 </div>
