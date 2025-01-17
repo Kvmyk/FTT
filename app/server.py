@@ -271,22 +271,26 @@ class Server:
                     existing_marker = m
                     break
 
-            # Example fix: only append new info if it isn't already in the description.
             if existing_marker:
                 existing_marker.setdefault('description', '')
-                new_description = marker.get('description', 'No description')
-                if new_description not in existing_marker['description']:
-                    existing_marker['description'] += f"<br>{new_description}"
+                new_description = marker.get('description', 'No description').strip()
 
+                # Split the existing description by <br> to avoid repeated appends
+                existing_descriptions = existing_marker['description'].split('<br>') if existing_marker['description'] else []
+                if new_description not in existing_descriptions:
+                    existing_marker['description'] += f"<br>{new_description}" if existing_marker['description'] else new_description
+                
                 existing_marker.setdefault('rating', '')
-                new_rating = marker.get('rating', 'Brak oceny')
-                if new_rating not in existing_marker['rating']:
-                    existing_marker['rating'] += f"<br>{new_rating}"
-
+                new_rating = marker.get('rating', 'Brak oceny').strip()
+                existing_ratings = existing_marker['rating'].split('<br>') if existing_marker['rating'] else []
+                if new_rating not in existing_ratings:
+                    existing_marker['rating'] += f"<br>{new_rating}" if existing_marker['rating'] else new_rating
+                
                 existing_marker.setdefault('photo', '')
-                new_photo = marker.get('photo', None)
-                if str(new_photo) not in existing_marker['photo']:
-                    existing_marker['photo'] += f"<br>{new_photo}"
+                new_photo = str(marker.get('photo', '')).strip()
+                existing_photos = existing_marker['photo'].split('<br>') if existing_marker['photo'] else []
+                if new_photo and new_photo not in existing_photos:
+                    existing_marker['photo'] += f"<br>{new_photo}" if existing_marker['photo'] else new_photo
 
                 # Redraw marker with updated data
                 iconToilet = folium.CustomIcon(
