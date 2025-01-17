@@ -277,11 +277,16 @@ class Server:
                 existing_marker['rating'] += f"<br>{marker.get('rating','Brak oceny')}"
                 existing_marker['photo'] += f"<br>{marker.get('photo',None)}"
 
-                # Redraw the marker with updated popup
+                # Use CustomIcon instead of a string
+                iconToilet = folium.CustomIcon(
+                    toilet_icon, 
+                    icon_size=(50, 50), 
+                    shadow_size=(50, 50)
+                )
                 folium.Marker(
                     location=[existing_marker['lat'], existing_marker['lon']],
-                    popup=existing_marker['description'],  # or build a combined popup
-                    icon=toilet_icon
+                    popup=existing_marker['description'],
+                    icon=iconToilet
                 ).add_to(self.m)
             else:
                 # Marker toalety (globalny)
