@@ -271,16 +271,27 @@ class Server:
                     existing_marker = m
                     break
 
+            # Example fix: only append new info if it isn't already in the description.
             if existing_marker:
-                # Update stored data
-                existing_marker['description'] += f"<br>{marker.get('description','No description')}"
-                existing_marker['rating'] += f"<br>{marker.get('rating','Brak oceny')}"
-                existing_marker['photo'] += f"<br>{marker.get('photo',None)}"
+                existing_marker.setdefault('description', '')
+                new_description = marker.get('description', 'No description')
+                if new_description not in existing_marker['description']:
+                    existing_marker['description'] += f"<br>{new_description}"
 
-                # Use CustomIcon instead of a string
+                existing_marker.setdefault('rating', '')
+                new_rating = marker.get('rating', 'Brak oceny')
+                if new_rating not in existing_marker['rating']:
+                    existing_marker['rating'] += f"<br>{new_rating}"
+
+                existing_marker.setdefault('photo', '')
+                new_photo = marker.get('photo', None)
+                if str(new_photo) not in existing_marker['photo']:
+                    existing_marker['photo'] += f"<br>{new_photo}"
+
+                # Redraw marker with updated data
                 iconToilet = folium.CustomIcon(
-                    toilet_icon, 
-                    icon_size=(50, 50), 
+                    toilet_icon,
+                    icon_size=(50, 50),
                     shadow_size=(50, 50)
                 )
                 folium.Marker(
