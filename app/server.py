@@ -244,64 +244,70 @@ class Server:
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.
+        Jeśli marker o tych samych współrzędnych już istnieje, dodaje dane do istniejącego popupu.
         """
-        if marker.get('name') == "User Location":
-            # Marker użytkownika
-            icon = folium.CustomIcon(
-                toilet_icon,
-                icon_size=(50, 50),
-                shadow_size=(50, 50)
-            )
-            popup_content = f"""
-                <div style="width: 300px;">
-                    <h2>User Location</h2>
-                    <p>{marker.get('description','')}</p>
-                </div>
-            """
+        existing_marker = None
+        for m in self.m._children.values():
+            if isinstance(m, folium.map.Marker) and m.location == [marker['lat'], marker['lon']]:
+                existing_marker = m
+                break
+
+        if existing_marker:
+            # Update the existing marker's popup content
+            existing_popup = existing_marker.popup
+            existing_popup_content = existing_popup._content if existing_popup else ""
+            new_popup_content = self.create_popup_content(marker)
+            updated_popup_content = existing_popup_content + "<hr>" + new_popup_content
+            existing_marker.popup = folium.Popup(updated_popup_content, max_width='100%')
+        else:
+            # Create a new marker
+            if marker.get('type') == 'user':
+                icon = folium.Icon(color='blue', icon='user')
+                marker['description'] = "this is your location"
+            else:
+                icon = folium.CustomIcon(
+                    toilet_icon, 
+                    icon_size=(50, 50), 
+                    shadow_size=(50, 50)
+                )
+            popup_content = self.create_popup_content(marker)
             folium.Marker(
                 location=[marker['lat'], marker['lon']],
-                popup=popup_content,
+                popup=folium.Popup(popup_content, max_width='100%'),
                 icon=icon
             ).add_to(self.m)
-        else:
-            # Marker toalety (globalny)
-            iconToilet = folium.CustomIcon(
-                toilet_icon, 
-                icon_size=(50, 50), 
-                shadow_size=(50, 50)
-            )
-            name = marker.get('name', 'Unknown')
-            description = marker.get('description', 'No description')
-            payable = "TAK" if marker.get('payable', False) else "NIE"
-            onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
-            rating = marker.get('rating', 'Brak oceny')
-            photo_base64 = marker.get('photo', None)
 
-            photo_html = ""
-            if photo_base64:
-                photo_html = f"""
-                    <img src="data:image/jpeg;base64,{photo_base64}" 
-                         style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
-                                object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
-                """
+    def create_popup_content(self, marker):
+        """
+        Tworzy zawartość popupu dla markera.
+        """
+        name = marker.get('name', 'Unknown')
+        description = marker.get('description', 'No description')
+        payable = "TAK" if marker.get('payable', False) else "NIE"
+        onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
+        rating = marker.get('rating', 'Brak oceny')
+        photo_base64 = marker.get('photo', None)
 
-            wholePopUp = f"""
-                <div style="width: 300px;">
-                    <h2>{name}</h2>
-                    <p>{description}</p>
-                    <p><strong>Płatna:</strong> {payable}</p>
-                    <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                    <p><strong>Ocena:</strong> {rating}</p>
-                    <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
-                        {photo_html}
-                    </div>
-                </div>
+        photo_html = ""
+        if photo_base64:
+            photo_html = f"""
+                <img src="data:image/jpeg;base64,{photo_base64}" 
+                     style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
+                            object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
             """
-            folium.Marker(
-                location=[marker['lat'], marker['lon']],
-                popup=wholePopUp,
-                icon=iconToilet
-            ).add_to(self.m)
+
+        return f"""
+            <div style="width: 300px;">
+                <h2>{name}</h2>
+                <p>{description}</p>
+                <p><strong>Płatna:</strong> {payable}</p>
+                <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                <p><strong>Ocena:</strong> {rating}</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                    {photo_html}
+                </div>
+            </div>
+        """
 
     def add_route_to_map(self, route):
         """
