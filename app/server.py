@@ -52,6 +52,7 @@ class Server:
             max_zoom=18,
             height='100%',
             width='100%'
+            max_bounds=True
         )
 
     def load_markers(self):
