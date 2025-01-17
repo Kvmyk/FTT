@@ -255,7 +255,7 @@ class Server:
             popup_content = f"""
                 <div style="width: 300px;">
                     <h2>User Location</h2>
-                    <p>{marker.get('description','')}</p>
+                    <p>{marker.get('description', '')}</p>
                 </div>
             """
             folium.Marker(
