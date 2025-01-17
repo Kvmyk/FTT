@@ -272,9 +272,13 @@ class Server:
                     break
 
             if existing_marker:
-                # Append new opinion to the existing marker's popup content
+                existing_marker.setdefault('description', '')
                 existing_marker['description'] += f"<br>{marker.get('description', 'No description')}"
+
+                existing_marker.setdefault('rating', '')
                 existing_marker['rating'] += f"<br>{marker.get('rating', 'Brak oceny')}"
+
+                existing_marker.setdefault('photo', '')
                 existing_marker['photo'] += f"<br>{marker.get('photo', None)}"
             else:
                 # Marker toalety (globalny)
