@@ -272,13 +272,16 @@ class Server:
                     break
 
             if existing_marker:
-                existing_marker.setdefault('description', '')
+                if not isinstance(existing_marker.get('description'), str):
+                    existing_marker['description'] = ''
                 existing_marker['description'] += f"<br>{marker.get('description', 'No description')}"
 
-                existing_marker.setdefault('rating', '')
+                if not isinstance(existing_marker.get('rating'), str):
+                    existing_marker['rating'] = ''
                 existing_marker['rating'] += f"<br>{marker.get('rating', 'Brak oceny')}"
 
-                existing_marker.setdefault('photo', '')
+                if not isinstance(existing_marker.get('photo'), str):
+                    existing_marker['photo'] = ''
                 existing_marker['photo'] += f"<br>{marker.get('photo', None)}"
             else:
                 # Marker toalety (globalny)
