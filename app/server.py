@@ -272,17 +272,17 @@ class Server:
                     break
 
             if existing_marker:
-                if not isinstance(existing_marker.get('description'), str):
-                    existing_marker['description'] = ''
-                existing_marker['description'] += f"<br>{marker.get('description', 'No description')}"
+                # Update stored data
+                existing_marker['description'] += f"<br>{marker.get('description','No description')}"
+                existing_marker['rating'] += f"<br>{marker.get('rating','Brak oceny')}"
+                existing_marker['photo'] += f"<br>{marker.get('photo',None)}"
 
-                if not isinstance(existing_marker.get('rating'), str):
-                    existing_marker['rating'] = ''
-                existing_marker['rating'] += f"<br>{marker.get('rating', 'Brak oceny')}"
-
-                if not isinstance(existing_marker.get('photo'), str):
-                    existing_marker['photo'] = ''
-                existing_marker['photo'] += f"<br>{marker.get('photo', None)}"
+                # Redraw the marker with updated popup
+                folium.Marker(
+                    location=[existing_marker['lat'], existing_marker['lon']],
+                    popup=existing_marker['description'],  # or build a combined popup
+                    icon=toilet_icon
+                ).add_to(self.m)
             else:
                 # Marker toalety (globalny)
                 iconToilet = folium.CustomIcon(
