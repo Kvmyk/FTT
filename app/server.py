@@ -254,11 +254,11 @@ class Server:
 
         if existing_marker:
             # Update the existing marker's popup content
-            existing_popup = existing_marker.popup
+            existing_popup = existing_marker.options.get('popup')
             existing_popup_content = existing_popup._content if existing_popup else ""
             new_popup_content = self.create_popup_content(marker)
             updated_popup_content = existing_popup_content + "<hr>" + new_popup_content
-            existing_marker.popup = folium.Popup(updated_popup_content, max_width='100%')
+            existing_marker.options['popup'] = folium.Popup(updated_popup_content, max_width='100%')
         else:
             # Create a new marker
             if marker.get('type') == 'user':
