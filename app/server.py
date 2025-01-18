@@ -297,9 +297,21 @@ class Server:
                     </div>
                 </div>
             """
+            newPopup = wholePopUp = f"""
+                <div style="width: 300px;">
+                    <h2>{name}</h2>
+                    <p>{description}</p>
+                    <p><strong>Płatna:</strong> {payable}</p>
+                    <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                    <p><strong>Ocena:</strong> {rating}</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                        {photo_html}
+                    </div>
+                </div>
+            """
             folium.Marker(
                 location=[marker['lat'], marker['lon']],
-                popup=wholePopUp,
+                popup=wholePopUp + newPopup,
                 icon=iconToilet
             ).add_to(self.m)
 
