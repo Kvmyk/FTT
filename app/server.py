@@ -264,44 +264,102 @@ class Server:
                 icon=icon
             ).add_to(self.m)
         else:
-            # Marker toalety (globalny)
-            iconToilet = folium.CustomIcon(
-                toilet_icon, 
-                icon_size=(50, 50), 
-                shadow_size=(50, 50)
+            # Sprawdź, czy marker już istnieje na tych współrzędnych
+            existing_marker = next(
+                (m for m in self.markers if m['lat'] == marker['lat'] and m['lon'] == marker['lon']),
+                None
             )
-            name = marker.get('name', 'Unknown')
-            description = marker.get('description', 'No description')
-            payable = "TAK" if marker.get('payable', False) else "NIE"
-            onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
-            rating = marker.get('rating', 'Brak oceny')
-            photo_base64 = marker.get('photo', None)
 
-            photo_html = ""
-            if photo_base64:
-                photo_html = f"""
-                    <img src="data:image/jpeg;base64,{photo_base64}" 
-                         style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
-                                object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
+            if existing_marker:
+                # Utwórz nową sekcję popupu z nowego modala
+                new_popup_section = f"""
+                    <div style="margin-top:10px;border-top:1px solid #ccc;padding-top:10px;">
+                        <h3>{marker.get('name', 'Unknown')}</h3>
+                        <p>{marker.get('description', '')}</p>
+                        <p><strong>Ocena:</strong> {marker.get('rating', 'Brak oceny')}</p>
+                        {"<img src='data:image/jpeg;base64," + marker.get('photo') + "' style='max-width: 150px; max-height: 150px; width: auto; height: auto; object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;'>" if marker.get('photo') else ""}
+                    </div>
+                """
+                # Dodaj nową sekcję do istniejącego wholePopUp
+                existing_marker['wholePopUp'] += new_popup_section
+
+                # Utwórz zaktualizowany popup_content z możliwością przewijania
+                wholePopUp = f"""
+                    <div style="width: 300px; max-height: 400px; overflow-y: auto;">
+                        {existing_marker['wholePopUp']}
+                    </div>
                 """
 
-            wholePopUp = f"""
-                <div style="width: 300px;">
-                    <h2>{name}</h2>
-                    <p>{description}</p>
-                    <p><strong>Płatna:</strong> {payable}</p>
-                    <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                    <p><strong>Ocena:</strong> {rating}</p>
-                    <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
-                        {photo_html}
+                # Usuń istniejący marker z mapy
+                self.m.remove_layer(existing_marker['folium_marker'])
+
+                # Dodaj zaktualizowany marker do mapy
+                updated_marker = folium.Marker(
+                    location=[existing_marker['lat'], existing_marker['lon']],
+                    popup=wholePopUp,
+                    icon=iconToilet
+                ).add_to(self.m)
+
+                # Zaktualizuj referencję do folium_marker
+                existing_marker['folium_marker'] = updated_marker
+            else:
+                # Dodaj nowy marker
+                iconToilet = folium.CustomIcon(
+                    toilet_icon, 
+                    icon_size=(50, 50), 
+                    shadow_size=(50, 50)
+                )
+                name = marker.get('name', 'Unknown')
+                description = marker.get('description', 'No description')
+                payable = "TAK" if marker.get('payable', False) else "NIE"
+                onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
+                rating = marker.get('rating', 'Brak oceny')
+                photo_base64 = marker.get('photo', None)
+
+                photo_html = ""
+                if photo_base64:
+                    photo_html = f"""
+                        <img src="data:image/jpeg;base64,{photo_base64}" 
+                             style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
+                                    object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
+                    """
+
+                wholePopUp = f"""
+                    <div style="width: 300px; max-height: 400px; overflow-y: auto;">
+                        <div>
+                            <h2>{name}</h2>
+                            <p>{description}</p>
+                            <p><strong>Płatna:</strong> {payable}</p>
+                            <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                            <p><strong>Ocena:</strong> {rating}</p>
+                            <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                                {photo_html}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            """
-            folium.Marker(
-                location=[marker['lat'], marker['lon']],
-                popup=wholePopUp,
-                icon=iconToilet
-            ).add_to(self.m)
+                """
+
+                folium_marker = folium.Marker(
+                    location=[marker['lat'], marker['lon']],
+                    popup=wholePopUp,
+                    icon=iconToilet
+                ).add_to(self.m)
+
+                # Przechowaj referencję do folium_marker oraz wholePopUp
+                marker['folium_marker'] = folium_marker
+                marker['wholePopUp'] = f"""
+                    <div>
+                        <h2>{name}</h2>
+                        <p>{description}</p>
+                        <p><strong>Płatna:</strong> {payable}</p>
+                        <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                        <p><strong>Ocena:</strong> {rating}</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                            {photo_html}
+                        </div>
+                    </div>
+                """
+                self.markers.append(marker)
 
     def add_route_to_map(self, route):
         """
