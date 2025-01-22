@@ -149,6 +149,12 @@ function openCommentModal(lat, lon) {
     document.getElementById('commentModal').dataset.lon = lon;
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('closeCommentModal').addEventListener('click', function() {
+        document.getElementById('commentModal').style.display = 'none';
+    });
+});
+
 function submitComment() {
     var lat = document.getElementById('commentModal').dataset.lat;
     var lon = document.getElementById('commentModal').dataset.lon;
