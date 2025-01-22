@@ -244,12 +244,10 @@ class Server:
         @self.app.route('/add_comment', methods=['POST'])
         def add_comment():
             data = request.form
-            marker_id = data.get('marker_id')
             comment = data.get('comment')
             rating = data.get('rating')
 
             for marker in self.markers:
-                if marker['id'] == marker_id:
                     if 'comments' not in marker:
                         marker['comments'] = []
                     marker['comments'].append({'comment': comment, 'rating': rating})
