@@ -251,12 +251,9 @@ class Server:
 
             for marker in self.markers:
                 if marker['lat'] == lat and marker['lon'] == lon:
-                    if 'comments' not in marker:
-                        marker['comments'] = []
-                    marker['comments'].append({'comment': comment, 'rating': rating})
+                    marker.setdefault('comments', []).append({'comment': comment, 'rating': rating})
                     self.save_markers()
                     return jsonify({'status': 'success'})
-
             return jsonify({'status': 'error', 'message': 'Marker not found'}), 404
 
     def add_marker_to_map(self, marker):
@@ -307,7 +304,7 @@ class Server:
             lat = marker['lat']
             lon = marker['lon']
             comment_button_html = f"""
-                <button onclick="window.parent.openCommentModal({lat}, {lon})">Dodaj komentarz</button>
+                <button onclick="openCommentModal({marker['lat']}, {marker['lon']})">Dodaj komentarz</button>
             """
 
             wholePopUp = f"""
