@@ -292,7 +292,7 @@ class Server:
             onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
             rating = marker.get('rating', 'Brak oceny')
             photo_base64 = marker.get('photo', None)
-
+            comments_list = marker.get('comments', [])
             photo_html = ""
             if photo_base64:
                 photo_html = f"""
@@ -300,6 +300,13 @@ class Server:
                          style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
                                 object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
                 """
+
+            # Sekcja komentarzy
+            comments_html = "<div id='comments-{lat}-{lon}' style='max-height:100px; overflow-y:auto;'>".format(lat=marker['lat'], lon=marker['lon'])
+            for c in comments_list:
+                comments_html += f"<p><strong>Ocena:</strong> {c.get('rating')}</p>"
+                comments_html += f"<p>{c.get('comment')}</p><hr>"
+            comments_html += "</div>"
 
             # Użycie współrzędnych jako identyfikatora
             lat = marker['lat']
@@ -318,12 +325,13 @@ class Server:
                     <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                         {photo_html}
                     </div>
+                    {comments_html}
                     {comment_button_html}
                 </div>
             """
             folium.Marker(
                 location=[lat, lon],
-                popup=wholePopUp,
+                popup= folium.Popup(wholePopUp, max_width=300),
                 icon=iconToilet
             ).add_to(self.m)
 
