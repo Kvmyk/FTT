@@ -105,5 +105,13 @@
         <div id="imagePreviewContainer"></div>
         <button onclick="submitModal()">Gotowe</button>
     </div>
+
+    <!-- New Comment Modal -->
+    <div id="commentModal" style="display:none;">
+        <span id="closeCommentModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
+        <input type="number" id="commentRating" placeholder="Ocena (1-10)" min="1" max="10">
+        <textarea id="commentText" placeholder="Dodaj komentarz..."></textarea>
+        <button onclick="submitComment()">Dodaj komentarz</button>
+    </div>
 </body>
 </html>

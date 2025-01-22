@@ -241,6 +241,23 @@ class Server:
             """
             return self.update_map()
 
+        @self.app.route('/add_comment', methods=['POST'])
+        def add_comment():
+            data = request.form
+            marker_id = data.get('marker_id')
+            comment = data.get('comment')
+            rating = data.get('rating')
+
+            for marker in self.markers:
+                if marker['id'] == marker_id:
+                    if 'comments' not in marker:
+                        marker['comments'] = []
+                    marker['comments'].append({'comment': comment, 'rating': rating})
+                    self.save_markers()
+                    return jsonify({'status': 'success'})
+
+            return jsonify({'status': 'error', 'message': 'Marker not found'}), 404
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.
@@ -295,6 +312,7 @@ class Server:
                     <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                         {photo_html}
                     </div>
+                    <button onclick="openCommentModal('{marker['id']}')">Dodaj komentarz</button>
                 </div>
             """
             folium.Marker(

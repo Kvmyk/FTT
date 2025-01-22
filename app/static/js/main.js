@@ -99,6 +99,10 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeModal').addEventListener('click', function() {
         document.getElementById('myModal').style.display = 'none';
     });
+
+    document.getElementById('closeCommentModal').addEventListener('click', function() {
+        document.getElementById('commentModal').style.display = 'none';
+    });
 });
 
 function submitModal() {
@@ -137,4 +141,34 @@ function submitModal() {
     });
 
     document.getElementById('myModal').style.display = 'none';
+}
+
+function openCommentModal(markerId) {
+    document.getElementById('commentModal').style.display = 'block';
+    document.getElementById('commentModal').dataset.markerId = markerId;
+}
+
+function submitComment() {
+    var markerId = document.getElementById('commentModal').dataset.markerId;
+    var comment = document.getElementById('commentText').value;
+    var rating = document.getElementById('commentRating').value;
+
+    var formData = new FormData();
+    formData.append('marker_id', markerId);
+    formData.append('comment', comment);
+    formData.append('rating', rating);
+
+    fetch('/add_comment', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('commentModal').style.display = 'none';
+            window.location.reload();
+        } else {
+            console.error('Error:', data.message);
+        }
+    });
 }
