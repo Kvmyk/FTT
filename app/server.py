@@ -307,7 +307,7 @@ class Server:
             lat = marker['lat']
             lon = marker['lon']
             comment_button_html = f"""
-                <button onclick="openCommentModal({lat}, {lon})">Dodaj komentarz</button>
+                <button onclick="window.parent.openCommentModal({lat}, {lon})">Dodaj komentarz</button>
             """
 
             wholePopUp = f"""
