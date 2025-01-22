@@ -244,10 +244,13 @@ class Server:
         @self.app.route('/add_comment', methods=['POST'])
         def add_comment():
             data = request.form
+            lat = float(data.get('lat'))
+            lon = float(data.get('lon'))
             comment = data.get('comment')
             rating = data.get('rating')
 
             for marker in self.markers:
+                if marker['lat'] == lat and marker['lon'] == lon:
                     if 'comments' not in marker:
                         marker['comments'] = []
                     marker['comments'].append({'comment': comment, 'rating': rating})
@@ -300,6 +303,13 @@ class Server:
                                 object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
                 """
 
+            # Użycie współrzędnych jako identyfikatora
+            lat = marker['lat']
+            lon = marker['lon']
+            comment_button_html = f"""
+                <button onclick="openCommentModal({lat}, {lon})">Dodaj komentarz</button>
+            """
+
             wholePopUp = f"""
                 <div style="width: 300px;">
                     <h2>{name}</h2>
@@ -310,11 +320,11 @@ class Server:
                     <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                         {photo_html}
                     </div>
-                    <button onclick="openCommentModal('{marker['id']}')">Dodaj komentarz</button>
+                    {comment_button_html}
                 </div>
             """
             folium.Marker(
-                location=[marker['lat'], marker['lon']],
+                location=[lat, lon],
                 popup=wholePopUp,
                 icon=iconToilet
             ).add_to(self.m)

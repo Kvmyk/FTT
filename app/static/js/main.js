@@ -143,18 +143,21 @@ function submitModal() {
     document.getElementById('myModal').style.display = 'none';
 }
 
-function openCommentModal(markerId) {
+function openCommentModal(lat, lon) {
     document.getElementById('commentModal').style.display = 'block';
-    document.getElementById('commentModal').dataset.markerId = markerId;
+    document.getElementById('commentModal').dataset.lat = lat;
+    document.getElementById('commentModal').dataset.lon = lon;
 }
 
 function submitComment() {
-    var markerId = document.getElementById('commentModal').dataset.markerId;
+    var lat = document.getElementById('commentModal').dataset.lat;
+    var lon = document.getElementById('commentModal').dataset.lon;
     var comment = document.getElementById('commentText').value;
     var rating = document.getElementById('commentRating').value;
 
     var formData = new FormData();
-    formData.append('marker_id', markerId);
+    formData.append('lat', lat);
+    formData.append('lon', lon);
     formData.append('comment', comment);
     formData.append('rating', rating);
 
