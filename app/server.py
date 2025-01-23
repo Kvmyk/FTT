@@ -302,11 +302,9 @@ class Server:
                 """
 
             # Sekcja komentarzy
-            comments_html = f"""
-                <div id='comments-{marker['lat']}-{marker['lon']}' style='max-height:100px; overflow-y:auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px;'>
-                    <h3 style='margin-top: 0;'>Komentarze</h3>
-                    <p style='font-style: italic; color: #888;'>Przewiń, aby zobaczyć więcej komentarzy</p>
-            """
+            comments_html = f"""<div id='comments-{lat}-{lon}' style='max-height:100px; overflow-y:auto;'>".format(lat=marker['lat'], lon=marker['lon'])
+                                <h3 style='margin-top: 0;'>Komentarze</h3>
+                            """
             for c in comments_list:
                 comments_html += f"<p><strong>Ocena:</strong> {c.get('rating')}</p>"
                 comments_html += f"<p>{c.get('comment')}</p><hr>"
