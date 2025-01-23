@@ -302,7 +302,7 @@ class Server:
                 """
 
             # Sekcja komentarzy
-            comments_html = f"<div id='comments-{lat}-{lon}' style='max-height:100px; overflow-y:auto;'>".format(lat=marker['lat'], lon=marker['lon'])
+            comments_html = "<div id='comments-{lat}-{lon}' style='max-height:100px; overflow-y:auto;'>".format(lat=marker['lat'], lon=marker['lon'])
             for c in comments_list:
                 comments_html += f"<p><strong>Ocena:</strong> {c.get('rating')}</p>"
                 comments_html += f"<p>{c.get('comment')}</p><hr>"
