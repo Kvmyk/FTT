@@ -302,9 +302,7 @@ class Server:
                 """
 
             # Sekcja komentarzy
-            comments_html = f"""<div id='comments-{lat}-{lon}' style='max-height:100px; overflow-y:auto;'>".format(lat=marker['lat'], lon=marker['lon'])
-                                <h3 style='margin-top: 0;'>Komentarze</h3>
-                            """
+            comments_html = f"<div id='comments-{lat}-{lon}' style='max-height:100px; overflow-y:auto;'>".format(lat=marker['lat'], lon=marker['lon'])
             for c in comments_list:
                 comments_html += f"<p><strong>Ocena:</strong> {c.get('rating')}</p>"
                 comments_html += f"<p>{c.get('comment')}</p><hr>"
@@ -327,6 +325,7 @@ class Server:
                     <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                         {photo_html}
                     </div>
+                    <h3 style='margin-top: 0;'>Komentarze</h3>
                     {comments_html}
                     {comment_button_html}
                 </div>
