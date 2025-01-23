@@ -280,12 +280,27 @@ class Server:
                 icon=icon
             ).add_to(self.m)
         else:
+
             # Marker toalety (globalny)
             iconToilet = folium.CustomIcon(
                 toilet_icon, 
                 icon_size=(50, 50), 
                 shadow_size=(50, 50)
             )
+            lat = marker['lat']
+            lon = marker['lon']
+            existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
+
+        if existing_marker:
+            # Dodaj komentarz i ocenę do istniejącego markera
+            description = marker.get('description')
+            rating = marker.get('rating')
+            if description and rating:
+                existing_marker.setdefault('comments', []).append({'comment': description, 'rating': rating})
+                existing_marker['rating'] = rating  # Aktualizuj ocenę
+                self.save_markers()
+                return
+                
             name = marker.get('name', 'Unknown')
             description = marker.get('description', 'No description')
             payable = "TAK" if marker.get('payable', False) else "NIE"
@@ -309,8 +324,6 @@ class Server:
             comments_html += "</div>"
 
             # Użycie współrzędnych jako identyfikatora
-            lat = marker['lat']
-            lon = marker['lon']
             comment_button_html = f"""
                 <button onclick="window.parent.openCommentModal({lat}, {lon})" 
                         style="width: 80%; background-color: red; color: white; padding: 14px 20px; margin: 8px 0; border: none; border-radius: 4px; cursor: pointer; font-family: 'Roboto', sans-serif; font-weight: 300;">
