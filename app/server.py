@@ -302,7 +302,10 @@ class Server:
                 """
 
             # Sekcja komentarzy
-            comments_html = "<div id='comments-{lat}-{lon}' style='max-height:100px; overflow-y:auto;'>".format(lat=marker['lat'], lon=marker['lon'])
+            comments_html = f"""
+                <div id='comments-{marker['lat']}-{marker['lon']}' style='max-height:100px; overflow-y:auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px;'>
+                    <p style='font-style: italic; color: #888;'>Przewiń, aby zobaczyć więcej komentarzy</p>
+            """
             for c in comments_list:
                 comments_html += f"<p><strong>Ocena:</strong> {c.get('rating')}</p>"
                 comments_html += f"<p>{c.get('comment')}</p><hr>"
@@ -331,7 +334,7 @@ class Server:
             """
             folium.Marker(
                 location=[lat, lon],
-                popup= folium.Popup(wholePopUp, max_width=300),
+                popup= folium.Popup (wholePopUp, max_width=300),
                 icon=iconToilet
             ).add_to(self.m)
 
