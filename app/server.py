@@ -304,6 +304,7 @@ class Server:
             # Sekcja komentarzy
             comments_html = f"""
                 <div id='comments-{marker['lat']}-{marker['lon']}' style='max-height:100px; overflow-y:auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px;'>
+                    <h3 style='margin-top: 0;'>Komentarze</h3>
                     <p style='font-style: italic; color: #888;'>Przewiń, aby zobaczyć więcej komentarzy</p>
             """
             for c in comments_list:
