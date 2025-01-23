@@ -298,6 +298,7 @@ class Server:
                 if description and rating:
                     existing_marker.setdefault('comments', []).append({'comment': description, 'rating': rating})
                     existing_marker['rating'] = rating  # Aktualizuj ocenę
+                    self.save_markers()
                     return
                 
             name = marker.get('name', 'Unknown')
@@ -365,6 +366,7 @@ class Server:
                 popup= folium.Popup (wholePopUp, max_width=300),
                 icon=iconToilet
             ).add_to(self.m)
+            self.save_markers()
 
     def add_route_to_map(self, route):
         """
