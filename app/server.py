@@ -291,15 +291,15 @@ class Server:
             lon = marker['lon']
             existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
 
-        if existing_marker:
-            # Dodaj komentarz i ocenę do istniejącego markera
-            description = marker.get('description')
-            rating = marker.get('rating')
-            if description and rating:
-                existing_marker.setdefault('comments', []).append({'comment': description, 'rating': rating})
-                existing_marker['rating'] = rating  # Aktualizuj ocenę
-                self.save_markers()
-                return
+            if existing_marker:
+                # Dodaj komentarz i ocenę do istniejącego markera
+                description = marker.get('description')
+                rating = marker.get('rating')
+                if description and rating:
+                    existing_marker.setdefault('comments', []).append({'comment': description, 'rating': rating})
+                    existing_marker['rating'] = rating  # Aktualizuj ocenę
+                    self.save_markers()
+                    return
                 
             name = marker.get('name', 'Unknown')
             description = marker.get('description', 'No description')
