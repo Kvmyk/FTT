@@ -319,10 +319,16 @@ class Server:
                 """
 
             # Sekcja komentarzy
-            comments_html = ""
+            comments_html = """
+            <div style="max-height: 200px; overflow-y: auto;">
+            <ul style='list-style-type: circle; padding-left: 20px; margin: 0;'>
+            """
             for c in comments_list:
                 comments_html += f"<li><strong>Ocena:</strong> {c.get('rating')}<br>{c.get('comment')}</li>"
-            comments_html += "</ul>"
+            comments_html += """
+            </ul>
+            </div>
+            """
 
             # Użycie współrzędnych jako identyfikatora
             comment_button_html = f"""
