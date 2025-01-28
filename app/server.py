@@ -218,7 +218,7 @@ class Server:
                                 user_marker['lat'], user_marker['lon'],
                                 nearest_marker['lat'], nearest_marker['lon']
                             )
-                            if route:
+                            if route and len(self.markers) > 1:
                                 self.add_route_to_map(route)
 
                 return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
