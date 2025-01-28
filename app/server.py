@@ -179,7 +179,6 @@ class Server:
             onlyForClients = data.get('onlyForClients', 'false').lower() == 'true'
             rating = data.get('rating', '0')
             photo = request.files.get('photos')  # może być None
-
             photo_base64 = None
             if photo:
                 photo_base64 = base64.b64encode(photo.read()).decode('utf-8')
@@ -372,7 +371,7 @@ class Server:
                 """
             folium.Marker(
                 location=[lat, lon],
-                popup= folium.Popup (wholePopUp, max_width=1000),
+                popup=wholePopUp,
                 icon=iconToilet
             ).add_to(self.m)
             self.save_markers()
