@@ -372,7 +372,7 @@ class Server:
                 """
             folium.Marker(
                 location=[lat, lon],
-                popup= folium.Popup (wholePopUp, max_width=300),
+                popup= folium.Popup (wholePopUp, max_width=1000),
                 icon=iconToilet
             ).add_to(self.m)
             self.save_markers()
