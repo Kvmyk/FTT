@@ -319,16 +319,17 @@ class Server:
                 """
 
             # Sekcja komentarzy
-            comments_html = """
-            <div style="max-height: 200px; overflow-y: auto;">
-            <ul style='list-style-type: circle; padding-left: 20px; margin: 0;'>
+            comments_html = f"""
+                <div id='comments-{marker['lat']}-{marker['lon']}'
+                     style='max-height: 200px; overflow-y: auto; font-family: Roboto, sans-serif;'>
             """
             for c in comments_list:
-                comments_html += f"<li><strong>Ocena:</strong> {c.get('rating')}<br>{c.get('comment')}</li>"
-            comments_html += """
-            </ul>
-            </div>
-            """
+                comments_html += f"""
+                    <p><strong>Ocena:</strong> {c.get('rating')}</p>
+                    <p>{c.get('comment')}</p>
+                    <hr style="border-top: 1px solid #ccc;" />
+                """
+            comments_html += "</div>"
 
             # Użycie współrzędnych jako identyfikatora
             comment_button_html = f"""
