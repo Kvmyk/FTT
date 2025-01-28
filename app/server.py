@@ -298,7 +298,6 @@ class Server:
                 if description and rating:
                     existing_marker.setdefault('comments', []).append({'comment': description, 'rating': rating})
                     existing_marker['rating'] = rating  # Aktualizuj ocenę
-                    self.save_markers()
                     return
                 
             name = marker.get('name', 'Unknown')
