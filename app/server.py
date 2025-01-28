@@ -296,7 +296,10 @@ class Server:
                 description = marker.get('description')
                 rating = marker.get('rating')
                 if description and rating:
-                    existing_marker.setdefault('comments', []).append({'comment': description, 'rating': rating})
+                    comments = existing_marker.setdefault('comments', [])
+                    # Dodaj komentarz tylko, jeśli go wcześniej nie było
+                    if not any(c for c in comments if c['comment'] == description and c['rating'] == rating):
+                        comments.append({'comment': description, 'rating': rating})
                     existing_marker['rating'] = rating  # Aktualizuj ocenę
                     return
                 
