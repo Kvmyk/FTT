@@ -419,7 +419,7 @@ class Server:
                 self.add_marker_to_map(user_marker)
 
             route = user_data.get('current_route')
-            if route and len(self.markers) > 1:
+            if route and len(self.markers) > 0:
                 coordinates = [
                     (coord[1], coord[0])
                     for coord in route['routes'][0]['geometry']['coordinates']
