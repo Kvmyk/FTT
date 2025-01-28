@@ -211,7 +211,7 @@ class Server:
                 if user_id:
                     user_data = session.get(user_id, {})
                     user_marker = user_data.get('marker')
-                    if user_marker and len(self.markers) > 1:  # Sprawdzamy, czy jest więcej niż jeden marker
+                    if user_marker and len(self.markers) > 0:  # Sprawdzamy, czy jest więcej niż jeden marker
                         nearest_marker = find_nearest_marker(user_marker, self.markers)
                         if nearest_marker:
                             route = get_route(
