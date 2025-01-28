@@ -323,14 +323,14 @@ class Server:
                 <div id='comments-{marker['lat']}-{marker['lon']}'
                      style='max-height: 200px; overflow-y: auto; font-family: Roboto, sans-serif;'>
             """
-            if not any(c for c in comments if c['comment'] == description and c['rating'] == rating):
-                for c in comments_list:
-                    comments_html += f"""
-                        <p><strong>Ocena:</strong> {c.get('rating')}</p>
-                        <p>{c.get('comment')}</p>
-                        <hr style="border-top: 1px solid #ccc;" />
-                    """
-                comments_html += "</div>"
+            
+            for c in comments_list:
+                comments_html += f"""
+                    <p><strong>Ocena:</strong> {c.get('rating')}</p>
+                    <p>{c.get('comment')}</p>
+                    <hr style="border-top: 1px solid #ccc;" />
+                """
+            comments_html += "</div>"
 
             # Użycie współrzędnych jako identyfikatora
             comment_button_html = f"""
