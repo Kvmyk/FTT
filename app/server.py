@@ -319,7 +319,7 @@ class Server:
                 """
 
             # Sekcja komentarzy
-            comments_html = "<h3>Komentarze</h3><ul style='list-style-type: circle; padding-left: 20px;'>"
+            comments_html = ""
             for c in comments_list:
                 comments_html += f"<li><strong>Ocena:</strong> {c.get('rating')}<br>{c.get('comment')}</li>"
             comments_html += "</ul>"
