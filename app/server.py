@@ -194,7 +194,8 @@ class Server:
                     "payable": payable,
                     "onlyForClients": onlyForClients,
                     "rating": rating,
-                    "photo": photo_base64
+                    "photo": photo_base64,
+                    "comments": []
                 }
 
                 # Dodajemy do globalnej listy
