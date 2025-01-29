@@ -260,6 +260,7 @@ class Server:
         """
         Dodaje POJEDYNCZY marker do mapy self.m.
         """
+
         if marker.get('name') == "User Location":
             # Marker użytkownika
             icon = folium.CustomIcon(
@@ -290,7 +291,7 @@ class Server:
             lon = marker['lon']
             existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
 
-            if existing_marker and marker['is_new'] == False:
+            if existing_marker and marker != existing_marker:
                 # Dodaj komentarz i ocenę do istniejącego markera
                 description = marker.get('description')
                 rating = marker.get('rating')
@@ -300,11 +301,7 @@ class Server:
                     if not any(c for c in comments if c['comment'] == description and c['rating'] == rating):
                         comments.append({'comment': description, 'rating': rating})
                     existing_marker['rating'] = rating  # Aktualizuj ocenę
-                existing_marker['is_new'] = False
-            else:
-                marker['is_new'] = True
-                self.markers.append(marker)
-
+                    
             name = marker.get('name', 'Unknown')
             description = marker.get('description', 'No description')
             payable = "TAK" if marker.get('payable', False) else "NIE"
