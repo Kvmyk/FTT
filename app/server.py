@@ -340,37 +340,37 @@ class Server:
                         Dodaj komentarz
                     </button>
                 """
-            if not comments_list:
-                wholePopUp = f"""
-                    <div style="width: 300px;">
-                        <h2>{name}</h2>
-                        <p>{description}</p>
-                        <p><strong>Płatna:</strong> {payable}</p>
-                        <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                        <p><strong>Ocena:</strong> {rating}</p>
-                        <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
-                            {photo_html}
+                if not comments_list:
+                    wholePopUp = f"""
+                        <div style="width: 300px;">
+                            <h2>{name}</h2>
+                            <p>{description}</p>
+                            <p><strong>Płatna:</strong> {payable}</p>
+                            <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                            <p><strong>Ocena:</strong> {rating}</p>
+                            <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                                {photo_html}
+                            </div>
+                            {comments_html}
+                            {comment_button_html}
                         </div>
-                        {comments_html}
-                        {comment_button_html}
-                    </div>
-                """
-            else:
-                wholePopUp = f"""
-                    <div style="width: 300px;">
-                        <h2>{name}</h2>
-                        <p>{description}</p>
-                        <p><strong>Płatna:</strong> {payable}</p>
-                        <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                        <p><strong>Ocena:</strong> {rating}</p>
-                        <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
-                            {photo_html}
+                    """
+                else:
+                    wholePopUp = f"""
+                        <div style="width: 300px;">
+                            <h2>{name}</h2>
+                            <p>{description}</p>
+                            <p><strong>Płatna:</strong> {payable}</p>
+                            <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                            <p><strong>Ocena:</strong> {rating}</p>
+                            <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                                {photo_html}
+                            </div>
+                            <h3 style='margin-top: 0;'>Komentarze</h3>
+                            {comments_html}
+                            {comment_button_html}
                         </div>
-                        <h3 style='margin-top: 0;'>Komentarze</h3>
-                        {comments_html}
-                        {comment_button_html}
-                    </div>
-                """
+                    """
             folium.Marker(
                 location=[lat, lon],
                 popup=wholePopUp,
