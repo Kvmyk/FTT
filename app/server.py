@@ -179,6 +179,7 @@ class Server:
             onlyForClients = data.get('onlyForClients', 'false').lower() == 'true'
             rating = data.get('rating', '0')
             photo = request.files.get('photos')  # może być None
+            comments_list = []
             photo_base64 = None
             if photo:
                 photo_base64 = base64.b64encode(photo.read()).decode('utf-8')
@@ -195,7 +196,7 @@ class Server:
                     "onlyForClients": onlyForClients,
                     "rating": rating,
                     "photo": photo_base64,
-                    "comments": []
+                    "comments": comments_list
                 }
 
                 # Dodajemy do globalnej listy
@@ -309,7 +310,7 @@ class Server:
                 onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
                 rating = marker.get('rating', 'Brak oceny')
                 photo_base64 = marker.get('photo', None)
-                comments_list = marker.get('comments', [])
+                comments_list= marker.get('comments', [])
                 photo_html = ""
                 if photo_base64:
                     photo_html = f"""
