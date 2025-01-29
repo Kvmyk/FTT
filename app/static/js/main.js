@@ -116,14 +116,19 @@ function validateRating() {
 }
 
 function submitModal() {
+    var userInput = document.getElementById('userInput').value;
+    var descriptionInput = document.getElementById('descriptionInput').value;
+    var ratingInput = document.getElementById('ratingInput').value;
+
+    if (!userInput || !descriptionInput || !ratingInput) {
+        alert('Wszystkie pola muszą być wypełnione.');
+        return;
+    }
 
     if (!validateRating()) {
         return;
     }
 
-    var userInput = document.getElementById('userInput').value;
-    var descriptionInput = document.getElementById('descriptionInput').value;
-    var ratingInput = document.getElementById('ratingInput').value;
     var paidInput = document.getElementById('paidInput').checked;
     var customersOnlyInput = document.getElementById('customersOnlyInput').checked;
     var photoInput = document.getElementById('photoInput').files;
