@@ -105,7 +105,22 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+function validateRating() {
+    const ratingInput = document.getElementById('ratingInput');
+    const rating = parseInt(ratingInput.value, 10);
+    if (rating < 1 || rating > 10) {
+        alert('Ocena musi być w zakresie od 1 do 10.');
+        return false;
+    }
+    return true;
+}
+
 function submitModal() {
+
+    if (!validateRating()) {
+        return;
+    }
+
     var userInput = document.getElementById('userInput').value;
     var descriptionInput = document.getElementById('descriptionInput').value;
     var ratingInput = document.getElementById('ratingInput').value;
