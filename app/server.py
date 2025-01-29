@@ -368,12 +368,12 @@ class Server:
                             {comment_button_html}
                         </div>
                     """
-                folium.Marker(
-                    location=[lat, lon],
-                    popup=wholePopUp,
-                    icon=iconToilet
-                ).add_to(self.m)
-                self.save_markers()
+            folium.Marker(
+                location=[lat, lon],
+                popup=wholePopUp,
+                icon=iconToilet
+            ).add_to(self.m)
+            self.save_markers()
 
     def add_route_to_map(self, route):
         """
