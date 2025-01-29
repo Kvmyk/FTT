@@ -81,6 +81,24 @@
                 }
             }
         });
+
+        function validateRating() {
+            const ratingInput = document.getElementById('ratingInput');
+            const rating = parseInt(ratingInput.value, 10);
+            if (rating < 1 || rating > 10) {
+                alert('Ocena musi być w zakresie od 1 do 10.');
+                return false;
+            }
+            return true;
+        }
+
+        function submitModal() {
+            if (!validateRating()) {
+                return;
+            }
+            // Your existing submit logic here
+        }
+
     </script>
 </head>
 <body>
@@ -96,11 +114,11 @@
     </div>
     <div id="myModal">
         <span id="closeModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
-        <input type="text" id="userInput" placeholder="Wpisz coś...">
-        <textarea id="descriptionInput" placeholder="Dodaj opis..."></textarea>
+        <input type="text" id="userInput" placeholder="Wpisz coś..." required>
+        <textarea id="descriptionInput" placeholder="Dodaj opis..." required></textarea>
         <label><input type="checkbox" id="paidInput" name ="payable">Płatna</label>
         <label><input type="checkbox" id="customersOnlyInput" name ="onlyForClients">Tylko dla klientów</label>
-        <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10">
+        <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10" required>
         <input type="file" id="photoInput" accept=".jpg,.png" multiple>
         <div id="imagePreviewContainer"></div>
         <button onclick="submitModal()">Gotowe</button>
