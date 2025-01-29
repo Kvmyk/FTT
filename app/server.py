@@ -300,7 +300,6 @@ class Server:
                     if not any(c for c in comments if c['comment'] == description and c['rating'] == rating):
                         comments.append({'comment': description, 'rating': rating})
                     existing_marker['rating'] = rating  # Aktualizuj ocenę
-                    return
                 
             name = marker.get('name', 'Unknown')
             description = marker.get('description', 'No description')
