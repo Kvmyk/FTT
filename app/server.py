@@ -290,7 +290,7 @@ class Server:
             lon = marker['lon']
             existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
 
-            if existing_marker:
+            if existing_marker and marker['is_new'] == False:
                 # Dodaj komentarz i ocenę do istniejącego markera
                 description = marker.get('description')
                 rating = marker.get('rating')
@@ -304,7 +304,7 @@ class Server:
             else:
                 marker['is_new'] = True
                 self.markers.append(marker)
-                
+
             name = marker.get('name', 'Unknown')
             description = marker.get('description', 'No description')
             payable = "TAK" if marker.get('payable', False) else "NIE"
