@@ -256,138 +256,138 @@ class Server:
 
             return jsonify({'status': 'error', 'message': 'Marker not found'}), 404
 
-def add_marker_to_map(self, marker):
-    # 1. Sprawdź, czy marker o danym (lat, lon) już istnieje
-    lat = marker['lat']
-    lon = marker['lon']
-    existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
+    def add_marker_to_map(self, marker):
+        # 1. Sprawdź, czy marker o danym (lat, lon) już istnieje
+        lat = marker['lat']
+        lon = marker['lon']
+        existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
 
-    # 2. Jeżeli marker istnieje, sprawdź, czy chcemy dodać KOMENTARZ:
-    #    Zamiast używać marker['description'] jako komentarza, używamy np. marker['comment'] i marker['comment_rating']
-    if existing_marker:
-        new_comment = marker.get('comment')  # np. 'comment' zamiast 'description'
-        new_comment_rating = marker.get('comment_rating')  # np. 'comment_rating' zamiast 'rating'
-        if new_comment and new_comment_rating:
-            comments = existing_marker.setdefault('comments', [])
-            # Dodaj komentarz tylko, jeśli go wcześniej nie było:
-            if not any(c for c in comments if c['comment'] == new_comment and c['rating'] == new_comment_rating):
-                comments.append({'comment': new_comment, 'rating': new_comment_rating})
-            existing_marker['rating'] = new_comment_rating  # Aktualizuj ocenę wg najnowszego komentarza
+        # 2. Jeżeli marker istnieje, sprawdź, czy chcemy dodać KOMENTARZ:
+        #    Zamiast używać marker['description'] jako komentarza, używamy np. marker['comment'] i marker['comment_rating']
+        if existing_marker:
+            new_comment = marker.get('comment')  # np. 'comment' zamiast 'description'
+            new_comment_rating = marker.get('comment_rating')  # np. 'comment_rating' zamiast 'rating'
+            if new_comment and new_comment_rating:
+                comments = existing_marker.setdefault('comments', [])
+                # Dodaj komentarz tylko, jeśli go wcześniej nie było:
+                if not any(c for c in comments if c['comment'] == new_comment and c['rating'] == new_comment_rating):
+                    comments.append({'comment': new_comment, 'rating': new_comment_rating})
+                existing_marker['rating'] = new_comment_rating  # Aktualizuj ocenę wg najnowszego komentarza
 
-    # 3. Jeżeli marker nie istnieje, to go dopiero dodajemy. Wtedy:
-    #    - potraktuj marker['description'] i marker['rating'] jako główny opis i ocenę
-    #    - komentowanie zostaw puste (comments = [])
-    else:
-        marker.setdefault('comments', [])
-        self.markers.append(marker)  # dopiero dodajemy go do self.markers
-
-    # -- DALEJ: logika rysowania na mapie (folium.Marker itd.) --
-    # W tej części tworzysz popup niezależnie od tego, czy jest to nowy czy istniejący marker.
-
-    # Ikonka zależnie od tego, czy to 'User Location' czy zwykła toaleta
-    if marker.get('name') == "User Location":
-        icon = folium.CustomIcon(
-            toilet_icon,
-            icon_size=(50, 50),
-            shadow_size=(50, 50)
-        )
-        popup_content = f"""
-            <div style="width: 300px;">
-                <h2>User Location</h2>
-                <p>{marker.get('description','')}</p>
-            </div>
-        """
-        folium.Marker(
-            location=[marker['lat'], marker['lon']],
-            popup=popup_content,
-            icon=icon
-        ).add_to(self.m)
-
-    else:
-        iconToilet = folium.CustomIcon(
-            toilet_icon, 
-            icon_size=(50, 50), 
-            shadow_size=(50, 50)
-        )
-        name = marker.get('name', 'Unknown')
-        description = marker.get('description', 'No description')
-        payable = "TAK" if marker.get('payable', False) else "NIE"
-        onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
-        rating = marker.get('rating', 'Brak oceny')
-        photo_base64 = marker.get('photo', None)
-        comments_list = marker.get('comments', [])  # tu już będą TYLKO komentarze, jeśli jakieś są
-
-        # Sekcja zdjęcia
-        photo_html = ""
-        if photo_base64:
-            photo_html = f"""
-                <img src="data:image/jpeg;base64,{photo_base64}" 
-                     style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
-                            object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
-            """
-
-        # Sekcja komentarzy
-        comments_html = f"""
-            <div id='comments-{lat}-{lon}'
-                 style='max-height: 200px; overflow-y: auto; font-family: Roboto, sans-serif;'>
-        """
-        for c in comments_list:
-            comments_html += f"""
-                <p><strong>Ocena:</strong> {c.get('rating')}</p>
-                <p>{c.get('comment')}</p>
-                <hr style="border-top: 1px solid #ccc;" />
-            """
-        comments_html += "</div>"
-
-        # Przycisk do dodania komentarza
-        comment_button_html = f"""
-            <button onclick="window.parent.openCommentModal({lat}, {lon})" 
-                    style="width: 80%; background-color: red; color: white; padding: 14px 20px; margin: 8px 0; border: none; border-radius: 4px; cursor: pointer; font-family: 'Roboto', sans-serif; font-weight: 300;">
-                Dodaj komentarz
-            </button>
-        """
-
-        # Budowanie popupu, w zależności od tego, czy są komentarze
-        if not comments_list:
-            wholePopUp = f"""
-                <div style="width: 300px;">
-                    <h2>{name}</h2>
-                    <p>{description}</p>
-                    <p><strong>Płatna:</strong> {payable}</p>
-                    <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                    <p><strong>Ocena:</strong> {rating}</p>
-                    <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
-                        {photo_html}
-                    </div>
-                    {comments_html}
-                    {comment_button_html}
-                </div>
-            """
+        # 3. Jeżeli marker nie istnieje, to go dopiero dodajemy. Wtedy:
+        #    - potraktuj marker['description'] i marker['rating'] jako główny opis i ocenę
+        #    - komentowanie zostaw puste (comments = [])
         else:
-            wholePopUp = f"""
+            marker.setdefault('comments', [])
+            self.markers.append(marker)  # dopiero dodajemy go do self.markers
+
+        # -- DALEJ: logika rysowania na mapie (folium.Marker itd.) --
+        # W tej części tworzysz popup niezależnie od tego, czy jest to nowy czy istniejący marker.
+
+        # Ikonka zależnie od tego, czy to 'User Location' czy zwykła toaleta
+        if marker.get('name') == "User Location":
+            icon = folium.CustomIcon(
+                toilet_icon,
+                icon_size=(50, 50),
+                shadow_size=(50, 50)
+            )
+            popup_content = f"""
                 <div style="width: 300px;">
-                    <h2>{name}</h2>
-                    <p>{description}</p>
-                    <p><strong>Płatna:</strong> {payable}</p>
-                    <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                    <p><strong>Ocena:</strong> {rating}</p>
-                    <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
-                        {photo_html}
-                    </div>
-                    <h3 style='margin-top: 0;'>Komentarze</h3>
-                    {comments_html}
-                    {comment_button_html}
+                    <h2>User Location</h2>
+                    <p>{marker.get('description','')}</p>
                 </div>
             """
+            folium.Marker(
+                location=[marker['lat'], marker['lon']],
+                popup=popup_content,
+                icon=icon
+            ).add_to(self.m)
 
-        folium.Marker(
-            location=[lat, lon],
-            popup=wholePopUp,
-            icon=iconToilet
-        ).add_to(self.m)
+        else:
+            iconToilet = folium.CustomIcon(
+                toilet_icon, 
+                icon_size=(50, 50), 
+                shadow_size=(50, 50)
+            )
+            name = marker.get('name', 'Unknown')
+            description = marker.get('description', 'No description')
+            payable = "TAK" if marker.get('payable', False) else "NIE"
+            onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
+            rating = marker.get('rating', 'Brak oceny')
+            photo_base64 = marker.get('photo', None)
+            comments_list = marker.get('comments', [])  # tu już będą TYLKO komentarze, jeśli jakieś są
 
-    # Zapis listy markerów
-    self.save_markers()
+            # Sekcja zdjęcia
+            photo_html = ""
+            if photo_base64:
+                photo_html = f"""
+                    <img src="data:image/jpeg;base64,{photo_base64}" 
+                        style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
+                                object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
+                """
+
+            # Sekcja komentarzy
+            comments_html = f"""
+                <div id='comments-{lat}-{lon}'
+                    style='max-height: 200px; overflow-y: auto; font-family: Roboto, sans-serif;'>
+            """
+            for c in comments_list:
+                comments_html += f"""
+                    <p><strong>Ocena:</strong> {c.get('rating')}</p>
+                    <p>{c.get('comment')}</p>
+                    <hr style="border-top: 1px solid #ccc;" />
+                """
+            comments_html += "</div>"
+
+            # Przycisk do dodania komentarza
+            comment_button_html = f"""
+                <button onclick="window.parent.openCommentModal({lat}, {lon})" 
+                        style="width: 80%; background-color: red; color: white; padding: 14px 20px; margin: 8px 0; border: none; border-radius: 4px; cursor: pointer; font-family: 'Roboto', sans-serif; font-weight: 300;">
+                    Dodaj komentarz
+                </button>
+            """
+
+            # Budowanie popupu, w zależności od tego, czy są komentarze
+            if not comments_list:
+                wholePopUp = f"""
+                    <div style="width: 300px;">
+                        <h2>{name}</h2>
+                        <p>{description}</p>
+                        <p><strong>Płatna:</strong> {payable}</p>
+                        <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                        <p><strong>Ocena:</strong> {rating}</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                            {photo_html}
+                        </div>
+                        {comments_html}
+                        {comment_button_html}
+                    </div>
+                """
+            else:
+                wholePopUp = f"""
+                    <div style="width: 300px;">
+                        <h2>{name}</h2>
+                        <p>{description}</p>
+                        <p><strong>Płatna:</strong> {payable}</p>
+                        <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                        <p><strong>Ocena:</strong> {rating}</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                            {photo_html}
+                        </div>
+                        <h3 style='margin-top: 0;'>Komentarze</h3>
+                        {comments_html}
+                        {comment_button_html}
+                    </div>
+                """
+
+            folium.Marker(
+                location=[lat, lon],
+                popup=wholePopUp,
+                icon=iconToilet
+            ).add_to(self.m)
+
+        # Zapis listy markerów
+        self.save_markers()
 
     def add_route_to_map(self, route):
         """
