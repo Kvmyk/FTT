@@ -300,45 +300,44 @@ class Server:
                         comments.append({'comment': description, 'rating': rating})
                     existing_marker['rating'] = rating
             else:
-                # Jeśli marker jest nowy, dodaj go do listy
-                self.markers.append(marker)
+                
 
-            name = marker.get('name', 'Unknown')
-            description = marker.get('description', 'No description')
-            payable = "TAK" if marker.get('payable', False) else "NIE"
-            onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
-            rating = marker.get('rating', 'Brak oceny')
-            photo_base64 = marker.get('photo', None)
-            comments_list = marker.get('comments', [])
-            photo_html = ""
-            if photo_base64:
-                photo_html = f"""
-                    <img src="data:image/jpeg;base64,{photo_base64}" 
-                         style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
-                                object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
+                name = marker.get('name', 'Unknown')
+                description = marker.get('description', 'No description')
+                payable = "TAK" if marker.get('payable', False) else "NIE"
+                onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
+                rating = marker.get('rating', 'Brak oceny')
+                photo_base64 = marker.get('photo', None)
+                comments_list = marker.get('comments', [])
+                photo_html = ""
+                if photo_base64:
+                    photo_html = f"""
+                        <img src="data:image/jpeg;base64,{photo_base64}" 
+                            style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
+                                    object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
+                    """
+
+                # Sekcja komentarzy
+                comments_html = f"""
+                    <div id='comments-{marker['lat']}-{marker['lon']}'
+                        style='max-height: 200px; overflow-y: auto; font-family: Roboto, sans-serif;'>
                 """
+                
+                for c in comments_list:
+                    comments_html += f"""
+                        <p><strong>Ocena:</strong> {c.get('rating')}</p>
+                        <p>{c.get('comment')}</p>
+                        <hr style="border-top: 1px solid #ccc;" />
+                    """
+                comments_html += "</div>"
 
-            # Sekcja komentarzy
-            comments_html = f"""
-                <div id='comments-{marker['lat']}-{marker['lon']}'
-                     style='max-height: 200px; overflow-y: auto; font-family: Roboto, sans-serif;'>
-            """
-            
-            for c in comments_list:
-                comments_html += f"""
-                    <p><strong>Ocena:</strong> {c.get('rating')}</p>
-                    <p>{c.get('comment')}</p>
-                    <hr style="border-top: 1px solid #ccc;" />
+                # Użycie współrzędnych jako identyfikatora
+                comment_button_html = f"""
+                    <button onclick="window.parent.openCommentModal({lat}, {lon})" 
+                            style="width: 80%; background-color: red; color: white; padding: 14px 20px; margin: 8px 0; border: none; border-radius: 4px; cursor: pointer; font-family: 'Roboto', sans-serif; font-weight: 300;">
+                        Dodaj komentarz
+                    </button>
                 """
-            comments_html += "</div>"
-
-            # Użycie współrzędnych jako identyfikatora
-            comment_button_html = f"""
-                <button onclick="window.parent.openCommentModal({lat}, {lon})" 
-                        style="width: 80%; background-color: red; color: white; padding: 14px 20px; margin: 8px 0; border: none; border-radius: 4px; cursor: pointer; font-family: 'Roboto', sans-serif; font-weight: 300;">
-                    Dodaj komentarz
-                </button>
-            """
             if not comments_list:
                 wholePopUp = f"""
                     <div style="width: 300px;">
