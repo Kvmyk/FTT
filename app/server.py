@@ -7,7 +7,6 @@ import json
 import base64
 import uuid
 import logging
-import time
 
 from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
@@ -398,19 +397,6 @@ class Server:
 
         # Opcjonalnie można odświeżyć mapę już teraz
         self.update_map()
-
-        # Animacja dodawania trasy
-        coordinates = route['routes'][0]['geometry']['coordinates']
-        polyline = folium.PolyLine(locations=[], color='red', weight=5, opacity=0.7)
-        polyline.add_to(self.m)
-
-        for coord in coordinates:
-            lat, lon = coord[1], coord[0]
-            polyline.locations.append([lat, lon])
-            self.m._repr_html_()  # Aktualizuj mapę
-            time.sleep(0.1)  # Opóźnienie dla animacji
-
-        self.save_markers()
 
     def update_map(self):
         """
