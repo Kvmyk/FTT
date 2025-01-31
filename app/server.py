@@ -341,7 +341,7 @@ class Server:
             """
             if not comments_list:
                 wholePopUp = f"""
-                    <div style="width: 300px;">
+                    <div style="width: 300px; max-height:300px, overflow-y: auto;">
                         <h2>{name}</h2>
                         <p>{description}</p>
                         <p><strong>Płatna:</strong> {payable}</p>
@@ -356,7 +356,7 @@ class Server:
                 """
             else:
                 wholePopUp = f"""
-                    <div style="width: 300px;">
+                    <div style="width: 300px; max-height:300px, overflow-y: auto;">
                         <h2>{name}</h2>
                         <p>{description}</p>
                         <p><strong>Płatna:</strong> {payable}</p>
