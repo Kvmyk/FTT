@@ -219,9 +219,8 @@ class Server:
                             )
                             if route:
                                 self.add_route_to_map(route)
-                                coordinates = route['routes'][0]['geometry']['coordinates']
 
-                return jsonify({'status': 'success', 'lat': lat, 'lon': lon, 'route': coordinates})
+                return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
             else:
                 return jsonify({'status': 'error', 'message': 'Location not found'})
 

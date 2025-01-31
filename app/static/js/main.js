@@ -149,15 +149,16 @@ function submitModal() {
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Success:', data);
         if (data.status === 'success') {
-            const map = L.map('map'); // Użyj istniejącego identyfikatora 'map'
-            const coordinates = data.route.map(coord => [coord[1], coord[0]]); // Zamień współrzędne na [lat, lon]
-            animateRoute(map, coordinates);
+            window.location.reload();
         } else {
             alert(data.message);
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 
     document.getElementById('myModal').style.display = 'none';
 }
