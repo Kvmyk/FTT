@@ -356,39 +356,26 @@ class Server:
                 """
             else:
                 wholePopUp = f"""
-                    <style>
-                        .collapsible-content {{
-                            max-height: 0;
-                            overflow: hidden;
-                            transition: max-height 0.3s ease-out;
-                        }}
-                        .expanded {{
-                            max-height: 500px;
-                        }}
-                        .toggle-btn {{
-                            background: none;
-                            border: none;
-                            color: blue;
-                            text-decoration: underline;
-                            cursor: pointer;
-                            padding: 5px;
-                            margin: 5px 0;
-                        }}
-                    </style>
-                    <script>
-                        function toggleComments(btnId, contentId) {{
-                            const content = document.getElementById(contentId);
-                            const btn = document.getElementById(btnId);
-                            if (content.classList.contains('expanded')) {{
-                                content.classList.remove('expanded');
-                                btn.textContent = 'Pokaż komentarze';
-                            }} else {{
-                                content.classList.add('expanded');
-                                btn.textContent = 'Ukryj komentarze';
+                    <div class="popup-container-{lat}-{lon}" style="width: 300px; max-height:300px; overflow-y: auto;">
+                        <style>
+                            .popup-container-{lat}-{lon} .collapsible-content {{
+                                max-height: 0;
+                                overflow: hidden;
+                                transition: max-height 0.3s ease-out;
                             }}
-                        }}
-                    </script>
-                    <div style="width: 300px;">
+                            .popup-container-{lat}-{lon} .expanded {{
+                                max-height: 500px;
+                            }}
+                            .popup-container-{lat}-{lon} .toggle-btn {{
+                                background: none;
+                                border: none;
+                                color: blue;
+                                text-decoration: underline;
+                                cursor: pointer;
+                                padding: 5px;
+                                margin: 5px 0;
+                            }}
+                        </style>
                         <h2>{name}</h2>
                         <p>{description}</p>
                         <p><strong>Płatna:</strong> {payable}</p>
@@ -397,12 +384,13 @@ class Server:
                         <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                             {photo_html}
                         </div>
-                        <button id="toggleBtn_{lat}_{lon}" 
-                                class="toggle-btn" 
-                                onclick="toggleComments('toggleBtn_{lat}_{lon}', 'comments_{lat}_{lon}')">
+                        <button class="toggle-btn" 
+                                onclick="this.nextElementSibling.classList.toggle('expanded'); 
+                                        this.textContent = this.nextElementSibling.classList.contains('expanded') ? 
+                                        'Ukryj komentarze' : 'Pokaż komentarze'">
                             Pokaż komentarze
                         </button>
-                        <div id="comments_{lat}_{lon}" class="collapsible-content">
+                        <div class="collapsible-content">
                             <h3 style='margin-top: 0;'>Komentarze</h3>
                             {comments_html}
                             {comment_button_html}
