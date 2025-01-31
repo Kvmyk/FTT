@@ -356,20 +356,59 @@ class Server:
                 """
             else:
                 wholePopUp = f"""
-                    <div style="width: 300px; max-height:300px, overflow-y: auto;">
-                        <h2>{name}</h2>
-                        <p>{description}</p>
-                        <p><strong>Płatna:</strong> {payable}</p>
-                        <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                        <p><strong>Ocena:</strong> {rating}</p>
-                        <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
-                            {photo_html}
-                        </div>
-                        <h3 style='margin-top: 0;'>Komentarze</h3>
-                        {comments_html}
-                        {comment_button_html}
-                    </div>
-                """
+    <style>
+        .collapsible-content {{
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }}
+        .expanded {{
+            max-height: 500px;
+        }}
+        .toggle-btn {{
+            background: none;
+            border: none;
+            color: blue;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 5px;
+            margin: 5px 0;
+        }}
+    </style>
+    <script>
+        function toggleComments(btnId, contentId) {{
+            const content = document.getElementById(contentId);
+            const btn = document.getElementById(btnId);
+            if (content.classList.contains('expanded')) {{
+                content.classList.remove('expanded');
+                btn.textContent = 'Pokaż komentarze';
+            }} else {{
+                content.classList.add('expanded');
+                btn.textContent = 'Ukryj komentarze';
+            }}
+        }}
+    </script>
+    <div style="width: 300px;">
+        <h2>{name}</h2>
+        <p>{description}</p>
+        <p><strong>Płatna:</strong> {payable}</p>
+        <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+        <p><strong>Ocena:</strong> {rating}</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+            {photo_html}
+        </div>
+        <button id="toggleBtn_{lat}_{lon}" 
+                class="toggle-btn" 
+                onclick="toggleComments('toggleBtn_{lat}_{lon}', 'comments_{lat}_{lon}')">
+            Pokaż komentarze
+        </button>
+        <div id="comments_{lat}_{lon}" class="collapsible-content">
+            <h3 style='margin-top: 0;'>Komentarze</h3>
+            {comments_html}
+            {comment_button_html}
+        </div>
+    </div>
+"""
             folium.Marker(
                 location=[lat, lon],
                 popup=folium.Popup(
