@@ -374,7 +374,6 @@ class Server:
                 location=[lat, lon],
                 popup=folium.Popup(
                     wholePopUp,
-                    max_width=500,  # Set maximum width in pixels
                     min_width=300,  # Set minimum width in pixels
                     max_height=400  # Set maximum height in pixels
                 ),
