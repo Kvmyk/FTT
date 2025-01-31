@@ -103,41 +103,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeCommentModal').addEventListener('click', function() {
         document.getElementById('commentModal').style.display = 'none';
     });
-
-    document.getElementById('loadingOverlay').style.display = 'flex'; // Pokaż spinner przed rozpoczęciem pobierania trasy
-
-    fetch('/nearest_toilet_distance')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                fetch('/get_route', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        start_lat: data.user_lat,
-                        start_lon: data.user_lon,
-                        end_lat: data.nearest_lat,
-                        end_lon: data.nearest_lon
-                    })
-                })
-                .then(response => response.json())
-                .then(routeData => {
-                    animateRoute(map, routeData.coordinates);
-                })
-                .catch(error => {
-                    console.error('Error fetching route:', error);
-                    document.getElementById('loadingOverlay').style.display = 'none'; // Ukryj spinner w przypadku błędu
-                });
-            } else {
-                document.getElementById('loadingOverlay').style.display = 'none'; // Ukryj spinner w przypadku błędu
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching nearest toilet distance:', error);
-            document.getElementById('loadingOverlay').style.display = 'none'; // Ukryj spinner w przypadku błędu
-        });
 });
 
 function validateRating() {
@@ -184,16 +149,15 @@ function submitModal() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Success:', data);
         if (data.status === 'success') {
-            window.location.reload();
+            const map = L.map('map'); // Użyj istniejącego identyfikatora 'map'
+            const coordinates = data.route.map(coord => [coord[1], coord[0]]); // Zamień współrzędne na [lat, lon]
+            animateRoute(map, coordinates);
         } else {
             alert(data.message);
         }
     })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
+    .catch(error => console.error('Error:', error));
 
     document.getElementById('myModal').style.display = 'none';
 }
@@ -247,13 +211,11 @@ function animateRoute(map, coordinates) {
     let polyline = L.polyline([], { color: 'red', weight: 5 }).addTo(map);
 
     function drawSegment() {
-        if (currentIndex < coordinates.length) {
-            polyline.addLatLng(L.latLng(coordinates[currentIndex]));
-            currentIndex++;
-            requestAnimationFrame(drawSegment);
-        } else {
-            document.getElementById('loadingOverlay').style.display = 'none'; // Ukryj spinner po zakończeniu animacji
-        }
+      if (currentIndex < coordinates.length) {
+        polyline.addLatLng(L.latLng(coordinates[currentIndex]));
+        currentIndex++;
+        requestAnimationFrame(drawSegment);
+      }
     }
     drawSegment();
-}
+  }

@@ -219,8 +219,9 @@ class Server:
                             )
                             if route:
                                 self.add_route_to_map(route)
+                                coordinates = route['routes'][0]['geometry']['coordinates']
 
-                return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
+                return jsonify({'status': 'success', 'lat': lat, 'lon': lon, 'route': coordinates})
             else:
                 return jsonify({'status': 'error', 'message': 'Location not found'})
 
@@ -255,19 +256,6 @@ class Server:
                     return jsonify({'status': 'success'})
 
             return jsonify({'status': 'error', 'message': 'Marker not found'}), 404
-
-        @self.app.route('/get_route', methods=['POST'])
-        def get_route_endpoint():
-            data = request.json
-            start_lat = data['start_lat']
-            start_lon = data['start_lon']
-            end_lat = data['end_lat']
-            end_lon = data['end_lon']
-            route = get_route(start_lat, start_lon, end_lat, end_lon)
-            if route:
-                return jsonify({'status': 'success', 'coordinates': route['routes'][0]['geometry']['coordinates']})
-            else:
-                return jsonify({'status': 'error', 'message': 'Route not found'}), 404
 
     def add_marker_to_map(self, marker):
         """
