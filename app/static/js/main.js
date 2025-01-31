@@ -207,3 +207,24 @@ function submitComment() {
         }
     });
 }
+function animateRoute(map, coordinates) {
+    let currentIndex = 0;
+    let polyline = L.polyline([], { color: 'red', weight: 5 }).addTo(map);
+
+    function drawSegment() {
+      if (currentIndex < coordinates.length) {
+        polyline.addLatLng(L.latLng(coordinates[currentIndex]));
+        currentIndex++;
+        requestAnimationFrame(drawSegment);
+      }
+    }
+    drawSegment();
+  }
+
+fetch('/get_route')
+  .then(response => response.json())
+  .then(data => {
+    // 'map' to obiekt Leaflet Map
+    animateRoute(map, data.coordinates);
+  })
+  .catch(error => console.error('Error:', error));
