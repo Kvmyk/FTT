@@ -5,6 +5,9 @@ html, body {
     height: 100%;
     overflow: hidden; /* Ukryj pasek przewijania */
     font-weight: 300; /* Light */
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
 }
 
 #map {
@@ -30,6 +33,8 @@ html, body {
     right: 10px;
     z-index: 1000;
     cursor: pointer; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, background-color 0.2s;
 }
 
 .circle-plus:hover {
@@ -47,8 +52,6 @@ html, body {
     box-sizing: border-box;
     font-family: 'Roboto', sans-serif;
     font-weight: 300; /* Light */
-
-
 }
 
 #myModal input[type="file"] {
@@ -66,7 +69,6 @@ html, body {
     box-sizing: border-box;
     font-family: 'Roboto', sans-serif;
     font-weight: 300; /* Light */
-
 }
 
 #myModal input[type="checkbox"] {
@@ -85,6 +87,7 @@ html, body {
     cursor: pointer;
     font-family: 'Roboto', sans-serif;
     font-weight: 300; /* Light */
+    transition: background-color 0.2s;
 }
 
 #myModal button:hover {
@@ -144,6 +147,7 @@ html, body {
     cursor: pointer;
     font-family: 'Roboto', sans-serif;
     font-weight: 300;
+    transition: background-color 0.2s;
 }
 
 #commentModal button:hover {
@@ -174,7 +178,7 @@ html, body {
 
 #nearestPinInfo.hide {
     opacity: 0;
-    transition: opacity 1s ease-in-out;;
+    transition: opacity 1s ease-in-out;
 }
 
 #loadingOverlay {
