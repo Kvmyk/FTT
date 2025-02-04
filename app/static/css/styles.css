@@ -18,13 +18,14 @@ html, body {
 
 /* Style dla kontenera mapy */
 #map {
-    position: fixed; /* zmiana z relative na fixed */
-    top: 0;
-    left: 0;
-    width: 100vw; /* użyj viewport width */
-    height: 100vh; /* użyj viewport height */
-    margin: 0;
-    padding: 0;
+    position: fixed !important; /* Wymuszenie fixed */
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important; /* Użyj viewport width */
+    height: 100vh !important; /* Użyj viewport height */
+    margin: 0 !important;
+    padding: 0 !important;
+    z-index: 1; /* Upewnij się że mapa jest pod innymi elementami */
 }
 
 .circle-plus {
@@ -389,14 +390,24 @@ label {
 
 /* Responsywność dla map */
 @media screen and (max-width: 768px) {
-    #map {
-        height: 100vh; /* wymuszenie pełnej wysokości na mobilnych */
-        width: 100vw;
-        position: fixed;
-    }
-    
-    .leaflet-container {
+    #map, 
+    .leaflet-container,
+    iframe,
+    .folium-map {
         height: 100vh !important;
         width: 100vw !important;
+        position: fixed !important;
     }
+}
+
+.leaflet-container {
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+/* Wymuś style dla iframe */
+iframe {
+    width: 100vw !important;
+    height: 100vh !important;
+    border: none !important;
 }
