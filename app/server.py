@@ -348,11 +348,8 @@ class Server:
             navigate_button_html = f"""
                 <div>
                     <button {disabled_attr} onclick="{onclick_attr}" 
-                            style="width: 80%; background-color: red; color: white; 
-                                   padding: 14px 20px; margin: 8px 0; border: none; 
-                                   border-radius: 4px; cursor: {'pointer' if is_within_range else 'not-allowed'};
-                                   font-family: 'Roboto', sans-serif; 
-                                   font-weight: 300;
+                            class="popup-button"
+                            style="
                                    pointer-events: {'auto' if is_within_range else 'none'};
                                    filter: {'none' if is_within_range else 'brightness(0.8)'};
                                    opacity: {'1' if is_within_range else '0.7'};">

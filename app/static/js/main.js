@@ -284,3 +284,28 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
     return R * c; // w metrach
 }
+
+// Dodaj po załadowaniu mapy
+document.addEventListener('DOMContentLoaded', function() {
+    // Obsługa przycisków w popupach
+    const buttons = document.querySelectorAll('.popup-button');
+    buttons.forEach(button => {
+        // Dodaj efekt ripple przy kliknięciu
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = button.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            ripple.className = 'ripple';
+            
+            button.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+});
