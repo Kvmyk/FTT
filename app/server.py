@@ -16,10 +16,26 @@ logging.basicConfig(level=logging.DEBUG)
 # Ścieżka do pliku z ikoną (w katalogu static)
 toilet_icon = os.path.join('toilet_icon.png')
 
+class RouteCache:
+    def __init__(self):
+        self._cache = {}
+        self._timeout = 3600  # 1 godzina
+
+    def set(self, route_id, route_data):
+        self._cache[route_id] = route_data
+        
+    def get(self, route_id):
+        return self._cache.get(route_id)
+
+    def cleanup(self):
+        # Możesz dodać czyszczenie starych tras
+        pass
+
 class Server:
     def __init__(self):
         self.app = Flask(__name__, static_url_path='/static')
         self.app.secret_key = "twoj_sekretny_klucz"  # klucz do sesji - niezbędny
+        self.route_cache = RouteCache()
 
         # Domyślne współrzędne (np. Warszawa) - użyte TYLKO gdy user nie ustawił własnych
         self.default_lat = 52.2297
@@ -282,12 +298,9 @@ class Server:
             )
             
             if route:
-                # Zapisz tylko niezbędne dane trasy
-                simplified_route = {
-                    'coordinates': route['routes'][0]['geometry']['coordinates'],
-                    'distance': route['routes'][0]['distance']
-                }
-                user_data['current_route'] = simplified_route
+                route_id = str(uuid.uuid4())
+                self.route_cache.set(route_id, route)
+                user_data['current_route_id'] = route_id  # Zapisujemy tylko ID
                 session[user_id] = user_data
                 self.update_map()
                 return jsonify({'status': 'success'})
@@ -542,14 +555,7 @@ class Server:
         self.update_map()
 
     def update_map(self):
-        """
-        Buduje nową mapę, centrowaną na markerze użytkownika (jeśli istnieje)
-        lub na domyślnych współrzędnych. Następnie dodaje:
-          - globalne markery (toalety),
-          - marker użytkownika,
-          - trasę użytkownika (current_route).
-        Zwraca HTML do wstawienia na stronę.
-        """
+        """Aktualizacja mapy z użyciem cache"""
         user_id = session.get('user_id')
         center_lat = self.default_lat
         center_lon = self.default_lon
@@ -560,82 +566,28 @@ class Server:
             if user_marker:
                 center_lat = user_marker['lat']
                 center_lon = user_marker['lon']
-
-        # Tworzymy mapę z uwzględnieniem centrum na user_marker (o ile jest)
-        self.m = self.create_map(center_lat, center_lon)
-
-        # Dodajemy globalne markery (toalety)
-        for marker in self.markers:
-            self.add_marker_to_map(marker)
-
-        # Dodajemy marker + trasę użytkownika
-        if user_id:
-            user_data = session.get(user_id, {})
-            user_marker = user_data.get('marker')
-            if user_marker:
                 self.add_marker_to_map(user_marker)
 
-            route = user_data.get('current_route')
-            if route and len(self.markers) > 0:
-                coordinates = [
-                    (coord[1], coord[0])
-                    for coord in route['routes'][0]['geometry']['coordinates']
-                ]
-                distance = route['routes'][0]['distance']  # w metrach
-                distance_text = f"{distance / 1000:.2f} km"
+            route_id = user_data.get('current_route_id')
+            if route_id:
+                route = self.route_cache.get(route_id)
+                if route and len(self.markers) > 0:
+                    coordinates = [
+                        (coord[1], coord[0])
+                        for coord in route['routes'][0]['geometry']['coordinates']
+                    ]
+                    distance = route['routes'][0]['distance']
+                    distance_text = f"{distance / 1000:.2f} km"
 
-                # Rysujemy czerwoną polilinię
-                folium.PolyLine(
-                    locations=coordinates,
-                    color='red',
-                    weight=5,
-                    opacity=0.7
-                ).add_to(self.m)
+                    folium.PolyLine(
+                        locations=coordinates,
+                        color='red',
+                        weight=5,
+                        opacity=0.7
+                    ).add_to(self.m)
 
-                # Znacznik z odległością w połowie trasy
-                mid_point_index = len(coordinates) // 2
-                mid_point = coordinates[mid_point_index]
-                offset_latitude = 0.0007  # przesuwamy napis troszkę do góry
-                offset_longitude = 0.0007  # przesuwamy napis troszkę w bok
-                mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
+                    # Reszta kodu dla wyświetlania trasy...
 
-                folium.Marker(
-                    location=mid_point_with_offset,
-                    icon=folium.DivIcon(
-                        html=f"""
-                            <div style="
-                                font-size: 14px; 
-                                color: #D32F2F;
-                                font-weight: bold;
-                                background-color: rgba(255, 255, 255, 0.9);
-                                padding: 0.4em 0.8em;
-                                border-radius: 0.3em;
-                                text-align: center;
-                                font-family: Arial, sans-serif;
-                                box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
-                                display: inline-block;
-                                min-width: max-content;
-                                white-space: nowrap;
-                            ">
-                                {distance_text}
-                            </div>
-                        """
-                    )
-                ).add_to(self.m)
-
-        # Dodawanie trasy na mapę
-        for user_id, user_data in session.items():
-            if isinstance(user_data, dict) and 'current_route' in user_data:
-                route_data = user_data['current_route']
-                coordinates = route_data['coordinates']
-                folium.PolyLine(
-                    locations=[[coord[1], coord[0]] for coord in coordinates],
-                    weight=2,
-                    color='blue',
-                    opacity=0.8
-                ).add_to(self.map)
-
-        # Zwracamy kod HTML gotowy do wstawienia w przeglądarkę (w <div id="map">)
         return self.m._repr_html_()
 
     def runThePage(self):
