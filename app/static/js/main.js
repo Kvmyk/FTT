@@ -220,3 +220,41 @@ function animateRoute(map, coordinates) {
     }
     drawSegment();
   }
+
+window.navigateToToilet = function(targetLat, targetLon) {
+    // Pobierz aktualną pozycję użytkownika
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLat = position.coords.latitude;
+                const userLon = position.coords.longitude;
+                
+                // Wyślij żądanie do serwera o wyznaczenie nowej trasy
+                fetch('/navigate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_lat: userLat,
+                        user_lon: userLon,
+                        target_lat: targetLat,
+                        target_lon: targetLon
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Odśwież mapę
+                        fetch('/render_map')
+                            .then(response => response.text())
+                            .then(html => {
+                                document.getElementById('map').innerHTML = html;
+                            });
+                    }
+                });
+            },
+            (error) => console.error('Error getting location:', error)
+        );
+    }
+};

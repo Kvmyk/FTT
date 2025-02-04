@@ -256,6 +256,42 @@ class Server:
 
             return jsonify({'status': 'error', 'message': 'Marker not found'}), 404
 
+        @self.app.route('/navigate', methods=['POST'])
+        def navigate():
+            """Endpoint do wyznaczania trasy do konkretnej toalety."""
+            data = request.json
+            user_id = session.get('user_id')
+            
+            if not user_id:
+                user_id = str(uuid.uuid4())
+                session['user_id'] = user_id
+            
+            # Aktualizuj marker użytkownika
+            user_data = session.get(user_id, {})
+            user_marker = {
+                "lat": data['user_lat'],
+                "lon": data['user_lon'],
+                "name": "User Location",
+                "description": "This is your location"
+            }
+            user_data['marker'] = user_marker
+            
+            # Wyznacz trasę do wybranej toalety
+            route = get_route(
+                data['user_lat'], 
+                data['user_lon'],
+                data['target_lat'], 
+                data['target_lon']
+            )
+            
+            if route:
+                user_data['current_route'] = route
+                session[user_id] = user_data
+                self.update_map()
+                return jsonify({'status': 'success'})
+            
+            return jsonify({'status': 'error', 'message': 'Could not calculate route'})
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.
@@ -396,6 +432,22 @@ class Server:
                     }}
                 </style>
             """
+            navigate_button_html = f"""
+                <button onclick="window.parent.navigateToToilet({lat}, {lon})" 
+                        style="width: 80%; background-color: #2196F3; color: white; 
+                               padding: 14px 20px; margin: 8px 0; border: none; 
+                               border-radius: 4px; cursor: pointer; 
+                               font-family: 'Roboto', sans-serif; 
+                               font-weight: 300; 
+                               transition: background-color 0.2s;">
+                    Nawiguj do toalety
+                </button>
+                <style>
+                    button:hover {{
+                        background-color: #1976D2;
+                    }}
+                </style>
+            """
             if not comments_list:
                 wholePopUp = f"""
                     <div style="width: 300px; max-height:300px, overflow-y: auto;">
@@ -408,6 +460,7 @@ class Server:
                             {photo_html}
                         </div>
                         {comments_html}
+                        {navigate_button_html}
                         {comment_button_html}
                     </div>
                 """
@@ -424,6 +477,7 @@ class Server:
                         </div>
                         <h3 style='margin-top: 0;'>Komentarze</h3>
                         {comments_html}
+                        {navigate_button_html}
                         {comment_button_html}
                     </div>
                 """
