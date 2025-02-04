@@ -323,15 +323,16 @@ class Server:
             # Calculate distance if user location exists
             distance_km = None
             is_within_range = False
+            # If user_marker exists, calculate the distance
             if user_marker:
                 distance = haversine(
-                    user_marker['lat'], 
-                    user_marker['lon'],
-                    marker['lat'], 
-                    marker['lon']
+                    user_marker['lat'], user_marker['lon'],
+                    marker['lat'], marker['lon']
                 )
-                distance_km = distance / 1000  # Convert to kilometers
+                distance_km = distance / 1000  # Convert distance to kilometers
                 is_within_range = distance_km <= 10
+            else:
+                is_within_range = False
 
             # Create toilet marker with modified navigation button
             lat = marker['lat']
