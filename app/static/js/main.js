@@ -228,6 +228,16 @@ window.navigateToToilet = function(targetLat, targetLon) {
                 const userLat = position.coords.latitude;
                 const userLon = position.coords.longitude;
                 
+                // Oblicz odległość używając funkcji haversine (dodaj tę funkcję)
+                const distance = calculateDistance(userLat, userLon, targetLat, targetLon);
+                const distanceKm = distance / 1000;
+
+                if (distanceKm > 10) {
+                    alert('Nie możesz nawigować do tej toalety - znajduje się dalej niż 10km od Twojej lokalizacji.');
+                    return;
+                }
+                
+                // Jeśli odległość jest OK, kontynuuj nawigację
                 fetch('/navigate', {
                     method: 'POST',
                     headers: {
@@ -243,7 +253,6 @@ window.navigateToToilet = function(targetLat, targetLon) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // Zamiast przeładowywać całą stronę, zaktualizuj tylko mapę
                         fetch('/render_map')
                             .then(response => response.text())
                             .then(html => {
@@ -259,3 +268,19 @@ window.navigateToToilet = function(targetLat, targetLon) {
         );
     }
 };
+
+// Dodaj funkcję do obliczania odległości
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // Promień Ziemi w metrach
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c; // w metrach
+}
