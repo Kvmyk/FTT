@@ -315,6 +315,40 @@ class Server:
                 icon=icon
             ).add_to(self.m)
         else:
+            # Get user location from session
+            user_id = session.get('user_id')
+            user_data = session.get(user_id, {}) if user_id else {}
+            user_marker = user_data.get('marker')
+            
+            # Calculate distance if user location exists
+            distance_km = None
+            is_within_range = False
+            if user_marker:
+                distance = haversine(
+                    user_marker['lat'], 
+                    user_marker['lon'],
+                    marker['lat'], 
+                    marker['lon']
+                )
+                distance_km = distance / 1000  # Convert to kilometers
+                is_within_range = distance_km <= 5
+
+            # Create toilet marker with modified navigation button
+            lat = marker['lat']
+            lon = marker['lon']
+
+            navigate_button_html = f"""
+                <button onclick="window.parent.navigateToToilet({lat}, {lon})" 
+                        style="width: 80%; background-color: #2196F3; color: white; 
+                               padding: 14px 20px; margin: 8px 0; border: none; 
+                               border-radius: 4px; cursor: {('pointer' if is_within_range else 'not-allowed')}; 
+                               font-family: 'Roboto', sans-serif; 
+                               font-weight: 300;
+                               opacity: {('1' if is_within_range else '0.5')};"
+                        {'disabled' if not is_within_range else ''}>
+                    {'Nawiguj' if is_within_range else 'Za daleko (>5km)'}
+                </button>
+            """
 
             # Marker toalety (globalny)
             iconToilet = folium.CustomIcon(
@@ -428,22 +462,6 @@ class Server:
                 <style>
                     button:hover {{
                         background-color: #C92704;
-                    }}
-                </style>
-            """
-            navigate_button_html = f"""
-                <button onclick="window.parent.navigateToToilet({lat}, {lon})" 
-                        style="width: 80%; background-color: #2196F3; color: white; 
-                               padding: 14px 20px; margin: 8px 0; border: none; 
-                               border-radius: 4px; cursor: pointer; 
-                               font-family: 'Roboto', sans-serif; 
-                               font-weight: 300; 
-                               transition: background-color 0.2s;">
-                    Nawiguj do toalety
-                </button>
-                <style>
-                    button:hover {{
-                        background-color: #1976D2;
                     }}
                 </style>
             """
