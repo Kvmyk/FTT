@@ -323,7 +323,24 @@ class Server:
                 <div id='comments-container-{marker["lat"]}-{marker["lon"]}'>
                     <div id='comments-{marker["lat"]}-{marker["lon"]}'
                          style='max-height: 80px; overflow-y: hidden; font-family: Roboto, sans-serif; 
-                                scrollbar-width: thin; scrollbar-color: #888 #f1f1f1;'>
+                                scrollbar-width: thin; scrollbar-color: #888 #f1f1f1; padding-right: 5px;
+                                -webkit-scrollbar-width: thin; -webkit-scrollbar-color: #888 #f1f1f1;'>
+                        <style>
+                            #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar {{
+                                width: 8px;
+                            }}
+                            #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar-track {{
+                                background: #f1f1f1;
+                                border-radius: 4px;
+                            }}
+                            #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar-thumb {{
+                                background: #888;
+                                border-radius: 4px;
+                            }}
+                            #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar-thumb:hover {{
+                                background: #555;
+                            }}
+                        </style>
             """
             
             # Pokazujemy tylko pierwszy komentarz domyślnie
@@ -351,7 +368,7 @@ class Server:
                         var commentsDiv = document.getElementById('comments-{marker["lat"]}-{marker["lon"]}');
                         var arrow = this.querySelector('span');
                         if (commentsDiv.style.maxHeight === '80px') {{
-                            commentsDiv.style.maxHeight = 'none';
+                            commentsDiv.style.maxHeight = '200px';
                             commentsDiv.style.overflowY = 'scroll';
                             arrow.textContent = '▲';
                         }} else {{
