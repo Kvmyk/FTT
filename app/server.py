@@ -537,8 +537,8 @@ class Server:
                 location=[lat, lon],
                 popup=folium.Popup(
                     wholePopUp,
-                    min_width=300,  # Set minimum width in pixels
-                    max_height=400  # Set maximum height in pixels
+                    min_width=250,  # Set minimum width in pixels
+                    max_height=300  # Set maximum height in pixels
                 ),
                 icon=iconToilet
             ).add_to(self.m)

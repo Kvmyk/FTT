@@ -347,8 +347,9 @@ label {
 /* Mobile devices */
 @media screen and (max-width: 480px) {
     #myModal {
-        width: 90%;
-        padding: 10px;
+        width: 85%;
+        max-width: 320px;
+        padding: 15px;
     }
     
     .circle-plus {
@@ -365,6 +366,11 @@ label {
 /* Tablets */
 @media screen and (min-width: 481px) and (max-width: 768px) {
     #myModal {
+        width: 60%;
+        max-width: 450px;
+    }
+    
+    #myModal {
         width: 70%;
     }
 }
@@ -372,12 +378,22 @@ label {
 /* Larger screens */
 @media screen and (min-width: 769px) {
     #myModal {
+        width: 40%;
+        max-width: 500px;
+    }
+    
+    #myModal {
         width: 50%;
         max-width: 600px;
     }
 }
 
 @media screen and (max-height: 600px) {
+    #myModal {
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+    
     #myModal {
         max-height: 90vh;
         overflow-y: auto;
