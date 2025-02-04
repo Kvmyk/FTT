@@ -232,8 +232,8 @@ window.navigateToToilet = function(targetLat, targetLon) {
                 const distance = calculateDistance(userLat, userLon, targetLat, targetLon);
                 const distanceKm = distance / 1000;
 
-                if (distanceKm > 7) {
-                    alert('Nie możesz nawigować do tej toalety - znajduje się dalej niż 7km od Twojej lokalizacji.');
+                if (distanceKm > 8) {
+                    alert('Nie możesz nawigować do tej toalety - znajduje się dalej niż w promieniu 8km od Twojej lokalizacji.');
                     return;
                 }
                 
