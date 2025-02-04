@@ -265,7 +265,6 @@ class Server:
                 user_id = str(uuid.uuid4())
                 session['user_id'] = user_id
             
-            # Aktualizuj marker użytkownika
             user_data = session.get(user_id, {})
             user_marker = {
                 "lat": data['user_lat'],
@@ -275,7 +274,6 @@ class Server:
             }
             user_data['marker'] = user_marker
             
-            # Wyznacz trasę do wybranej toalety
             route = get_route(
                 data['user_lat'], 
                 data['user_lon'],
@@ -284,9 +282,14 @@ class Server:
             )
             
             if route:
-                user_data['current_route'] = route
-                session[user_id] = user_data  # Zapisz dane w sesji
-                self.update_map()  # Zaktualizuj mapę
+                # Zapisz tylko niezbędne dane trasy
+                simplified_route = {
+                    'coordinates': route['routes'][0]['geometry']['coordinates'],
+                    'distance': route['routes'][0]['distance']
+                }
+                user_data['current_route'] = simplified_route
+                session[user_id] = user_data
+                self.update_map()
                 return jsonify({'status': 'success'})
             
             return jsonify({'status': 'error', 'message': 'Could not calculate route'})
@@ -619,6 +622,18 @@ class Server:
                         """
                     )
                 ).add_to(self.m)
+
+        # Dodawanie trasy na mapę
+        for user_id, user_data in session.items():
+            if isinstance(user_data, dict) and 'current_route' in user_data:
+                route_data = user_data['current_route']
+                coordinates = route_data['coordinates']
+                folium.PolyLine(
+                    locations=[[coord[1], coord[0]] for coord in coordinates],
+                    weight=2,
+                    color='blue',
+                    opacity=0.8
+                ).add_to(self.map)
 
         # Zwracamy kod HTML gotowy do wstawienia w przeglądarkę (w <div id="map">)
         return self.m._repr_html_()
