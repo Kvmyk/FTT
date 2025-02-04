@@ -339,7 +339,7 @@ class Server:
 
             navigate_button_html = f"""
                 <div>
-                    <button onclick="{f'window.parent.navigateToToilet({lat}, {lon})' if is_within_range else 'alert(\'Ta toaleta znajduje się zbyt daleko\')'}" 
+                    <button onclick="{f'window.parent.navigateToToilet({lat}, {lon})' if is_within_range else 'alert(\"Ta toaleta znajduje się zbyt daleko\")'}" 
                             style="width: 80%; background-color: red; color: white; 
                                    padding: 14px 20px; margin: 8px 0; border: none; 
                                    border-radius: 4px; cursor: {('pointer' if is_within_range else 'not-allowed')}; 
