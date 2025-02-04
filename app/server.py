@@ -334,49 +334,36 @@ class Server:
                     <p>{first_comment.get('comment')}</p>
                 """
 
-                # Pozostałe komentarze w ukrytym div'ie
+                # Pozostałe komentarze 
                 if len(comments_list) > 1:
-                    comments_html += f"""
-                    <div id='hidden-comments-{marker["lat"]}-{marker["lon"]}' style='display: none;'>
-            """
                     for c in comments_list[1:]:
                         comments_html += f"""
                         <hr style="border-top: 1px solid #ccc;" />
                         <p><strong>Ocena:</strong> {c.get('rating')}</p>
                         <p>{c.get('comment')}</p>
-            """
-                    comments_html += "</div>"
+                        """
 
             comments_html += "</div>"
 
             if len(comments_list) > 1:
                 comments_html += f"""
-                    <button onclick="toggleComments('{marker["lat"]}-{marker["lon"]}')"
-                            id='toggle-btn-{marker["lat"]}-{marker["lon"]}'
-                            style="width: auto; background: none; color: #666; padding: 4px 8px; 
-                                   margin: 2px 0; border: none; cursor: pointer; 
-                                   font-family: 'Roboto', sans-serif; font-size: 12px;">
-                        <span id='arrow-{marker["lat"]}-{marker["lon"]}'>▼</span> Więcej komentarzy
+                    <button onclick="
+                        var commentsDiv = document.getElementById('comments-{marker["lat"]}-{marker["lon"]}');
+                        var arrow = this.querySelector('span');
+                        if (commentsDiv.style.maxHeight === '80px') {{
+                            commentsDiv.style.maxHeight = 'none';
+                            commentsDiv.style.overflowY = 'scroll';
+                            arrow.textContent = '▲';
+                        }} else {{
+                            commentsDiv.style.maxHeight = '80px';
+                            commentsDiv.style.overflowY = 'hidden';
+                            arrow.textContent = '▼';
+                        }}"
+                        style="width: auto; background: none; color: #666; padding: 4px 8px; 
+                               margin: 2px 0; border: none; cursor: pointer; 
+                               font-family: 'Roboto', sans-serif; font-size: 12px;">
+                        <span>▼</span> Więcej komentarzy
                     </button>
-                    <script>
-                        function toggleComments(id) {{
-                            const hiddenComments = document.getElementById('hidden-comments-' + id);
-                            const commentsDiv = document.getElementById('comments-' + id);
-                            const arrow = document.getElementById('arrow-' + id);
-                            
-                            if (hiddenComments.style.display === 'none') {{
-                                hiddenComments.style.display = 'block';
-                                commentsDiv.style.maxHeight = '300px';
-                                commentsDiv.style.overflowY = 'scroll';
-                                arrow.textContent = '▲';
-                            }} else {{
-                                hiddenComments.style.display = 'none';
-                                commentsDiv.style.maxHeight = '80px';
-                                commentsDiv.style.overflowY = 'hidden';
-                                arrow.textContent = '▼';
-                            }}
-                        }}
-                    </script>
                 """
             comments_html += "</div>"
 
