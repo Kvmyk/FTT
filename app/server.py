@@ -55,6 +55,7 @@ class Server:
             max_bounds=True
         )
 
+
     def load_markers(self):
         """Wczytuje listę toalet (markerów) z pliku data.json."""
         try:
@@ -346,17 +347,30 @@ class Server:
                 disabled_attr = 'disabled="disabled"'
 
             navigate_button_html = f"""
-                <div>
-                    <button {disabled_attr} onclick="{onclick_attr}" 
-                            class="popup-button"
-                            style="
-                                   pointer-events: {'auto' if is_within_range else 'none'};
-                                   filter: {'none' if is_within_range else 'brightness(0.8)'};
-                                   opacity: {'1' if is_within_range else '0.7'};">
-                        Nawiguj
-                    </button>
-                    {f'<span style="color: #d32f2f; font-size: 12px; margin-left: 8px;">Toaleta znajduje się dalej niż 10km</span>' if not is_within_range else ''}
-                </div>
+                <button onclick="window.parent.navigateToToilet({lat}, {lon})"
+                        class="popup-button" 
+                        style="
+                            opacity: {'1' if is_within_range else '0.7'};
+                            pointer-events: {'auto' if is_within_range else 'none'};
+                            filter: {'none' if is_within_range else 'brightness(0.8)'};
+                            width: 80%;
+                            background-color: red;
+                            color: white;
+                            padding: 14px 20px; 
+                            margin: 8px 0;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-family: 'Roboto', sans-serif;
+                            font-weight: 300;
+                            transition: all 0.3s ease;
+                        "
+                        onmouseover="this.style.backgroundColor='#C92704';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
+                        onmouseout="this.style.backgroundColor='red';this.style.transform='none';this.style.boxShadow='none'"
+                        >
+                    Nawiguj
+                </button>
+                {f'<span style="color: #d32f2f; font-size: 12px; margin-left: 8px;">Toaleta znajduje się dalej niż 10km</span>' if not is_within_range else ''}
             """
 
             # Marker toalety (globalny)
@@ -465,14 +479,25 @@ class Server:
             # Użycie współrzędnych jako identyfikatora
             comment_button_html = f"""
                 <button onclick="window.parent.openCommentModal({lat}, {lon})" 
-                        style="width: 80%; background-color: red; color: white; padding: 14px 20px; margin: 8px 0; border: none; border-radius: 4px; cursor: pointer; font-family: 'Roboto', sans-serif; font-weight: 300; transition: background-color 0.2s;">
+                        class="popup-button"
+                        style="
+                            width: 80%;
+                            background-color: red;
+                            color: white;
+                            padding: 14px 20px;
+                            margin: 8px 0;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-family: 'Roboto', sans-serif;
+                            font-weight: 300;
+                            transition: all 0.3s ease;
+                        "
+                        onmouseover="this.style.backgroundColor='#C92704';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
+                        onmouseout="this.style.backgroundColor='red';this.style.transform='none';this.style.boxShadow='none'"
+                >
                     Dodaj komentarz
                 </button>
-                <style>
-                    button:hover {{
-                        background-color: #C92704;
-                    }}
-                </style>
             """
             if not comments_list:
                 wholePopUp = f"""
