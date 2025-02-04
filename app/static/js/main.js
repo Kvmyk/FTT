@@ -243,14 +243,19 @@ window.navigateToToilet = function(targetLat, targetLon) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // Przeładuj całą stronę
-                        window.parent.location.reload();
+                        // Zamiast przeładowywać całą stronę, zaktualizuj tylko mapę
+                        fetch('/render_map')
+                            .then(response => response.text())
+                            .then(html => {
+                                document.getElementById('map').innerHTML = html;
+                            })
+                            .catch(error => console.error('Error updating map:', error));
                     } else {
                         alert('Nie udało się wyznaczyć trasy');
                     }
                 });
             },
-            (error) => alert('Nie udało się pobrać lokalizacji')
+            (error) => alert('Nie udało się pobrać lokalizacji: ' + error.message)
         );
     }
 };
