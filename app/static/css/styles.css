@@ -332,3 +332,47 @@ label {
         opacity: 0;
     }
 }
+
+/* Mobile devices */
+@media screen and (max-width: 480px) {
+    #myModal {
+        width: 90%;
+        padding: 10px;
+    }
+    
+    .circle-plus {
+        width: 30px;
+        height: 30px;
+        font-size: 20px;
+    }
+
+    #loadingOverlay .logo {
+        width: 200px;
+    }
+}
+
+/* Tablets */
+@media screen and (min-width: 481px) and (max-width: 768px) {
+    #myModal {
+        width: 70%;
+    }
+}
+
+/* Larger screens */
+@media screen and (min-width: 769px) {
+    #myModal {
+        width: 50%;
+        max-width: 600px;
+    }
+}
+
+@media screen and (max-height: 600px) {
+    #myModal {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    #loadingOverlay .logo {
+        width: 150px;
+    }
+}
