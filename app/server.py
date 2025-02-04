@@ -338,15 +338,15 @@ class Server:
             lon = marker['lon']
 
             navigate_button_html = f"""
-                <button onclick="window.parent.navigateToToilet({lat}, {lon})" 
+                <button onclick="{f'window.parent.navigateToToilet({lat}, {lon})' if is_within_range else 'void(0)'}" 
                         style="width: 80%; background-color: #2196F3; color: white; 
                                padding: 14px 20px; margin: 8px 0; border: none; 
                                border-radius: 4px; cursor: {('pointer' if is_within_range else 'not-allowed')}; 
                                font-family: 'Roboto', sans-serif; 
                                font-weight: 300;
                                opacity: {('1' if is_within_range else '0.5')};"
-                        {'disabled' if not is_within_range else ''}>
-                    {'Nawiguj' if is_within_range else 'Za daleko (>5km)'}
+                        {' disabled="disabled"' if not is_within_range else ''}>
+                    {('Nawiguj' if is_within_range else 'Za daleko (>5km)')}
                 </button>
             """
 
