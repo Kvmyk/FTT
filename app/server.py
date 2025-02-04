@@ -318,7 +318,7 @@ class Server:
                                 object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
                 """
 
-            # Sekcja komentarzy z przyciskiem rozwijania
+            # Sekcja komentarzy
             comments_html = f"""
                 <div id='comments-container-{marker["lat"]}-{marker["lon"]}'>
                     <div id='comments-{marker["lat"]}-{marker["lon"]}'
@@ -333,29 +333,15 @@ class Server:
                 """
             comments_html += "</div>"
             
-            if len(comments_list) > 2:  # Dodajemy przycisk tylko jeśli jest więcej niż 2 komentarze
+            if len(comments_list) > 2:
                 comments_html += f"""
-                    <button onclick="toggleComments('{marker["lat"]}-{marker["lon"]}')"
-                            id='expand-btn-{marker["lat"]}-{marker["lon"]}'
-                            style="width: 100%; background-color: #4CAF50; color: white; 
-                                   padding: 8px; margin: 4px 0; border: none; border-radius: 4px; 
-                                   cursor: pointer; font-family: 'Roboto', sans-serif;">
+                    <button onclick="document.getElementById('comments-{marker['lat']}-{marker['lon']}').style.maxHeight = 
+                        document.getElementById('comments-{marker['lat']}-{marker['lon']}').style.maxHeight === '100px' ? 'none' : '100px';"
+                        style="width: 100%; background-color: #4CAF50; color: white; padding: 8px; 
+                        margin: 4px 0; border: none; border-radius: 4px; cursor: pointer; 
+                        font-family: 'Roboto', sans-serif; font-size: 14px;">
                         Rozwiń komentarze
                     </button>
-                    <script>
-                        function toggleComments(id) {{
-                            const commentsDiv = document.getElementById('comments-' + id);
-                            const button = document.getElementById('expand-btn-' + id);
-                            
-                            if (commentsDiv.style.maxHeight === '100px') {{
-                                commentsDiv.style.maxHeight = 'none';
-                                button.textContent = 'Zwiń komentarze';
-                            }} else {{
-                                commentsDiv.style.maxHeight = '100px';
-                                button.textContent = 'Rozwiń komentarze';
-                            }}
-                        }}
-                    </script>
                 """
             comments_html += "</div>"
 
