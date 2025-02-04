@@ -331,23 +331,27 @@ class Server:
                     marker['lon']
                 )
                 distance_km = distance / 1000  # Convert to kilometers
-                is_within_range = distance_km <= 5
+                is_within_range = distance_km <= 10
 
             # Create toilet marker with modified navigation button
             lat = marker['lat']
             lon = marker['lon']
 
             navigate_button_html = f"""
-                <button onclick="{f'window.parent.navigateToToilet({lat}, {lon})' if is_within_range else ''}" 
-                        style="width: 80%; background-color: #2196F3; color: white; 
-                               padding: 14px 20px; margin: 8px 0; border: none; 
-                               border-radius: 4px; cursor: {('pointer' if is_within_range else 'not-allowed')}; 
-                               font-family: 'Roboto', sans-serif; 
-                               font-weight: 300;
-                               opacity: {('1' if is_within_range else '0.5')};"
-                        disabled={str(not is_within_range).lower()}>
-                    {('Nawiguj' if is_within_range else 'Za daleko (>5km)')}
-                </button>
+                <div>
+                    <button onclick="{f'window.parent.navigateToToilet({lat}, {lon})' if is_within_range else ''}" 
+                            style="width: 80%; background-color: #4CAF50; color: white; 
+                                   padding: 14px 20px; margin: 8px 0; border: none; 
+                                   border-radius: 4px; cursor: {('pointer' if is_within_range else 'not-allowed')}; 
+                                   font-family: 'Roboto', sans-serif; 
+                                   font-weight: 300;
+                                   filter: {('none' if is_within_range else 'brightness(0.8)')};
+                                   opacity: {('1' if is_within_range else '0.7')};"
+                            disabled={str(not is_within_range).lower()}>
+                        Nawiguj
+                    </button>
+                    {f'<span style="color: #d32f2f; font-size: 12px; margin-left: 8px;">Toaleta znajduje się dalej niż 5km</span>' if not is_within_range else ''}
+                </div>
             """
 
             # Marker toalety (globalny)
