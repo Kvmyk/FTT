@@ -284,10 +284,8 @@ class Server:
             )
             
             if route:
-                route_id = str(uuid.uuid4())  # Generate a unique route ID
-                # Zamiast zapisywać całą trasę w session[user_id]
-                session[user_id] = {'marker': user_marker, 'route_id': route_id}
-                # Duże dane trasy przechowuj w DB/Redis/plikach
+                user_data['current_route'] = route
+                session[user_id] = user_data  # Zapisz dane w sesji
                 self.update_map()  # Zaktualizuj mapę
                 return jsonify({'status': 'success'})
             

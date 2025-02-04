@@ -23,17 +23,17 @@ function sendPosition(position) {
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
-        localStorage.setItem('locationUpdated', 'true');
-        if (!sessionStorage.getItem('reloaded')) {
-            sessionStorage.setItem('reloaded', 'true');
-            window.location.reload();
-        }
+        // Zamiast przeładowywać stronę, pobierz i zaktualizuj mapę
+        return fetch('/render_map');
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('map').innerHTML = html;
         document.getElementById('loadingOverlay').style.display = 'none';
     })
     .catch((error) => {
         console.error('Error:', error);
     });
-
 }
 
 function showError(error) {
