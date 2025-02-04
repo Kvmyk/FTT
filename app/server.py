@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Ścieżka do pliku z ikoną (w katalogu static)
 toilet_icon = os.path.join('toilet_icon.png')
+user_icon = os.path.join('user_icon.png')
 
 class Server:
     def __init__(self):
@@ -300,7 +301,7 @@ class Server:
         if marker.get('name') == "User Location":
             # Marker użytkownika
             icon = folium.CustomIcon(
-                toilet_icon,
+                user_icon,
                 icon_size=(50, 50),
                 shadow_size=(50, 50)
             )
