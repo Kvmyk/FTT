@@ -322,7 +322,8 @@ class Server:
             comments_html = f"""
                 <div id='comments-container-{marker["lat"]}-{marker["lon"]}'>
                     <div id='comments-{marker["lat"]}-{marker["lon"]}'
-                         style='max-height: 100px; overflow-y: hidden; font-family: Roboto, sans-serif;'>
+                         style='max-height: 100px; overflow-y: scroll; font-family: Roboto, sans-serif; 
+                                scrollbar-width: thin; scrollbar-color: #888 #f1f1f1;'>
             """
             
             for c in comments_list:
@@ -337,10 +338,10 @@ class Server:
                 comments_html += f"""
                     <button onclick="document.getElementById('comments-{marker['lat']}-{marker['lon']}').style.maxHeight = 
                         document.getElementById('comments-{marker['lat']}-{marker['lon']}').style.maxHeight === '100px' ? 'none' : '100px';"
-                        style="width: 100%; background-color: #4CAF50; color: white; padding: 8px; 
-                        margin: 4px 0; border: none; border-radius: 4px; cursor: pointer; 
-                        font-family: 'Roboto', sans-serif; font-size: 14px;">
-                        Rozwiń komentarze
+                        style="width: auto; background: none; color: #666; padding: 4px 8px; 
+                               margin: 2px 0; border: none; cursor: pointer; 
+                               font-family: 'Roboto', sans-serif; font-size: 12px;">
+                        ▼ Więcej komentarzy
                     </button>
                 """
             comments_html += "</div>"
