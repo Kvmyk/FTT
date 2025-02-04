@@ -337,9 +337,16 @@ class Server:
             lat = marker['lat']
             lon = marker['lon']
 
+            if is_within_range:
+                onclick_attr = f"window.parent.navigateToToilet({lat}, {lon})"
+                disabled_attr = ""
+            else:
+                onclick_attr = ""
+                disabled_attr = 'disabled="disabled"'
+
             navigate_button_html = f"""
                 <div>
-                    <button {"disabled" if not is_within_range else ""} onclick="{ 'window.parent.navigateToToilet({lat}, {lon})' if is_within_range else ''}" 
+                    <button {disabled_attr} onclick="{onclick_attr}" 
                             style="width: 80%; background-color: red; color: white; 
                                    padding: 14px 20px; margin: 8px 0; border: none; 
                                    border-radius: 4px; cursor: {'pointer' if is_within_range else 'not-allowed'};
