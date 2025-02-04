@@ -607,7 +607,7 @@ class Server:
                 # Rysujemy czerwoną polilinię
                 folium.PolyLine(
                     locations=coordinates,
-                    color='#f21b3f',
+                    color='#fc2f00',
                     weight=5,
                     opacity=0.7
                 ).add_to(self.m)
