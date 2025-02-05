@@ -178,12 +178,18 @@ class MapManager:
 
     def add_route_to_map(self, route):
         coordinates = [(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']]
-        folium.PolyLine(
+        polyline = folium.PolyLine(
             locations=coordinates,
             color='#d00000',
             weight=5,
             opacity=0.7
         ).add_to(self.m)
+
+        # Dodajemy okienko po najechaniu na trasę
+        polyline.add_child(folium.Popup('Kliknij, aby zobaczyć trasę!', parse_html=True))
+
+        # Zdarzenie mouseover
+        polyline.on_mouseover = lambda e: folium.Popup("Jest to Twoja trasa!").add_to(self.m)
 
 class MarkerManager:
     def __init__(self):
