@@ -552,19 +552,19 @@ class Server:
         user_id = session.get('user_id')
         if not user_id:
             return
-
-        # Najpierw wyczyść stare trasy
+        
+        # Clear old routes
         self.routes_store.cleanup_old_routes()
         
-        # Generuj unikalny identyfikator trasy
+        # Generate unique route ID 
         route_id = str(uuid.uuid4())
         
-        # Zapisz trasę z timestampem
+        # Save route with timestamp
         self.routes_store.add_route(route_id, route)
         
-        # W sesji zapisz tylko id trasy
+        # Store only route ID in session
         user_data = session.get(user_id, {})
-        user_data['route_id'] = route_id
+        user_data['route_id'] = route_id 
         session[user_id] = user_data
 
     def update_map(self):
