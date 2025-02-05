@@ -622,6 +622,9 @@ class Server:
                 center_lat = user_marker['lat']
                 center_lon = user_marker['lon']
 
+        if self.m:
+            del self.m
+
         # Tworzymy mapę z uwzględnieniem centrum na user_marker (o ile jest)
         self.m = self.create_map(center_lat, center_lon)
 
