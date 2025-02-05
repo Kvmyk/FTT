@@ -80,10 +80,13 @@ class MapManager:
                  style="max-width: 150px; max-height: 150px; width: auto; height: auto; object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
         """ if photo_base64 else ""
 
+        # Sekcja komentarzy
         comments_html = f"""
             <div id='comments-container-{marker["lat"]}-{marker["lon"]}'>
                 <div id='comments-{marker["lat"]}-{marker["lon"]}'
-                     style='max-height: 80px; overflow-y: hidden; font-family: Roboto, sans-serif;'>
+                     style='max-height: 80px; overflow-y: hidden; font-family: Roboto, sans-serif; 
+                            scrollbar-width: thin; scrollbar-color: #888 #f1f1f1; padding-right: 5px;
+                            -webkit-scrollbar-width: thin; -webkit-scrollbar-color: #888 #f1f1f1;'>
                     {self.generate_comments_html(comments_list)}
                 </div>
             </div>
