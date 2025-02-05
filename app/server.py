@@ -28,7 +28,7 @@ class Server:
         # Configure server-side session storage (e.g., filesystem)
         self.app.config['SESSION_TYPE'] = 'filesystem'
         self.app.config['SESSION_PERMANENT'] = True
-        self.app.config['PERMANENT_SESSION_LIFETIME'] = 900  # 1 dzień (sekundy)
+        self.app.config['PERMANENT_SESSION_LIFETIME'] = 60  # 1 dzień (sekundy)
         self.app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session')
         if not os.path.exists(self.app.config['SESSION_FILE_DIR']):
             os.makedirs(self.app.config['SESSION_FILE_DIR'])
@@ -51,7 +51,7 @@ class Server:
         self.setup_routes()
 
     def cleanup_session_files(self):
-        session_lifetime = self.app.config.get('PERMANENT_SESSION_LIFETIME', 86400)
+        session_lifetime = self.app.config.get('PERMANENT_SESSION_LIFETIME', 60)
         session_dir = self.app.config.get('SESSION_FILE_DIR')
         if not session_dir or not os.path.isdir(session_dir):
             logging.warning("Katalog sesji nie istnieje lub nie jest zdefiniowany.")
