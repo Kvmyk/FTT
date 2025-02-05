@@ -41,6 +41,7 @@ class Server:
         # Domyślne współrzędne (np. Warszawa) - użyte TYLKO gdy user nie ustawił własnych
         self.default_lat = 52.2297
         self.default_lon = 21.0122
+        self.routes = []
 
         # Ładujemy globalne markery z pliku data.json (toalety)
         self.markers = self.load_markers()
@@ -626,7 +627,6 @@ class Server:
         # Tworzymy mapę z uwzględnieniem centrum na user_marker (o ile jest)
         if not hasattr(self, 'm'):  # Tworzymy mapę tylko raz
             self.m = self.create_map(center_lat, center_lon)
-            self.routes = []  # Dodajemy zmienną do przechowywania tras
 
         # Dodajemy globalne markery (toalety)
         for marker in self.markers:
@@ -692,6 +692,7 @@ class Server:
 
         # Zwracamy kod HTML gotowy do wstawienia w przeglądarkę (w <div id="map">)
         return self.m._repr_html_()
+
 
 
 
