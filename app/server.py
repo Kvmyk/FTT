@@ -19,18 +19,71 @@ logging.basicConfig(level=logging.DEBUG)
 toilet_icon = os.path.join('toilet_icon.png')
 user_icon = os.path.join('user_icon.png')
 
-class MapManager:
-    def __init__(self, default_lat=52.2297, default_lon=21.0122):
-        self.default_lat = default_lat
-        self.default_lon = default_lon
-        self.markers = []
-        self.m = None
+class Server:
+    def __init__(self):
+        self.app = Flask(__name__, static_url_path='/static')
+        self.app.secret_key = "twoj_sekretny_klucz"  # klucz do sesji - niezbędny
+        
+        # Configure server-side session storage (e.g., filesystem)
+        self.app.config['SESSION_TYPE'] = 'filesystem'
+        self.app.config['SESSION_PERMANENT'] = True
+        self.app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 dzień (sekundy)
+        self.app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session')
+        if not os.path.exists(self.app.config['SESSION_FILE_DIR']):
+            os.makedirs(self.app.config['SESSION_FILE_DIR'])
+        Session(self.app)
+
+        cleanup_thread = threading.Thread(target=self.cleanup_session_files_loop)
+        cleanup_thread.daemon = True
+        cleanup_thread.start()
+
+        # Domyślne współrzędne (np. Warszawa) - użyte TYLKO gdy user nie ustawił własnych
+        self.default_lat = 52.2297
+        self.default_lon = 21.0122
+
+        # Ładujemy globalne markery z pliku data.json (toalety)
+        self.markers = self.load_markers()
+
+        # Tworzymy na start pustą mapę, ale i tak będziemy ją przeładowywać w update_map()
+        self.m = self.create_map()
+
+        self.setup_routes()
+
+    def cleanup_session_files(self):
+        session_lifetime = self.app.config.get('PERMANENT_SESSION_LIFETIME', 3600)
+        session_dir = self.app.config.get('SESSION_FILE_DIR')
+        if not session_dir or not os.path.isdir(session_dir):
+            logging.warning("Katalog sesji nie istnieje lub nie jest zdefiniowany.")
+            return
+        now = time.time()
+        for filename in os.listdir(session_dir):
+            file_path = os.path.join(session_dir, filename)
+            if os.path.isfile(file_path):
+                file_mtime = os.path.getmtime(file_path)
+                if (now - file_mtime) > session_lifetime:
+                    try:
+                        os.remove(file_path)
+                        logging.debug(f"Usunięto stary plik sesji: {file_path}")
+                    except Exception as e:
+                        logging.error(f"Błąd podczas usuwania pliku {file_path}: {e}")
+
+    # Pętla uruchamiana w tle, która co określony czas wywołuje cleanup sesji
+    def cleanup_session_files_loop(self):
+        cleanup_interval = 3600  # czyszczenie co 1 godzinę
+        while True:
+            self.cleanup_session_files()
+            time.sleep(cleanup_interval)
 
     def create_map(self, center_lat=None, center_lon=None):
+        """
+        Tworzy nową instancję folium.Map. 
+        Jeśli center_lat/lon są None, użyjemy self.default_lat/lon.
+        """
         if center_lat is None:
             center_lat = self.default_lat
         if center_lon is None:
             center_lon = self.default_lon
+
         return folium.Map(
             location=[center_lat, center_lon],
             tiles="Cartodb positron",
@@ -43,9 +96,103 @@ class MapManager:
             max_bounds=True
         )
 
+    def load_markers(self):
+        """Wczytuje listę toalet (markerów) z pliku data.json."""
+        try:
+            with open(os.path.join('data', 'data.json'), 'r', encoding='utf-8') as file:
+                data = json.load(file)
+                if isinstance(data, list):
+                    return data
+                else:
+                    logging.error("Plik data.json nie zawiera listy.")
+                    return []
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logging.error(f"Problem z wczytaniem pliku data.json: {e}")
+            return []
+
+    def save_markers(self):
+        """Zapisuje obecne 'globalne' markery do pliku data.json."""
+        try:
+            with open(os.path.join('data', 'data.json'), 'w', encoding='utf-8') as file:
+                json.dump(self.markers, file, ensure_ascii=False, indent=4)
+        except Exception as e:
+            logging.error(f"Błąd przy zapisie do data.json: {e}")
+
+    def setup_routes(self):
+        @self.app.route('/')
+        def fullscreen():
+            return send_from_directory('static/html', 'template.html')
+
+        @self.app.route('/location', methods=['POST'])
+        def location():
+            data = request.json
+            user_id = session.get('user_id')
+            if not user_id:
+                user_id = str(uuid.uuid4())
+                session['user_id'] = user_id
+
+            # Słownik z danymi usera w sesji
+            user_data = session.get(user_id, {})
+            if not user_data:
+                user_data = {"marker": None, "current_route": None}
+
+            # Zapisz nowy marker użytkownika
+            user_marker = {
+                "lat": data['lat'],
+                "lon": data['lon'],
+                "name": "User Location",
+                "description": "This is your location"
+            }
+            user_data["marker"] = user_marker
+            session[user_id] = user_data
+
+            # Obliczamy trasę do najbliższego markera
+            nearest_marker = find_nearest_marker(user_marker, self.markers)
+            if nearest_marker:
+                route = get_route(
+                    user_marker['lat'], user_marker['lon'],
+                    nearest_marker['lat'], nearest_marker['lon']
+                )
+                if route:
+                    self.add_route_to_map(route)
+
+            return jsonify({
+                'status': 'success',
+                'lat': user_marker['lat'],
+                'lon': user_marker['lon']
+            })
+
+        @self.app.route('/render_map', methods=['GET'])
+        def render_map():
+            return self.update_map()
+
+        @self.app.route('/add_comment', methods=['POST'])
+        def add_comment():
+            data = request.form
+            lat = float(data.get('lat'))
+            lon = float(data.get('lon'))
+            comment = data.get('comment')
+            rating = data.get('rating')
+
+            for marker in self.markers:
+                if marker['lat'] == lat and marker['lon'] == lon:
+                    marker.setdefault('comments', []).append({'comment': comment, 'rating': rating})
+                    self.save_markers()
+                    return jsonify({'status': 'success'})
+
+            return jsonify({'status': 'error', 'message': 'Marker not found'}), 404
+
     def add_marker_to_map(self, marker):
+        """
+        Dodaje POJEDYNCZY marker do mapy self.m.
+        """
         if marker.get('name') == "User Location":
-            icon = folium.CustomIcon(user_icon, icon_size=(50, 50), shadow_size=(50, 50))
+            # Marker użytkownika
+            icon = folium.CustomIcon(
+                user_icon,
+                icon_size=(50, 50),
+                shadow_size=(50, 50)
+            )
             popup_content = f"""
                 <div style="width: 300px;">
                     <h2>User Location</h2>
@@ -58,101 +205,50 @@ class MapManager:
                 icon=icon
             ).add_to(self.m)
         else:
-            iconToilet = folium.CustomIcon(toilet_icon, icon_size=(50, 50), shadow_size=(50, 50))
+            iconToilet = folium.CustomIcon(
+                toilet_icon, 
+                icon_size=(50, 50), 
+                shadow_size=(50, 50)
+            )
             lat = marker['lat']
             lon = marker['lon']
+            popup_content = f"""
+                <div style="width: 300px;">
+                    <h2>{marker['name']}</h2>
+                    <p>{marker.get('description', 'No description')}</p>
+                </div>
+            """
             folium.Marker(
                 location=[lat, lon],
                 icon=iconToilet,
-                popup=folium.Popup(self.generate_marker_popup(marker), min_width=250, max_height=300)
+                popup=folium.Popup(popup_content, min_width=250, max_height=300)
             ).add_to(self.m)
 
-    def generate_marker_popup(self, marker):
-        name = marker.get('name', 'Unknown')
-        description = marker.get('description', 'No description')
-        payable = "TAK" if marker.get('payable', False) else "NIE"
-        onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
-        rating = marker.get('rating', 'Brak oceny')
-        photo_base64 = marker.get('photo', None)
-        comments_list = marker.get('comments', [])
-        photo_html = f"""
-            <img src="data:image/jpeg;base64,{photo_base64}" 
-                 style="max-width: 150px; max-height: 150px; width: auto; height: auto; object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
-        """ if photo_base64 else ""
-
-        # Sekcja komentarzy
-        comments_html = f"""
-            <div id='comments-container-{marker["lat"]}-{marker["lon"]}'>
-                <div id='comments-{marker["lat"]}-{marker["lon"]}'
-                     style='max-height: 80px; overflow-y: hidden; font-family: Roboto, sans-serif; 
-                            scrollbar-width: thin; scrollbar-color: #888 #f1f1f1; padding-right: 5px;
-                            -webkit-scrollbar-width: thin; -webkit-scrollbar-color: #888 #f1f1f1;'>
-                    {self.generate_comments_html(comments_list)}
-                </div>
-            </div>
+    def add_route_to_map(self, route):
         """
-
-        # Obliczanie odległości od użytkownika
-        user_marker = session.get('user_marker', None)
-        is_within_range = False
-        if user_marker:
-            distance_km = haversine(user_marker['lat'], user_marker['lon'], marker['lat'], marker['lon']) / 1000
-            is_within_range = distance_km <= 10
-
-        # Przyciski
-        navigate_button_html = f"""
-            <button onclick="window.parent.navigateToToilet({marker['lat']}, {marker['lon']})"
-                    class="popup-button" 
-                    style="width: 80%; background-color: red; color: white; opacity: {'1' if is_within_range else '0.7'}; pointer-events: {'auto' if is_within_range else 'none'};">
-                Nawiguj
-            </button>
-            {f'<span style="color: #d32f2f; font-size: 12px;">Toaleta znajduje się dalej niż 10km</span>' if not is_within_range else ''}
+        Dodaje trasę do mapy
         """
-
-        comment_button_html = f"""
-            <button onclick="window.parent.openCommentModal({marker['lat']}, {marker['lon']})" 
-                    class="popup-button" style="width: 80%; background-color: green; color: white;">
-                Dodaj komentarz
-            </button>
-        """
-
-        return f"""
-            <div style="width: 300px; max-height:300px, overflow-y: auto;">
-                <h2>{name}</h2>
-                <p>{description}</p>
-                <p><strong>Płatna:</strong> {payable}</p>
-                <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                <p><strong>Ocena:</strong> {rating}</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
-                    {photo_html}
-                </div>
-                {comments_html}
-                {navigate_button_html}
-                {comment_button_html}
-            </div>
-        """
-
-    def generate_comments_html(self, comments_list):
-        comments_html = ""
-        if comments_list:
-            first_comment = comments_list[0]
-            comments_html += f"""
-                <p><strong>Ocena:</strong> {first_comment.get('rating')}</p>
-                <p>{first_comment.get('comment')}</p>
-            """
-            if len(comments_list) > 1:
-                for c in comments_list[1:]:
-                    comments_html += f"""
-                    <hr style="border-top: 1px solid #ccc;" />
-                    <p><strong>Ocena:</strong> {c.get('rating')}</p>
-                    <p>{c.get('comment')}</p>
-                    """
-        return comments_html
+        coordinates = [(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']]
+        folium.PolyLine(
+            locations=coordinates,
+            color='#d00000',
+            weight=5,
+            opacity=0.7
+        ).add_to(self.m)
 
     def update_map(self):
+        """
+        Buduje nową mapę, centrowaną na markerze użytkownika (jeśli istnieje)
+        lub na domyślnych współrzędnych. Następnie dodaje:
+          - globalne markery (toalety),
+          - marker użytkownika,
+          - trasę użytkownika (current_route).
+        Zwraca HTML do wstawienia na stronę.
+        """
         user_id = session.get('user_id')
         center_lat = self.default_lat
         center_lon = self.default_lon
+
         if user_id:
             user_data = session.get(user_id, {})
             user_marker = user_data.get('marker')
@@ -170,176 +266,17 @@ class MapManager:
             user_marker = user_data.get('marker')
             if user_marker:
                 self.add_marker_to_map(user_marker)
+
             route = user_data.get('current_route')
             if route:
                 self.add_route_to_map(route)
 
         return self.m._repr_html_()
 
-    def add_route_to_map(self, route):
-        coordinates = [(coord[1], coord[0]) for coord in route['routes'][0]['geometry']['coordinates']]
-        polyline = folium.PolyLine(
-            locations=coordinates,
-            color='#d00000',
-            weight=5,
-            opacity=0.7
-        ).add_to(self.m)
-
-        # Dodajemy okienko po najechaniu na trasę
-        polyline.add_child(folium.Popup('Kliknij, aby zobaczyć trasę!', parse_html=True))
-
-        # Zdarzenie mouseover
-        polyline.on_mouseover = lambda e: folium.Popup("Jest to Twoja trasa!").add_to(self.m)
-
-class MarkerManager:
-    def __init__(self):
-        self.data_changed = False
-
-    def load_markers(self):
-        try:
-            with open(os.path.join('data', 'data.json'), 'r', encoding='utf-8') as file:
-                data = json.load(file)
-                if isinstance(data, list):
-                    return data
-                else:
-                    logging.error("Plik data.json nie zawiera listy.")
-                    return []
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            logging.error(f"Problem z wczytaniem pliku data.json: {e}")
-            return []
-
-    def save_markers(self, markers):
-        if self.data_changed:
-            try:
-                with open(os.path.join('data', 'data.json'), 'w', encoding='utf-8') as file:
-                    json.dump(markers, file, ensure_ascii=False, indent=4)
-                self.data_changed = False
-            except Exception as e:
-                logging.error(f"Błąd przy zapisie do data.json: {e}")
-
-    def add_marker(self, markers, new_marker):
-        markers.append(new_marker)
-        self.data_changed = True
-
-class Server:
-    def __init__(self):
-        self.app = Flask(__name__, static_url_path='/static')
-        self.app.secret_key = "twoj_sekretny_klucz"
-        self.app.config['SESSION_TYPE'] = 'filesystem'
-        self.app.config['SESSION_PERMANENT'] = True
-        self.app.config['PERMANENT_SESSION_LIFETIME'] = 3600
-        self.app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session')
-        if not os.path.exists(self.app.config['SESSION_FILE_DIR']):
-            os.makedirs(self.app.config['SESSION_FILE_DIR'])
-        Session(self.app)
-
-        self.map_manager = MapManager()
-        self.marker_manager = MarkerManager()
-        self.markers = self.marker_manager.load_markers()
-
-        self.setup_routes()
-
-    def setup_routes(self):
-        @self.app.route('/')
-        def fullscreen():
-            return send_from_directory('static/html', 'template.html')
-
-        @self.app.route('/location', methods=['POST'])
-        def location():
-            data = request.json
-            user_id = session.get('user_id')
-            if not user_id:
-                user_id = str(uuid.uuid4())
-                session['user_id'] = user_id
-
-            user_marker = {
-                "lat": data['lat'],
-                "lon": data['lon'],
-                "name": "User Location",
-                "description": "This is your location"
-            }
-            session['user_marker'] = user_marker
-
-            nearest_marker = find_nearest_marker(user_marker, self.markers)
-            if nearest_marker:
-                route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
-                if route:
-                    self.map_manager.add_route_to_map(route)
-
-            return jsonify({'status': 'success', 'lat': user_marker['lat'], 'lon': user_marker['lon']})
-
-        @self.app.route('/nearest_toilet_distance', methods=['GET'])
-        def nearest_toilet_distance():
-            user_id = session.get('user_id')
-            if not user_id:
-                return jsonify({'status': 'error', 'message': 'User not identified'}), 404
-
-            user_data = session.get(user_id, {})
-            user_marker = user_data.get('marker')
-            if not user_marker:
-                return jsonify({'status': 'error', 'message': 'No user marker set'}), 404
-
-            nearest_marker = find_nearest_marker(user_marker, self.markers)
-            if not nearest_marker:
-                return jsonify({'status': 'error', 'message': 'No toilets found'}), 404
-
-            route = get_route(
-                user_marker['lat'], user_marker['lon'],
-                nearest_marker['lat'], nearest_marker['lon']
-            )
-            if not route:
-                return jsonify({'status': 'error', 'message': 'Route not found'}), 404
-
-            distance = route['routes'][0]['distance']  # metry
-            distance_text = format_distance_text(distance)
-
-            return jsonify({
-                'status': 'success',
-                'distance': distance_text,
-                'name': nearest_marker['name']
-            })
-
-        @self.app.route('/submit', methods=['POST'])
-        def submit():
-            data = request.form
-            userInput = data.get('userInput', '')
-            description = data.get('description', '')
-            payable = data.get('payable', 'false').lower() == 'true'
-            onlyForClients = data.get('onlyForClients', 'false').lower() == 'true'
-            rating = data.get('rating', '0')
-            photo = request.files.get('photos')
-            photo_base64 = None
-            if photo:
-                photo_base64 = self.save_photo(photo)
-
-            lat, lon = get_coordinates(userInput)
-            if lat and lon:
-                new_marker = {
-                    "lat": lat,
-                    "lon": lon,
-                    "name": userInput,
-                    "description": description,
-                    "payable": payable,
-                    "onlyForClients": onlyForClients,
-                    "rating": rating,
-                    "photo": photo_base64
-                }
-                self.marker_manager.add_marker(self.markers, new_marker)
-                self.marker_manager.save_markers(self.markers)
-                return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
-            else:
-                return jsonify({'status': 'error', 'message': 'Location not found'})
-
-        @self.app.route('/render_map', methods=['GET'])
-        def render_map():
-            return self.map_manager.update_map()
-
-    def save_photo(self, photo):
-        photo_filename = f"{uuid.uuid4()}.jpg"
-        photo_path = os.path.join('static/images', photo_filename)
-        photo.save(photo_path)
-        with open(photo_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode('utf-8')
-
-    def run(self):
+    def runThePage(self):
         self.app.run(host="2a01:4f9:2b:289c::130", port=80)
+
+# Uruchomienie aplikacji
+if __name__ == "__main__":
+    server = Server()
+    server.run()
