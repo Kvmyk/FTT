@@ -70,7 +70,7 @@ class Server:
 
     # Pętla uruchamiana w tle, która co określony czas wywołuje cleanup sesji
     def cleanup_session_files_loop(self):
-        cleanup_interval = 60  # czyszczenie co 1 godzinę
+        cleanup_interval = 3600  # czyszczenie co 1 godzinę
         while True:
             self.cleanup_session_files()
             time.sleep(cleanup_interval)
@@ -327,6 +327,8 @@ class Server:
             )
             
             if route:
+                user_data['current_route'] = route
+                session[user_id] = user_data  # Zapisz dane w sesji
                 self.update_map()  # Zaktualizuj mapę
                 return jsonify({'status': 'success'})
             
