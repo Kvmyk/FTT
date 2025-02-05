@@ -603,27 +603,43 @@ class Server:
             if route_id and len(self.markers) > 0:
                 route = self.routes_store.get_route(route_id)
                 if route:
-                    # Add debug logging
-                    print(f"Route structure: {route}")
-                    
-                    # Safe access to route data
                     try:
-                        if isinstance(route, dict) and 'routes' in route:
-                            coordinates = [
-                                (coord[1], coord[0])
-                                for coord in route['routes'][0]['geometry']['coordinates']
-                            ]
+                        
+                        coordinates = None
+                        distance = 0
+                        
+                        if isinstance(route, dict):
+                            if 'routes' in route and route['routes']:
+                                coordinates = [(coord[1], coord[0]) 
+                                             for coord in route['routes'][0]['geometry']['coordinates']]
+                                distance = route['routes'][0]['distance']
+                            else:
+                                coordinates = [(coord[1], coord[0]) for coord in route.get('coordinates', [])]
+                                distance = route.get('distance', 0)
                         else:
-                            # Assume route is directly the coordinates array
                             coordinates = [(coord[1], coord[0]) for coord in route]
+                            distance = 0  # No distance available for raw coordinates
+                        
+                        if coordinates:
+                            # Draw the route
+                            folium.PolyLine(
+                                locations=coordinates,
+                                color='#d00000',
+                                weight=5,
+                                opacity=0.7
+                            ).add_to(self.m)
                             
-                        # Draw the route
-                        folium.PolyLine(
-                            locations=coordinates,
-                            color='#d00000',
-                            weight=5,
-                            opacity=0.7
-                        ).add_to(self.m)
+                            # Add distance marker if available
+                            if distance:
+                                distance_text = f"{distance / 1000:.2f} km"
+                                folium.Element(
+                                    """
+                                    <div style="...">
+                                        {distance_text}
+                                    </div>
+                                    """
+                                ).add_to(self.m)
+                                
                     except Exception as e:
                         print(f"Error processing route: {e}")
                         # Continue without drawing route
