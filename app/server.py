@@ -241,6 +241,37 @@ class Server:
 
             return jsonify({'status': 'success', 'lat': user_marker['lat'], 'lon': user_marker['lon']})
 
+        @self.app.route('/nearest_toilet_distance', methods=['GET'])
+        def nearest_toilet_distance():
+            user_id = session.get('user_id')
+            if not user_id:
+                return jsonify({'status': 'error', 'message': 'User not identified'}), 404
+
+            user_data = session.get(user_id, {})
+            user_marker = user_data.get('marker')
+            if not user_marker:
+                return jsonify({'status': 'error', 'message': 'No user marker set'}), 404
+
+            nearest_marker = find_nearest_marker(user_marker, self.markers)
+            if not nearest_marker:
+                return jsonify({'status': 'error', 'message': 'No toilets found'}), 404
+
+            route = get_route(
+                user_marker['lat'], user_marker['lon'],
+                nearest_marker['lat'], nearest_marker['lon']
+            )
+            if not route:
+                return jsonify({'status': 'error', 'message': 'Route not found'}), 404
+
+            distance = route['routes'][0]['distance']  # metry
+            distance_text = format_distance_text(distance)
+
+            return jsonify({
+                'status': 'success',
+                'distance': distance_text,
+                'name': nearest_marker['name']
+            })
+
         @self.app.route('/submit', methods=['POST'])
         def submit():
             data = request.form
