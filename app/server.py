@@ -89,9 +89,26 @@ class MapManager:
             </div>
         """
 
+        # Obliczanie odległości od użytkownika
+        user_marker = session.get('user_marker', None)
+        is_within_range = False
+        if user_marker:
+            distance_km = haversine(user_marker['lat'], user_marker['lon'], marker['lat'], marker['lon']) / 1000
+            is_within_range = distance_km <= 10
+
+        # Przyciski
+        navigate_button_html = f"""
+            <button onclick="window.parent.navigateToToilet({marker['lat']}, {marker['lon']})"
+                    class="popup-button" 
+                    style="width: 80%; background-color: red; color: white; opacity: {'1' if is_within_range else '0.7'}; pointer-events: {'auto' if is_within_range else 'none'};">
+                Nawiguj
+            </button>
+            {f'<span style="color: #d32f2f; font-size: 12px;">Toaleta znajduje się dalej niż 10km</span>' if not is_within_range else ''}
+        """
+
         comment_button_html = f"""
             <button onclick="window.parent.openCommentModal({marker['lat']}, {marker['lon']})" 
-                    class="popup-button" style="width: 80%; background-color: red; color: white;">
+                    class="popup-button" style="width: 80%; background-color: green; color: white;">
                 Dodaj komentarz
             </button>
         """
@@ -107,6 +124,7 @@ class MapManager:
                     {photo_html}
                 </div>
                 {comments_html}
+                {navigate_button_html}
                 {comment_button_html}
             </div>
         """
