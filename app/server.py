@@ -327,8 +327,6 @@ class Server:
             )
             
             if route:
-                user_data['current_route'] = route
-                session[user_id] = user_data  # Zapisz dane w sesji
                 self.update_map()  # Zaktualizuj mapę
                 return jsonify({'status': 'success'})
             
