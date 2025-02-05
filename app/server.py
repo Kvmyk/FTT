@@ -553,12 +553,14 @@ class Server:
         if not user_id:
             return
 
+        # Najpierw wyczyść stare trasy
+        self.routes_store.cleanup_old_routes()
+        
         # Generuj unikalny identyfikator trasy
         route_id = str(uuid.uuid4())
         
-        # Zapisz trasę w pliku
-        self.routes_store.routes[route_id] = route
-        self.routes_store.save_routes()
+        # Zapisz trasę z timestampem
+        self.routes_store.add_route(route_id, route)
         
         # W sesji zapisz tylko id trasy
         user_data = session.get(user_id, {})
