@@ -622,12 +622,6 @@ class Server:
                 center_lat = user_marker['lat']
                 center_lon = user_marker['lon']
 
-        # Usuwamy starą mapę przed stworzeniem nowej
-        del self.m
-        # Tworzymy mapę z uwzględnieniem centrum na user_marker (o ile jest)
-        self.m = self.create_map(center_lat, center_lon)
-        
-
         # Dodajemy globalne markery (toalety)
         for marker in self.markers:
             self.add_marker_to_map(marker)
