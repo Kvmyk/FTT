@@ -627,6 +627,10 @@ class Server:
         # Tworzymy mapę z uwzględnieniem centrum na user_marker (o ile jest)
         self.m = self.create_map(center_lat, center_lon)
 
+        for layer in list(self.m._children.values()):
+            if isinstance(layer, folium.vector_layers.PolyLine):
+                self.m.remove_child(layer)
+
         # Dodajemy globalne markery (toalety)
         for marker in self.markers:
             self.add_marker_to_map(marker)
