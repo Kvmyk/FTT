@@ -8,6 +8,7 @@ import base64
 import uuid
 import logging
 
+from routes_store import RoutesStore
 from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
 
@@ -33,6 +34,9 @@ class Server:
         self.m = self.create_map()
 
         self.setup_routes()
+
+        # Dodaj do istniejącego __init__
+        self.routes_store = RoutesStore()
 
     def create_map(self, center_lat=None, center_lon=None):
         """
@@ -545,21 +549,21 @@ class Server:
             self.save_markers()
 
     def add_route_to_map(self, route):
-        """
-        Zapisuje JEDNĄ trasę (current_route) w sesji aktualnego użytkownika
-        i (opcjonalnie) od razu wywołuje update_map().
-        """
         user_id = session.get('user_id')
         if not user_id:
-            logging.warning("Brak user_id w sesji – nie można zapisać trasy.")
             return
 
+        # Generuj unikalny identyfikator trasy
+        route_id = str(uuid.uuid4())
+        
+        # Zapisz trasę w pliku
+        self.routes_store.routes[route_id] = route
+        self.routes_store.save_routes()
+        
+        # W sesji zapisz tylko id trasy
         user_data = session.get(user_id, {})
-        user_data['current_route'] = route
+        user_data['route_id'] = route_id
         session[user_id] = user_data
-
-        # Opcjonalnie można odświeżyć mapę już teraz
-        self.update_map()
 
     def update_map(self):
         """
