@@ -182,11 +182,21 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function submitComment() {
-    var lat = document.getElementById('commentModal').dataset.lat;
-    var lon = document.getElementById('commentModal').dataset.lon;
     var comment = document.getElementById('commentText').value;
     var rating = document.getElementById('commentRating').value;
+    if (!comment || !rating) {
+        alert('Wszystkie pola muszą być wypełnione.');
+        return;
+    }
 
+    if (!validateRating()) {
+        return;
+    }
+    
+    var lat = document.getElementById('commentModal').dataset.lat;
+    var lon = document.getElementById('commentModal').dataset.lon;
+
+    
     var formData = new FormData();
     formData.append('lat', lat);
     formData.append('lon', lon);
