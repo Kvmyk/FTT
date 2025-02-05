@@ -626,77 +626,73 @@ class Server:
         # Tworzymy mapę z uwzględnieniem centrum na user_marker (o ile jest)
         if not hasattr(self, 'm'):  # Tworzymy mapę tylko raz
             self.m = self.create_map(center_lat, center_lon)
+            self.routes = []  # Dodajemy zmienną do przechowywania tras
 
         # Dodajemy globalne markery (toalety)
         for marker in self.markers:
             self.add_marker_to_map(marker)
 
         # Usuwamy stare trasy, jeśli istnieją
+        if self.routes:
+            for route in self.routes:
+                self.m._children.pop(route._name, None)  # Bezpieczne usuwanie trasy
+
+        # Dodajemy trasę użytkownika, jeśli istnieje
         user_data = session.get(user_id, {})
         route = user_data.get('current_route')
         if route:
-            # Usuwanie poprzedniej trasy (jeśli jest)
-            for item in list(self.m._children.values()):  # Zmieniamy na listę, aby uniknąć modyfikacji słownika w trakcie iteracji
-                if isinstance(item, folium.PolyLine):  # Usuwamy tylko obiekty PolyLine
-                    self.m._children.pop(item._name)
+            coordinates = [
+                (coord[1], coord[0])
+                for coord in route['routes'][0]['geometry']['coordinates']
+            ]
+            distance = route['routes'][0]['distance']  # w metrach
+            distance_text = f"{distance / 1000:.2f} km"
 
-        # Dodajemy trasę użytkownika, jeśli istnieje
-        if user_id:
-            user_data = session.get(user_id, {})
-            user_marker = user_data.get('marker')
-            if user_marker:
-                self.add_marker_to_map(user_marker)
+            # Rysujemy czerwoną polilinię
+            polyline = folium.PolyLine(
+                locations=coordinates,
+                color='#d00000',
+                weight=5,
+                opacity=0.7
+            ).add_to(self.m)
 
-            route = user_data.get('current_route')
-            if route:
-                coordinates = [
-                    (coord[1], coord[0])
-                    for coord in route['routes'][0]['geometry']['coordinates']
-                ]
-                distance = route['routes'][0]['distance']  # w metrach
-                distance_text = f"{distance / 1000:.2f} km"
+            # Przechowujemy trasę, aby móc ją usunąć później
+            self.routes.append(polyline)
 
-                # Rysujemy czerwoną polilinię
-                folium.PolyLine(
-                    locations=coordinates,
-                    color='#d00000',
-                    weight=5,
-                    opacity=0.7
-                ).add_to(self.m)
+            # Znacznik z odległością w połowie trasy
+            mid_point_index = len(coordinates) // 2
+            mid_point = coordinates[mid_point_index]
+            offset_latitude = 0.0007  # przesuwamy napis troszkę do góry
+            offset_longitude = 0.0007  # przesuwamy napis troszkę w bok
+            mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
 
-                # Znacznik z odległością w połowie trasy
-                mid_point_index = len(coordinates) // 2
-                mid_point = coordinates[mid_point_index]
-                offset_latitude = 0.0007  # przesuwamy napis troszkę do góry
-                offset_longitude = 0.0007  # przesuwamy napis troszkę w bok
-                mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
-
-                folium.Marker(
-                    location=mid_point_with_offset,
-                    icon=folium.DivIcon(
-                        html=f"""
-                            <div style="
-                                font-size: 14px; 
-                                color: #D32F2F;
-                                font-weight: bold;
-                                background-color: rgba(255, 255, 255, 0.9);
-                                padding: 0.4em 0.8em;
-                                border-radius: 0.3em;
-                                text-align: center;
-                                font-family: Arial, sans-serif;
-                                box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
-                                display: inline-block;
-                                min-width: max-content;
-                                white-space: nowrap;
-                            ">
-                                {distance_text}
-                            </div>
-                        """
-                    )
-                ).add_to(self.m)
+            folium.Marker(
+                location=mid_point_with_offset,
+                icon=folium.DivIcon(
+                    html=f"""
+                        <div style="
+                            font-size: 14px; 
+                            color: #D32F2F;
+                            font-weight: bold;
+                            background-color: rgba(255, 255, 255, 0.9);
+                            padding: 0.4em 0.8em;
+                            border-radius: 0.3em;
+                            text-align: center;
+                            font-family: Arial, sans-serif;
+                            box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
+                            display: inline-block;
+                            min-width: max-content;
+                            white-space: nowrap;
+                        ">
+                            {distance_text}
+                        </div>
+                    """
+                )
+            ).add_to(self.m)
 
         # Zwracamy kod HTML gotowy do wstawienia w przeglądarkę (w <div id="map">)
         return self.m._repr_html_()
+
 
 
 
