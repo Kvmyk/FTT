@@ -14,4 +14,4 @@ if __name__ == "__main__":
     import threading
     monitor_thread = threading.Thread(target=monitor_memory)
     monitor_thread.start()
-    runner.run()
+    runner.runThePage()

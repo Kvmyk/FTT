@@ -276,7 +276,3 @@ class Server:
     def runThePage(self):
         self.app.run(host="2a01:4f9:2b:289c::130", port=80)
 
-# Uruchomienie aplikacji
-if __name__ == "__main__":
-    server = Server()
-    server.run()
