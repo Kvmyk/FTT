@@ -606,9 +606,9 @@ class Server:
         """
         Buduje nową mapę, centrowaną na markerze użytkownika (jeśli istnieje)
         lub na domyślnych współrzędnych. Następnie dodaje:
-          - globalne markery (toalety),
-          - marker użytkownika,
-          - trasę użytkownika (current_route).
+        - globalne markery (toalety),
+        - marker użytkownika,
+        - trasę użytkownika (current_route).
         Zwraca HTML do wstawienia na stronę.
         """
         user_id = session.get('user_id')
@@ -622,6 +622,8 @@ class Server:
                 center_lat = user_marker['lat']
                 center_lon = user_marker['lon']
 
+        # Usuwamy starą mapę przed stworzeniem nowej
+        del self.m
         # Tworzymy mapę z uwzględnieniem centrum na user_marker (o ile jest)
         self.m = self.create_map(center_lat, center_lon)
 
