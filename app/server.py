@@ -636,8 +636,8 @@ class Server:
         route = user_data.get('current_route')
         if route:
             # Usuwanie poprzedniej trasy (jeśli jest)
-            for item in self.m._children.values():
-                if isinstance(item, folium.PolyLine):
+            for item in list(self.m._children.values()):  # Zmieniamy na listę, aby uniknąć modyfikacji słownika w trakcie iteracji
+                if isinstance(item, folium.PolyLine):  # Usuwamy tylko obiekty PolyLine
                     self.m._children.pop(item._name)
 
         # Dodajemy trasę użytkownika, jeśli istnieje
@@ -697,6 +697,7 @@ class Server:
 
         # Zwracamy kod HTML gotowy do wstawienia w przeglądarkę (w <div id="map">)
         return self.m._repr_html_()
+
 
 
     def runThePage(self):
