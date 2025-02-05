@@ -232,7 +232,7 @@ window.navigateToToilet = function(targetLat, targetLon) {
                 const distance = calculateDistance(userLat, userLon, targetLat, targetLon);
                 const distanceKm = distance / 1000;
 
-                if (distanceKm > 3) {
+                if (distanceKm > 3000) {
                     alert('Nie możesz nawigować do tej toalety - znajduje się dalej niż w promieniu 3km od Twojej lokalizacji.');
                     return;
                 }
