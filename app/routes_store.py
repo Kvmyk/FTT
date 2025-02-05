@@ -51,3 +51,6 @@ class RoutesStore:
             'timestamp': time.time()
         }
         self.save_routes()
+
+    def get_route(self, route_id):
+        return self.routes.get(route_id)
