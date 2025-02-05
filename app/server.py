@@ -599,16 +599,17 @@ class Server:
         user_data['current_route'] = route
         session[user_id] = user_data
 
-        # Opcjonalnie można odświeżyć mapę już teraz
-        self.update_map()
+        # Zamiast od razu wywoływać update_map(), po prostu zaktualizuj trasę
+        # (to się zrobi podczas kolejnego renderowania mapy)
+
 
     def update_map(self):
         """
-        Buduje nową mapę, centrowaną na markerze użytkownika (jeśli istnieje)
-        lub na domyślnych współrzędnych. Następnie dodaje:
-          - globalne markery (toalety),
-          - marker użytkownika,
-          - trasę użytkownika (current_route).
+        Buduje mapę z uwzględnieniem centrum na user_marker (o ile jest).
+        Następnie dodaje:
+        - globalne markery (toalety),
+        - marker użytkownika,
+        - trasę użytkownika (current_route).
         Zwraca HTML do wstawienia na stronę.
         """
         user_id = session.get('user_id')
@@ -623,13 +624,23 @@ class Server:
                 center_lon = user_marker['lon']
 
         # Tworzymy mapę z uwzględnieniem centrum na user_marker (o ile jest)
-        self.m = self.create_map(center_lat, center_lon)
+        if not hasattr(self, 'm'):  # Tworzymy mapę tylko raz
+            self.m = self.create_map(center_lat, center_lon)
 
         # Dodajemy globalne markery (toalety)
         for marker in self.markers:
             self.add_marker_to_map(marker)
 
-        # Dodajemy marker + trasę użytkownika
+        # Usuwamy stare trasy, jeśli istnieją
+        user_data = session.get(user_id, {})
+        route = user_data.get('current_route')
+        if route:
+            # Usuwanie poprzedniej trasy (jeśli jest)
+            for item in self.m._children.values():
+                if isinstance(item, folium.PolyLine):
+                    self.m._children.pop(item._name)
+
+        # Dodajemy trasę użytkownika, jeśli istnieje
         if user_id:
             user_data = session.get(user_id, {})
             user_marker = user_data.get('marker')
@@ -637,7 +648,7 @@ class Server:
                 self.add_marker_to_map(user_marker)
 
             route = user_data.get('current_route')
-            if route and len(self.markers) > 0:
+            if route:
                 coordinates = [
                     (coord[1], coord[0])
                     for coord in route['routes'][0]['geometry']['coordinates']
@@ -686,6 +697,7 @@ class Server:
 
         # Zwracamy kod HTML gotowy do wstawienia w przeglądarkę (w <div id="map">)
         return self.m._repr_html_()
+
 
     def runThePage(self):
         self.app.run(host = "2a01:4f9:2b:289c::130", port=80)
