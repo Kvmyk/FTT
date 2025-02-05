@@ -115,6 +115,17 @@ function validateRating() {
     return true;
 }
 
+function validateCommentRating() {
+    const ratingInput = document.getElementById('commentRating');
+    const rating = parseInt(ratingInput.value, 10);
+    if (rating < 1 || rating > 10) {
+        alert('Ocena musi być w zakresie od 1 do 10.');
+        return false;
+    }
+    return true;
+}
+
+
 function submitModal() {
     var userInput = document.getElementById('userInput').value;
     var descriptionInput = document.getElementById('descriptionInput').value;
@@ -189,10 +200,10 @@ function submitComment() {
         return;
     }
 
-    if (!validateRating()) {
+    if (!validateCommentRating()) {
         return;
     }
-    
+
     var lat = document.getElementById('commentModal').dataset.lat;
     var lon = document.getElementById('commentModal').dataset.lon;
 
