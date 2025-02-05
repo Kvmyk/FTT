@@ -553,31 +553,13 @@ class Server:
         if not user_id:
             return
         
-        # Clear old routes
-        self.routes_store.cleanup_old_routes()
-        
-        # Generate unique route ID 
         route_id = str(uuid.uuid4())
-        
-        # Save route with timestamp
-        self.routes_store.add_route(route_id, route)
-        
-        # Store only route ID in session
-        user_data = session.get(user_id, {})
-        user_data['route_id'] = route_id 
-        session[user_id] = user_data
-
-    def add_route_to_map(self, route):
-        user_id = session.get('user_id')
-        if not user_id:
-            return
-        
-        route_id = str(uuid.uuid4())
+        # Debug print
+        print(f"Saving route structure: {route}")
         self.routes_store.add_route(route_id, route)
         
         user_data = session.get(user_id, {})
-        user_data['route_id'] = route_id  # Only store ID
-        # Remove current_route from session if it exists
+        user_data['route_id'] = route_id
         if 'current_route' in user_data:
             del user_data['current_route']
         session[user_id] = user_data
@@ -621,10 +603,31 @@ class Server:
             if route_id and len(self.markers) > 0:
                 route = self.routes_store.get_route(route_id)
                 if route:
-                    coordinates = [
-                        (coord[1], coord[0])
-                        for coord in route['routes'][0]['geometry']['coordinates']
-                    ]
+                    # Add debug logging
+                    print(f"Route structure: {route}")
+                    
+                    # Safe access to route data
+                    try:
+                        if isinstance(route, dict) and 'routes' in route:
+                            coordinates = [
+                                (coord[1], coord[0])
+                                for coord in route['routes'][0]['geometry']['coordinates']
+                            ]
+                        else:
+                            # Assume route is directly the coordinates array
+                            coordinates = [(coord[1], coord[0]) for coord in route]
+                            
+                        # Draw the route
+                        folium.PolyLine(
+                            locations=coordinates,
+                            color='#d00000',
+                            weight=5,
+                            opacity=0.7
+                        ).add_to(self.m)
+                    except Exception as e:
+                        print(f"Error processing route: {e}")
+                        # Continue without drawing route
+
                     distance = route['routes'][0]['distance']  # w metrach
                     distance_text = f"{distance / 1000:.2f} km"
 
