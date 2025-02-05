@@ -24,19 +24,6 @@ class Server:
     def __init__(self):
         self.app = Flask(__name__, static_url_path='/static')
         self.app.secret_key = "twoj_sekretny_klucz"  # klucz do sesji - niezbędny
-        
-        # Configure server-side session storage (e.g., filesystem)
-        self.app.config['SESSION_TYPE'] = 'filesystem'
-        self.app.config['SESSION_PERMANENT'] = True
-        self.app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 dzień (sekundy)
-        self.app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session')
-        if not os.path.exists(self.app.config['SESSION_FILE_DIR']):
-            os.makedirs(self.app.config['SESSION_FILE_DIR'])
-        Session(self.app)
-
-        cleanup_thread = threading.Thread(target=self.cleanup_session_files_loop)
-        cleanup_thread.daemon = True
-        cleanup_thread.start()
 
         # Domyślne współrzędne (np. Warszawa) - użyte TYLKO gdy user nie ustawił własnych
         self.default_lat = 52.2297
@@ -49,31 +36,6 @@ class Server:
         self.m = self.create_map()
 
         self.setup_routes()
-
-    def cleanup_session_files(self):
-        session_lifetime = self.app.config.get('PERMANENT_SESSION_LIFETIME', 3600)
-        session_dir = self.app.config.get('SESSION_FILE_DIR')
-        if not session_dir or not os.path.isdir(session_dir):
-            logging.warning("Katalog sesji nie istnieje lub nie jest zdefiniowany.")
-            return
-        now = time.time()
-        for filename in os.listdir(session_dir):
-            file_path = os.path.join(session_dir, filename)
-            if os.path.isfile(file_path):
-                file_mtime = os.path.getmtime(file_path)
-                if (now - file_mtime) > session_lifetime:
-                    try:
-                        os.remove(file_path)
-                        logging.debug(f"Usunięto stary plik sesji: {file_path}")
-                    except Exception as e:
-                        logging.error(f"Błąd podczas usuwania pliku {file_path}: {e}")
-
-    # Pętla uruchamiana w tle, która co określony czas wywołuje cleanup sesji
-    def cleanup_session_files_loop(self):
-        cleanup_interval = 3600  # czyszczenie co 1 godzinę
-        while True:
-            self.cleanup_session_files()
-            time.sleep(cleanup_interval)
 
     def create_map(self, center_lat=None, center_lon=None):
         """
