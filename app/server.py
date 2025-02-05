@@ -9,7 +9,6 @@ import uuid
 import logging
 import threading
 import time
-from redis import Redis
 from flask_session import Session
 
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -25,12 +24,14 @@ class Server:
     def __init__(self):
         self.app = Flask(__name__, static_url_path='/static')
         self.app.secret_key = "twoj_sekretny_klucz"  # klucz do sesji - niezbędny
-
-        self.app.config['SESSION_TYPE'] = 'redis'
-        self.app.config['SESSION_PERMANENT'] = False
-        self.app.config['SESSION_USE_SIGNER'] = True
-        self.app.config['SESSION_REDIS'] = Redis(host='localhost', port=6379)
-
+        
+        # Configure server-side session storage (e.g., filesystem)
+        self.app.config['SESSION_TYPE'] = 'filesystem'
+        self.app.config['SESSION_PERMANENT'] = True
+        self.app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 dzień (sekundy)
+        self.app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session')
+        if not os.path.exists(self.app.config['SESSION_FILE_DIR']):
+            os.makedirs(self.app.config['SESSION_FILE_DIR'])
         Session(self.app)
 
         cleanup_thread = threading.Thread(target=self.cleanup_session_files_loop)
