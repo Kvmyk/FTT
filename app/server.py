@@ -9,7 +9,7 @@ import uuid
 import logging
 import threading
 import time
-import redis
+from redis import Redis
 from flask_session import Session
 
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -29,7 +29,7 @@ class Server:
         self.app.config['SESSION_TYPE'] = 'redis'
         self.app.config['SESSION_PERMANENT'] = False
         self.app.config['SESSION_USE_SIGNER'] = True
-        self.app.config['SESSION_REDIS'] = redis(host='localhost', port=6379)
+        self.app.config['SESSION_REDIS'] = Redis(host='localhost', port=6379)
 
         Session(self.app)
 
