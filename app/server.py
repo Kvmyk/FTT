@@ -9,6 +9,7 @@ import uuid
 import logging
 import threading
 import time
+import gc 
 from flask_session import Session
 
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -34,10 +35,9 @@ class Server:
             os.makedirs(self.app.config['SESSION_FILE_DIR'])
         Session(self.app)
 
-        cleanup_thread = threading.Thread(target=self.cleanup_session_files_loop)
-        cleanup_thread.daemon = True
-        cleanup_thread.start()
-
+        self.cleanup_thread = None
+        self.start_cleanup_thread()
+        
         # Domyślne współrzędne (np. Warszawa) - użyte TYLKO gdy user nie ustawił własnych
         self.default_lat = 52.2297
         self.default_lon = 21.0122
@@ -45,10 +45,17 @@ class Server:
         # Ładujemy globalne markery z pliku data.json (toalety)
         self.markers = self.load_markers()
 
-        # Tworzymy na start pustą mapę, ale i tak będziemy ją przeładowywać w update_map()
-        self.m = self.create_map()
+        # Inicjalizacja mapy jako None
+        self.m = None
 
         self.setup_routes()
+    
+    def start_cleanup_thread(self):
+        if not self.cleanup_thread:
+            self.cleanup_thread = threading.Thread(target=self.cleanup_session_files_loop)
+            self.cleanup_thread.daemon = True
+            self.cleanup_thread.start()
+
 
     def cleanup_session_files(self):
         session_lifetime = self.app.config.get('PERMANENT_SESSION_LIFETIME', 3600)
@@ -76,16 +83,18 @@ class Server:
             time.sleep(cleanup_interval)
 
     def create_map(self, center_lat=None, center_lon=None):
-        """
-        Tworzy nową instancję folium.Map. 
-        Jeśli center_lat/lon są None, użyjemy self.default_lat/lon.
-        """
+        """Tworzy nową instancję mapy, usuwając starą"""
+        if hasattr(self, 'm') and self.m is not None:
+            del self.m  # Explicitly delete old map
+            self.m = None
+            gc.collect()
+            
         if center_lat is None:
             center_lat = self.default_lat
         if center_lon is None:
             center_lon = self.default_lon
 
-        return folium.Map(
+        self.m = folium.Map(
             location=[center_lat, center_lon],
             tiles="Cartodb positron",
             zoom_start=15,
@@ -96,6 +105,7 @@ class Server:
             width='100%',
             max_bounds=True
         )
+        return self.m
 
 
     def load_markers(self):
@@ -603,14 +613,14 @@ class Server:
         self.update_map()
 
     def update_map(self):
-        """
-        Buduje nową mapę, centrowaną na markerze użytkownika (jeśli istnieje)
-        lub na domyślnych współrzędnych. Następnie dodaje:
-          - globalne markery (toalety),
-          - marker użytkownika,
-          - trasę użytkownika (current_route).
-        Zwraca HTML do wstawienia na stronę.
-        """
+        """Aktualizuje mapę, najpierw ją usuwając"""
+        # Wyczyść starą mapę
+        if hasattr(self, 'm') and self.m is not None:
+            del self.m
+            self.m = None
+            gc.collect()
+            
+        # Ustaw centrum mapy
         user_id = session.get('user_id')
         center_lat = self.default_lat
         center_lon = self.default_lon
@@ -622,6 +632,10 @@ class Server:
                 center_lat = user_marker['lat']
                 center_lon = user_marker['lon']
 
+        # Utwórz nową mapę
+        self.m = self.create_map(center_lat, center_lon)
+
+        # Dodaj markery i trasy
         # Dodajemy globalne markery (toalety)
         for marker in self.markers:
             self.add_marker_to_map(marker)
