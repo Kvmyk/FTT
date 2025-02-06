@@ -46,7 +46,7 @@
                         // Dodaj nasłuchiwanie po załadowaniu zawartości iframe
                         mapIframe.onload = function() {
                             const iframeDocument = mapIframe.contentDocument || mapIframe.contentWindow.document;
-                            const paths = iframeDocument.querySelectorAll('path');
+                            const paths = iframeDocument.querySelectorAll('.leaflet-interactive');
                             paths.forEach(path => {
                                 path.addEventListener('mouseover', () => {
                                     const nearestPinInfo = document.getElementById('nearestPinInfo');
