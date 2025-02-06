@@ -29,67 +29,36 @@
                 })
                 .catch(error => console.error('Error:', error));
 
-            // 2. Ładujemy mapę (iframe)
-            fetch('/render_map')
+                fetch('/render_map')
                 .then(response => response.text())
                 .then(mapHtml => {
+                    // Wstaw wygenerowany HTML mapy
                     const mapContainer = document.getElementById('map');
                     mapContainer.innerHTML = mapHtml;
 
+                    // Znajdź `iframe` i ustaw odpowiednie style
                     const mapIframe = mapContainer.querySelector('iframe');
                     if (mapIframe) {
                         mapIframe.style.width = '100%';
-                        mapIframe.style.height = '100vh';
-                        mapIframe.style.border = 'none';
-                        
-                        // Nasłuchiwanie wiadomości z iframu
-                        window.addEventListener('message', function(event) {
-                            if (event.data.type === 'pathHover') {
-                                const nearestPinInfo = document.getElementById('nearestPinInfo');
-                                if (nearestPinInfo) {
-                                    nearestPinInfo.style.display = event.data.hover ? 'block' : 'none';
-                                }
-                            }
-                        });
+                        mapIframe.style.height = '100vh'; // Dopasuj do 100% wysokości okna przeglądarki
+                        mapIframe.style.border = 'none'; // Usuń obramowanie, jeśli niepotrzebne
 
-                        // 3. Po załadowaniu zawartości iframu wstrzykujemy do niego skrypt
+                        // Dodaj nasłuchiwanie po załadowaniu zawartości iframe
                         mapIframe.onload = function() {
-                            try {
-                                // Wersja z MutationObserver – nasłuchuje zmian w DOM
-                                const script = `
-                                    function attachHoverEvents() {
-                                        const paths = document.querySelectorAll('path.leaflet-interactive');
-                                        paths.forEach(path => {
-                                            // By nie dodawać wielokrotnie tych samych listenerów
-                                            if (!path.dataset.hoverBound) {
-                                                path.dataset.hoverBound = 'true';
-                                                path.addEventListener('mouseover', () => {
-                                                    window.parent.postMessage({type: 'pathHover', hover: true}, '*');
-                                                });
-                                                path.addEventListener('mouseout', () => {
-                                                    window.parent.postMessage({type: 'pathHover', hover: false}, '*');
-                                                });
-                                            }
-                                        });
-                                    }
-
-                                    // Najpierw spróbujmy dodać eventy od razu...
-                                    attachHoverEvents();
-
-                                    // ...a potem obserwujmy, czy Leaflet nie dodał nowych elementów
-                                    const observer = new MutationObserver(() => {
-                                        attachHoverEvents();
-                                    });
-                                    observer.observe(document.body, { childList: true, subtree: true });
-                                `;
-                                
-                                const iframeDocument = mapIframe.contentDocument || mapIframe.contentWindow.document;
-                                const scriptElement = iframeDocument.createElement('script');
-                                scriptElement.textContent = script;
-                                iframeDocument.body.appendChild(scriptElement);
-                            } catch (e) {
-                                console.error('Error injecting script:', e);
-                            }
+                            const iframeDocument = mapIframe.contentDocument || mapIframe.contentWindow.document;
+                            const paths = iframeDocument.querySelectorAll('path');
+                            paths.forEach(path => {
+                                path.addEventListener('mouseover', () => {
+                                    const nearestPinInfo = document.getElementById('nearestPinInfo');
+                                    nearestPinInfo.classList.remove('hide');
+                                    nearestPinInfo.classList.add('show');
+                                });
+                                path.addEventListener('mouseout', () => {
+                                    const nearestPinInfo = document.getElementById('nearestPinInfo');
+                                    nearestPinInfo.classList.remove('show');
+                                    nearestPinInfo.classList.add('hide');
+                                });
+                            });
                         };
                     }
                 })
