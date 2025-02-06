@@ -103,6 +103,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeCommentModal').addEventListener('click', function() {
         document.getElementById('commentModal').style.display = 'none';
     });
+
+    setupRouteHoverListeners();
 });
 
 function validateRating() {
@@ -329,4 +331,34 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 600);
         });
     });
+});
+
+function setupRouteHoverListeners() {
+    // Get the map iframe
+    const mapIframe = document.querySelector('#map iframe');
+    if (!mapIframe) return;
+
+    mapIframe.addEventListener('load', function() {
+        const iframeDocument = mapIframe.contentDocument || mapIframe.contentWindow.document;
+        const routePath = iframeDocument.querySelector('.route-path');
+        
+        if (routePath) {
+            routePath.addEventListener('mouseover', function() {
+                const nearestPinInfo = document.getElementById('nearestPinInfo');
+                nearestPinInfo.classList.remove('hide');
+                nearestPinInfo.classList.add('show');
+            });
+
+            routePath.addEventListener('mouseout', function() {
+                const nearestPinInfo = document.getElementById('nearestPinInfo');
+                nearestPinInfo.classList.remove('show');
+                nearestPinInfo.classList.add('hide');
+            });
+        }
+    });
+}
+
+// Call this function after map updates
+document.addEventListener('DOMContentLoaded', function() {
+    setupRouteHoverListeners();
 });
