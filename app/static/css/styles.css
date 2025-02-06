@@ -167,16 +167,15 @@ html, body {
 
 #nearestPinInfo {
     position: fixed;
-    bottom: 10px;
-    left: 10px;
-    background-color: white;
-    padding: 10px;
-    border: 1px solid black;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 10px 20px;
     border-radius: 5px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    z-index: 1001;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
     display: none;
-    opacity: 0;
     transition: opacity 0.3s ease-in-out;
     font-family: 'Roboto', sans-serif;
     font-weight: 300; /* Light */
@@ -430,5 +429,10 @@ iframe {
 
 .route-path {
     pointer-events: all !important;
-    cursor: pointer;
+    cursor: pointer !important;
+    transition: stroke-opacity 0.3s ease;
+}
+
+.route-path:hover {
+    stroke-opacity: 1 !important;
 }
