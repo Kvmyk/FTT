@@ -58,22 +58,23 @@ class Server:
 
 
     def cleanup_session_files(self):
-        session_lifetime = self.app.config.get('PERMANENT_SESSION_LIFETIME', 3600)
+        """Czyści stare pliki sesji"""
+        session_lifetime = 1800  # 30 minut
         session_dir = self.app.config.get('SESSION_FILE_DIR')
         if not session_dir or not os.path.isdir(session_dir):
-            logging.warning("Katalog sesji nie istnieje lub nie jest zdefiniowany.")
             return
+            
         now = time.time()
         for filename in os.listdir(session_dir):
             file_path = os.path.join(session_dir, filename)
             if os.path.isfile(file_path):
-                file_mtime = os.path.getmtime(file_path)
-                if (now - file_mtime) > session_lifetime:
+                # Sprawdź czas ostatniej modyfikacji
+                if (now - os.path.getmtime(file_path)) > session_lifetime:
                     try:
                         os.remove(file_path)
-                        logging.debug(f"Usunięto stary plik sesji: {file_path}")
-                    except Exception as e:
-                        logging.error(f"Błąd podczas usuwania pliku {file_path}: {e}")
+                        logging.debug(f"Usunięto plik sesji: {file_path}")
+                    except OSError as e:
+                        logging.error(f"Błąd podczas usuwania {file_path}: {e}")
 
     # Pętla uruchamiana w tle, która co określony czas wywołuje cleanup sesji
     def cleanup_session_files_loop(self):
@@ -343,6 +344,25 @@ class Server:
                 return jsonify({'status': 'success'})
             
             return jsonify({'status': 'error', 'message': 'Could not calculate route'})
+
+        @self.app.before_request
+        def check_session_status():
+            """Sprawdza status sesji przed każdym requestem"""
+            if 'last_activity' in session:
+                # Usuń sesję po 30 minutach nieaktywności
+                if time.time() - session['last_activity'] > 1800:  # 30 minut
+                    session.clear()
+                    return
+            session['last_activity'] = time.time()
+
+        @self.app.route('/clear_session', methods=['POST'])
+        def clear_session():
+            """Endpoint do czyszczenia sesji (wywoływany przez JavaScript przy zamknięciu karty)"""
+            try:
+                session.clear()
+                return jsonify({'status': 'success'})
+            except Exception as e:
+                return jsonify({'status': 'error', 'message': str(e)})
 
     def add_marker_to_map(self, marker):
         """

@@ -82,6 +82,12 @@
                 }
             }
         });
+
+        window.addEventListener('beforeunload', function() {
+            // Wyślij request do wyczyszczenia sesji
+            navigator.sendBeacon('/clear_session');
+        });
+
     </script>
 </head>
 <body>
