@@ -448,7 +448,6 @@ class Server:
                         # Dodaj komentarz tylko, jeśli go wcześniej nie było
                         if not any(c for c in comments if c['comment'] == description and c['rating'] == rating):
                             comments.append({'comment': description, 'rating': rating})
-                            self.save_markers()
                             gc.collect()
                         return
                         
@@ -716,6 +715,7 @@ class Server:
         except Exception as e:
             logging.error(f"Błąd podczas aktualizacji mapy: {e}")
             self.m = self.create_map()
+            gc.collect()
             return self.m
 
     def runThePage(self):
