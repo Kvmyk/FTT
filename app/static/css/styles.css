@@ -118,6 +118,14 @@ html, body {
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     font-family: 'Roboto', sans-serif;
     font-weight: 300; /* Light */
+    max-height: 80vh; /* maksymalna wysokość modalu */
+    overflow-y: auto; /* dodaj scrollowanie */
+}
+
+#myModal textarea {
+    /* istniejące style */
+    resize: vertical; /* pozwól tylko na pionowe rozszerzanie */
+    max-height: 200px; /* maksymalna wysokość textarea */
 }
 
 #commentModal {
