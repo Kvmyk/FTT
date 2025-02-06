@@ -196,14 +196,12 @@ class Server:
             user_data = session.get(user_id, {})
             user_marker = user_data.get('marker')
             if not user_marker:
-                # Return a default response instead of a 404 error if needed
                 response = jsonify({
-                    'status': 'success',
-                    'distance': '0 km',
-                    'name': 'Brak lokalizacji'
+                    'status': 'pending',
+                    'message': 'Czekaj, pobieranie lokalizacji...'
                 })
                 response.headers['Cache-Control'] = 'no-store'
-                return response, 200
+                return response, 202
 
             nearest_marker = find_nearest_marker(user_marker, self.markers)
             if not nearest_marker:
