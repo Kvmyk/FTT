@@ -10,6 +10,7 @@ import logging
 import threading
 import time
 import gc 
+import ctypes
 from flask_session import Session
 
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -353,7 +354,7 @@ class Server:
                 # Usuń sesję po 30 minutach nieaktywności
                 if time.time() - session['last_activity'] > 30:  # 30 minut
                     session.clear()
-                    gc.collect()  # Wymuś czyszczenie
+                    force_memory_cleanup()
                     return
             session['last_activity'] = time.time()
 
@@ -362,7 +363,7 @@ class Server:
             """Endpoint do czyszczenia sesji (wywoływany przez JavaScript przy zamknięciu karty)"""
             try:
                 session.clear()
-                gc.collect()  # Wymuś czyszczenie
+                force_memory_cleanup()
                 return jsonify({'status': 'success'})
             except Exception as e:
                 return jsonify({'status': 'error', 'message': str(e)})
@@ -743,3 +744,12 @@ class Server:
 
     def runThePage(self):
         self.app.run(host = "2a01:4f9:2b:289c::130", port=80)
+
+def force_memory_cleanup():
+    """Wymuś zwolnienie pamięci na Linuxie"""
+    gc.collect()
+    try:
+        libc = ctypes.CDLL("libc.so.6")
+        libc.malloc_trim(0)
+    except Exception as e:
+        logging.error(f"Memory trim failed: {e}")
