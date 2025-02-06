@@ -30,6 +30,7 @@ function sendPosition(position) {
     .then(html => {
         document.getElementById('map').innerHTML = html;
         document.getElementById('loadingOverlay').style.display = 'none';
+        initializeRouteHoverEffects(); // Add this line
     })
     .catch((error) => {
         console.error('Error:', error);
@@ -330,3 +331,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+function initializeRouteHoverEffects() {
+    const paths = document.querySelectorAll('path');
+    const nearestPinInfo = document.getElementById('nearestPinInfo');
+    const nearestPinText = document.getElementById('nearestPinText');
+    
+    paths.forEach(path => {
+        path.addEventListener('mouseover', () => {
+            if (nearestPinInfo && path.classList.contains('leaflet-interactive')) {
+                nearestPinInfo.classList.remove('hide');
+                nearestPinInfo.classList.add('show');
+            }
+        });
+        
+        path.addEventListener('mouseout', () => {
+            if (nearestPinInfo) {
+                nearestPinInfo.classList.remove('show');
+                nearestPinInfo.classList.add('hide');
+            }
+        });
+    });
+}
