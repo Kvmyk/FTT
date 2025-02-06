@@ -10,6 +10,7 @@ import logging
 import threading
 import time
 import gc 
+import ctypes
 from flask_session import Session
 
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -29,7 +30,7 @@ class Server:
         # Configure server-side session storage (e.g., filesystem)
         self.app.config['SESSION_TYPE'] = 'filesystem'
         self.app.config['SESSION_PERMANENT'] = True
-        self.app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 dzień (sekundy)
+        self.app.config['PERMANENT_SESSION_LIFETIME'] = 30  # 1 dzień (sekundy)
         self.app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session')
         if not os.path.exists(self.app.config['SESSION_FILE_DIR']):
             os.makedirs(self.app.config['SESSION_FILE_DIR'])
@@ -58,26 +59,28 @@ class Server:
 
 
     def cleanup_session_files(self):
-        session_lifetime = self.app.config.get('PERMANENT_SESSION_LIFETIME', 3600)
+        """Czyści stare pliki sesji"""
+        session_lifetime = 30  # 30 minut
         session_dir = self.app.config.get('SESSION_FILE_DIR')
         if not session_dir or not os.path.isdir(session_dir):
-            logging.warning("Katalog sesji nie istnieje lub nie jest zdefiniowany.")
             return
+            
         now = time.time()
         for filename in os.listdir(session_dir):
             file_path = os.path.join(session_dir, filename)
             if os.path.isfile(file_path):
-                file_mtime = os.path.getmtime(file_path)
-                if (now - file_mtime) > session_lifetime:
+                # Sprawdź czas ostatniej modyfikacji
+                if (now - os.path.getmtime(file_path)) > session_lifetime:
                     try:
                         os.remove(file_path)
-                        logging.debug(f"Usunięto stary plik sesji: {file_path}")
-                    except Exception as e:
-                        logging.error(f"Błąd podczas usuwania pliku {file_path}: {e}")
+                        gc.collect()  # Wymuś czyszczenie po każdym usuniętym pliku
+                        logging.debug(f"Usunięto plik sesji: {file_path}")
+                    except OSError as e:
+                        logging.error(f"Błąd podczas usuwania {file_path}: {e}")
 
     # Pętla uruchamiana w tle, która co określony czas wywołuje cleanup sesji
     def cleanup_session_files_loop(self):
-        cleanup_interval = 3600  # czyszczenie co 1 godzinę
+        cleanup_interval = 30  # czyszczenie co 1 godzinę
         while True:
             self.cleanup_session_files()
             time.sleep(cleanup_interval)
@@ -99,7 +102,7 @@ class Server:
             tiles="Cartodb positron",
             zoom_start=15,
             overlay=False,
-            min_zoom=2,
+            min_zoom=10,
             max_zoom=18,
             height='100%',
             width='100%',
@@ -344,256 +347,292 @@ class Server:
             
             return jsonify({'status': 'error', 'message': 'Could not calculate route'})
 
+        @self.app.before_request
+        def check_session_status():
+            """Sprawdza status sesji przed każdym requestem"""
+            if 'last_activity' in session:
+                # Usuń sesję po 30 minutach nieaktywności
+                if time.time() - session['last_activity'] > 30:  # 30 minut
+                    session.clear()
+                    force_memory_cleanup()
+                    return
+            session['last_activity'] = time.time()
+
+        @self.app.route('/clear_session', methods=['POST'])
+        def clear_session():
+            """Endpoint do czyszczenia sesji (wywoływany przez JavaScript przy zamknięciu karty)"""
+            try:
+                session.clear()
+                force_memory_cleanup()
+                return jsonify({'status': 'success'})
+            except Exception as e:
+                return jsonify({'status': 'error', 'message': str(e)})
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.
         """
 
-        if marker.get('name') == "User Location":
-            # Marker użytkownika
-            icon = folium.CustomIcon(
-                user_icon,
-                icon_size=(50, 50),
-                shadow_size=(50, 50)
-            )
-            popup_content = f"""
-                <div style="width: 300px;">
-                    <h2>User Location</h2>
-                    <p>{marker.get('description','')}</p>
-                </div>
-            """
-            folium.Marker(
-                location=[marker['lat'], marker['lon']],
-                popup=popup_content,
-                icon=icon
-            ).add_to(self.m)
-        else:
-            # Get user location from session
-            user_id = session.get('user_id')
-            user_data = session.get(user_id, {}) if user_id else {}
-            user_marker = user_data.get('marker')
-            
-            # Calculate distance if user location exists
-            distance_km = None
-            is_within_range = False
-            # If user_marker exists, calculate the distance
-            if user_marker:
-                distance = haversine(
-                    user_marker['lat'], user_marker['lon'],
-                    marker['lat'], marker['lon']
+        try:
+            if self.m is None:
+                self.m = self.create_map()
+
+            if marker.get('name') == "User Location":
+                # Marker użytkownika
+                icon = folium.CustomIcon(
+                    user_icon,
+                    icon_size=(50, 50),
+                    shadow_size=(50, 50)
                 )
-                distance_km = distance / 1000  # Convert distance to kilometers
-                is_within_range = distance_km <= 10
+                popup_content = f"""
+                    <div style="width: 300px;">
+                        <h2>User Location</h2>
+                        <p>{marker.get('description','')}</p>
+                    </div>
+                """
+                folium.Marker(
+                    location=[marker['lat'], marker['lon']],
+                    popup=popup_content,
+                    icon=icon
+                ).add_to(self.m)
             else:
+                # Get user location from session
+                user_id = session.get('user_id')
+                user_data = session.get(user_id, {}) if user_id else {}
+                user_marker = user_data.get('marker')
+                
+                # Calculate distance if user location exists
+                distance_km = None
                 is_within_range = False
+                # If user_marker exists, calculate the distance
+                if user_marker:
+                    distance = haversine(
+                        user_marker['lat'], user_marker['lon'],
+                        marker['lat'], marker['lon']
+                    )
+                    distance_km = distance / 1000  # Convert distance to kilometers
+                    is_within_range = distance_km <= 10
+                else:
+                    is_within_range = False
 
-            # Create toilet marker with modified navigation button
-            lat = marker['lat']
-            lon = marker['lon']
+                # Create toilet marker with modified navigation button
+                lat = marker['lat']
+                lon = marker['lon']
 
-            if is_within_range:
-                onclick_attr = f"window.parent.navigateToToilet({lat}, {lon})"
-                disabled_attr = ""
-            else:
-                onclick_attr = ""
-                disabled_attr = 'disabled="disabled"'
+                if is_within_range:
+                    onclick_attr = f"window.parent.navigateToToilet({lat}, {lon})"
+                    disabled_attr = ""
+                else:
+                    onclick_attr = ""
+                    disabled_attr = 'disabled="disabled"'
 
-            navigate_button_html = f"""
-                <button onclick="window.parent.navigateToToilet({lat}, {lon})"
-                        class="popup-button" 
-                        style="
-                            opacity: {'1' if is_within_range else '0.7'};
-                            pointer-events: {'auto' if is_within_range else 'none'};
-                            filter: {'none' if is_within_range else 'brightness(0.8)'};
-                            width: 80%;
-                            background-color: red;
-                            color: white;
-                            padding: 14px 20px; 
-                            margin: 8px 0;
-                            border: none;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-family: 'Roboto', sans-serif;
-                            font-weight: 300;
-                            transition: all 0.3s ease;
-                        "
-                        onmouseover="this.style.backgroundColor='#C92704';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
-                        onmouseout="this.style.backgroundColor='red';this.style.transform='none';this.style.boxShadow='none'"
-                        >
-                    Nawiguj
-                </button>
-                {f'<span style="color: #d32f2f; font-size: 12px; margin-left: 8px;">Toaleta znajduje się dalej niż 10km</span>' if not is_within_range else ''}
-            """
-
-            # Marker toalety (globalny)
-            iconToilet = folium.CustomIcon(
-                toilet_icon, 
-                icon_size=(50, 50), 
-                shadow_size=(50, 50)
-            )
-            lat = marker['lat']
-            lon = marker['lon']
-            existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
-
-            if existing_marker and marker != existing_marker:
-                # Dodaj komentarz i ocenę do istniejącego markera
-                description = marker.get('description')
-                rating = marker.get('rating')
-                if description and rating:
-                    comments = existing_marker.setdefault('comments', [])
-                    # Dodaj komentarz tylko, jeśli go wcześniej nie było
-                    if not any(c for c in comments if c['comment'] == description and c['rating'] == rating):
-                        comments.append({'comment': description, 'rating': rating})
-                    existing_marker['rating'] = rating  # Aktualizuj ocenę
-                    return
-                    
-            name = marker.get('name', 'Unknown')
-            description = marker.get('description', 'No description')
-            payable = "TAK" if marker.get('payable', False) else "NIE"
-            onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
-            rating = marker.get('rating', 'Brak oceny')
-            photo_base64 = marker.get('photo', None)
-            comments_list = marker.get('comments', [])
-            photo_html = ""
-            if photo_base64:
-                photo_html = f"""
-                    <img src="data:image/jpeg;base64,{photo_base64}" 
-                         style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
-                                object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
+                navigate_button_html = f"""
+                    <button onclick="window.parent.navigateToToilet({lat}, {lon})"
+                            class="popup-button" 
+                            style="
+                                opacity: {'1' if is_within_range else '0.7'};
+                                pointer-events: {'auto' if is_within_range else 'none'};
+                                filter: {'none' if is_within_range else 'brightness(0.8)'};
+                                width: 80%;
+                                background-color: red;
+                                color: white;
+                                padding: 14px 20px; 
+                                margin: 8px 0;
+                                border: none;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                font-family: 'Roboto', sans-serif;
+                                font-weight: 300;
+                                transition: all 0.3s ease;
+                            "
+                            onmouseover="this.style.backgroundColor='#C92704';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
+                            onmouseout="this.style.backgroundColor='red';this.style.transform='none';this.style.boxShadow='none'"
+                            >
+                        Nawiguj
+                    </button>
+                    {f'<span style="color: #d32f2f; font-size: 12px; margin-left: 8px;">Toaleta znajduje się dalej niż 10km</span>' if not is_within_range else ''}
                 """
 
-            # Sekcja komentarzy
-            comments_html = f"""
-                <div id='comments-container-{marker["lat"]}-{marker["lon"]}'>
-                    <div id='comments-{marker["lat"]}-{marker["lon"]}'
-                         style='max-height: 80px; overflow-y: hidden; font-family: Roboto, sans-serif; 
-                                scrollbar-width: thin; scrollbar-color: #888 #f1f1f1; padding-right: 5px;
-                                -webkit-scrollbar-width: thin; -webkit-scrollbar-color: #888 #f1f1f1;'>
-                        <style>
-                            #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar {{
-                                width: 8px;
-                            }}
-                            #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar-track {{
-                                background: #f1f1f1;
-                                border-radius: 4px;
-                            }}
-                            #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar-thumb {{
-                                background: #888;
-                                border-radius: 4px;
-                            }}
-                            #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar-thumb:hover {{
-                                background: #555;
-                            }}
-                        </style>
-            """
-            
-            # Pokazujemy tylko pierwszy komentarz domyślnie
-            if comments_list:
-                first_comment = comments_list[0]
-                comments_html += f"""
-                    <p><strong>Ocena:</strong> {first_comment.get('rating')}</p>
-                    <p>{first_comment.get('comment')}</p>
-                """
+                # Marker toalety (globalny)
+                iconToilet = folium.CustomIcon(
+                    toilet_icon, 
+                    icon_size=(50, 50), 
+                    shadow_size=(50, 50)
+                )
+                lat = marker['lat']
+                lon = marker['lon']
+                existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
 
-                # Pozostałe komentarze 
+                if existing_marker and marker != existing_marker:
+                    # Dodaj komentarz i ocenę do istniejącego markera
+                    description = marker.get('description')
+                    rating = marker.get('rating')
+                    if description and rating:
+                        comments = existing_marker.setdefault('comments', [])
+                        # Dodaj komentarz tylko, jeśli go wcześniej nie było
+                        if not any(c for c in comments if c['comment'] == description and c['rating'] == rating):
+                            comments.append({'comment': description, 'rating': rating})
+                            self.save_markers()
+                            gc.collect()
+                        return
+                        
+                name = marker.get('name', 'Unknown')
+                description = marker.get('description', 'No description')
+                payable = "TAK" if marker.get('payable', False) else "NIE"
+                onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
+                rating = marker.get('rating', 'Brak oceny')
+                photo_base64 = marker.get('photo', None)
+                comments_list = marker.get('comments', [])
+                photo_html = ""
+                if photo_base64:
+                    photo_html = f"""
+                        <img src="data:image/jpeg;base64,{photo_base64}" 
+                            style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
+                                    object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
+                    """
+
+                # Sekcja komentarzy
+                comments_html = f"""
+                    <div id='comments-container-{marker["lat"]}-{marker["lon"]}'>
+                        <div id='comments-{marker["lat"]}-{marker["lon"]}'
+                            style='max-height: 80px; overflow-y: hidden; font-family: Roboto, sans-serif; 
+                                    scrollbar-width: thin; scrollbar-color: #888 #f1f1f1; padding-right: 5px;
+                                    -webkit-scrollbar-width: thin; -webkit-scrollbar-color: #888 #f1f1f1;'>
+                            <style>
+                                #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar {{
+                                    width: 8px;
+                                }}
+                                #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar-track {{
+                                    background: #f1f1f1;
+                                    border-radius: 4px;
+                                }}
+                                #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar-thumb {{
+                                    background: #888;
+                                    border-radius: 4px;
+                                }}
+                                #comments-{marker["lat"]}-{marker["lon"]}::-webkit-scrollbar-thumb:hover {{
+                                    background: #555;
+                                }}
+                            </style>
+                """
+                
+                # Pokazujemy tylko pierwszy komentarz domyślnie
+                if comments_list:
+                    first_comment = comments_list[0]
+                    comments_html += f"""
+                        <p><strong>Ocena:</strong> {first_comment.get('rating')}</p>
+                        <p>{first_comment.get('comment')}</p>
+                    """
+
+                    # Pozostałe komentarze 
+                    if len(comments_list) > 1:
+                        for c in comments_list[1:]:
+                            comments_html += f"""
+                            <hr style="border-top: 1px solid #ccc;" />
+                            <p><strong>Ocena:</strong> {c.get('rating')}</p>
+                            <p>{c.get('comment')}</p>
+                            """
+
+                comments_html += "</div>"
+
                 if len(comments_list) > 1:
-                    for c in comments_list[1:]:
-                        comments_html += f"""
-                        <hr style="border-top: 1px solid #ccc;" />
-                        <p><strong>Ocena:</strong> {c.get('rating')}</p>
-                        <p>{c.get('comment')}</p>
-                        """
+                    comments_html += f"""
+                        <button onclick="
+                            var commentsDiv = document.getElementById('comments-{marker["lat"]}-{marker["lon"]}');
+                            var arrow = this.querySelector('span');
+                            if (commentsDiv.style.maxHeight === '80px') {{
+                                commentsDiv.style.maxHeight = '200px';
+                                commentsDiv.style.overflowY = 'scroll';
+                                arrow.textContent = '▲';
+                            }} else {{
+                                commentsDiv.style.maxHeight = '80px';
+                                commentsDiv.style.overflowY = 'hidden';
+                                arrow.textContent = '▼';
+                            }}"
+                            style="width: auto; background: none; color: #666; padding: 4px 8px; 
+                                margin: 2px 0; border: none; cursor: pointer; 
+                                font-family: 'Roboto', sans-serif; font-size: 12px;">
+                            <span>▼</span> Więcej komentarzy
+                        </button>
+                    """
+                comments_html += "</div>"
 
-            comments_html += "</div>"
-
-            if len(comments_list) > 1:
-                comments_html += f"""
-                    <button onclick="
-                        var commentsDiv = document.getElementById('comments-{marker["lat"]}-{marker["lon"]}');
-                        var arrow = this.querySelector('span');
-                        if (commentsDiv.style.maxHeight === '80px') {{
-                            commentsDiv.style.maxHeight = '200px';
-                            commentsDiv.style.overflowY = 'scroll';
-                            arrow.textContent = '▲';
-                        }} else {{
-                            commentsDiv.style.maxHeight = '80px';
-                            commentsDiv.style.overflowY = 'hidden';
-                            arrow.textContent = '▼';
-                        }}"
-                        style="width: auto; background: none; color: #666; padding: 4px 8px; 
-                               margin: 2px 0; border: none; cursor: pointer; 
-                               font-family: 'Roboto', sans-serif; font-size: 12px;">
-                        <span>▼</span> Więcej komentarzy
+                # Użycie współrzędnych jako identyfikatora
+                comment_button_html = f"""
+                    <button onclick="window.parent.openCommentModal({lat}, {lon})" 
+                            class="popup-button"
+                            style="
+                                width: 80%;
+                                background-color: red;
+                                color: white;
+                                padding: 14px 20px;
+                                margin: 8px 0;
+                                border: none;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                font-family: 'Roboto', sans-serif;
+                                font-weight: 300;
+                                transition: all 0.3s ease;
+                            "
+                            onmouseover="this.style.backgroundColor='#C92704';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
+                            onmouseout="this.style.backgroundColor='red';this.style.transform='none';this.style.boxShadow='none'"
+                    >
+                        Dodaj komentarz
                     </button>
                 """
-            comments_html += "</div>"
-
-            # Użycie współrzędnych jako identyfikatora
-            comment_button_html = f"""
-                <button onclick="window.parent.openCommentModal({lat}, {lon})" 
-                        class="popup-button"
-                        style="
-                            width: 80%;
-                            background-color: red;
-                            color: white;
-                            padding: 14px 20px;
-                            margin: 8px 0;
-                            border: none;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-family: 'Roboto', sans-serif;
-                            font-weight: 300;
-                            transition: all 0.3s ease;
-                        "
-                        onmouseover="this.style.backgroundColor='#C92704';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
-                        onmouseout="this.style.backgroundColor='red';this.style.transform='none';this.style.boxShadow='none'"
-                >
-                    Dodaj komentarz
-                </button>
-            """
-            if not comments_list:
-                wholePopUp = f"""
-                    <div style="width: 300px; max-height:300px, overflow-y: auto;">
-                        <h2>{name}</h2>
-                        <p>{description}</p>
-                        <p><strong>Płatna:</strong> {payable}</p>
-                        <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                        <p><strong>Ocena:</strong> {rating}</p>
-                        <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
-                            {photo_html}
+                if not comments_list:
+                    wholePopUp = f"""
+                        <div style="width: 300px; max-height:300px, overflow-y: auto;">
+                            <h2>{name}</h2>
+                            <p>{description}</p>
+                            <p><strong>Płatna:</strong> {payable}</p>
+                            <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                            <p><strong>Ocena:</strong> {rating}</p>
+                            <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                                {photo_html}
+                            </div>
+                            {comments_html}
+                            {navigate_button_html}
+                            {comment_button_html}
                         </div>
-                        {comments_html}
-                        {navigate_button_html}
-                        {comment_button_html}
-                    </div>
-                """
-            else:
-                wholePopUp = f"""
-                    <div style="width: 300px; max-height:300px, overflow-y: auto;">
-                        <h2>{name}</h2>
-                        <p>{description}</p>
-                        <p><strong>Płatna:</strong> {payable}</p>
-                        <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                        <p><strong>Ocena:</strong> {rating}</p>
-                        <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
-                            {photo_html}
+                    """
+                else:
+                    wholePopUp = f"""
+                        <div style="width: 300px; max-height:300px, overflow-y: auto;">
+                            <h2>{name}</h2>
+                            <p>{description}</p>
+                            <p><strong>Płatna:</strong> {payable}</p>
+                            <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                            <p><strong>Ocena:</strong> {rating}</p>
+                            <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                                {photo_html}
+                            </div>
+                            <h3 style='margin-top: 0;'>Komentarze</h3>
+                            {comments_html}
+                            {navigate_button_html}
+                            {comment_button_html}
                         </div>
-                        <h3 style='margin-top: 0;'>Komentarze</h3>
-                        {comments_html}
-                        {navigate_button_html}
-                        {comment_button_html}
-                    </div>
-                """
-            folium.Marker(
-                location=[lat, lon],
-                popup=folium.Popup(
-                    wholePopUp,
-                    min_width=250,  # Set minimum width in pixels
-                    max_height=300  # Set maximum height in pixels
-                ),
-                icon=iconToilet
-            ).add_to(self.m)
-            self.save_markers()
+                    """
+                folium.Marker(
+                    location=[lat, lon],
+                    popup=folium.Popup(
+                        wholePopUp,
+                        min_width=250,  # Set minimum width in pixels
+                        max_height=300  # Set maximum height in pixels
+                    ),
+                    icon=iconToilet
+                ).add_to(self.m)
+                self.save_markers()
+        except AttributeError as e:
+            logging.error(f"Błąd podczas dodawania markera: {e}")
+            # Spróbuj odtworzyć mapę
+            self.m = self.create_map()
+            # Rekurencyjnie spróbuj dodać marker ponownie
+            self.add_marker_to_map(marker)
+        except Exception as e:
+            logging.error(f"Nieoczekiwany błąd podczas dodawania markera: {e}")
+            # Można dodać dodatkową obsługę innych wyjątków
+        
 
     def add_route_to_map(self, route):
         """
@@ -614,89 +653,103 @@ class Server:
 
     def update_map(self):
         """Aktualizuje mapę, najpierw ją usuwając"""
-        # Wyczyść starą mapę
-        if hasattr(self, 'm') and self.m is not None:
-            del self.m
-            self.m = None
-            gc.collect()
+        try:
+            # Wyczyść starą mape
+            if hasattr(self, 'm') and self.m is not None:
+                del self.m
+                self.m = None
+                gc.collect()
+                
+            # Ustaw centrum mapy
+            user_id = session.get('user_id')
+            center_lat = self.default_lat
+            center_lon = self.default_lon
             
-        # Ustaw centrum mapy
-        user_id = session.get('user_id')
-        center_lat = self.default_lat
-        center_lon = self.default_lon
-        
-        if user_id:
-            user_data = session.get(user_id, {})
-            user_marker = user_data.get('marker')
-            if user_marker:
-                center_lat = user_marker['lat']
-                center_lon = user_marker['lon']
+            if user_id:
+                user_data = session.get(user_id, {})
+                user_marker = user_data.get('marker')
+                if user_marker:
+                    center_lat = user_marker['lat']
+                    center_lon = user_marker['lon']
 
-        # Utwórz nową mapę
-        self.m = self.create_map(center_lat, center_lon)
+            # Utwórz nową mapę
+            self.m = self.create_map(center_lat, center_lon)
 
-        # Dodaj markery i trasy
-        # Dodajemy globalne markery (toalety)
-        for marker in self.markers:
-            self.add_marker_to_map(marker)
+            # Dodaj markery i trasy
+            # Dodajemy globalne markery (toalety)
+            for marker in self.markers:
+                self.add_marker_to_map(marker)
 
-        # Dodajemy marker + trasę użytkownika
-        if user_id:
-            user_data = session.get(user_id, {})
-            user_marker = user_data.get('marker')
-            if user_marker:
-                self.add_marker_to_map(user_marker)
+            # Dodajemy marker + trasę użytkownika
+            if user_id:
+                user_data = session.get(user_id, {})
+                user_marker = user_data.get('marker')
+                if user_marker:
+                    self.add_marker_to_map(user_marker)
 
-            route = user_data.get('current_route')
-            if route and len(self.markers) > 0:
-                coordinates = [
-                    (coord[1], coord[0])
-                    for coord in route['routes'][0]['geometry']['coordinates']
-                ]
-                distance = route['routes'][0]['distance']  # w metrach
-                distance_text = f"{distance / 1000:.2f} km"
+                route = user_data.get('current_route')
+                if route and len(self.markers) > 0:
+                    coordinates = [
+                        (coord[1], coord[0])
+                        for coord in route['routes'][0]['geometry']['coordinates']
+                    ]
+                    distance = route['routes'][0]['distance']  # w metrach
+                    distance_text = f"{distance / 1000:.2f} km"
 
-                # Rysujemy czerwoną polilinię
-                folium.PolyLine(
-                    locations=coordinates,
-                    color='#d00000',
-                    weight=5,
-                    opacity=0.7
-                ).add_to(self.m)
+                    # Rysujemy czerwoną polilinię
+                    folium.PolyLine(
+                        locations=coordinates,
+                        color='#d00000',
+                        weight=5,
+                        opacity=0.7
+                    ).add_to(self.m)
 
-                # Znacznik z odległością w połowie trasy
-                mid_point_index = len(coordinates) // 2
-                mid_point = coordinates[mid_point_index]
-                offset_latitude = 0.0007  # przesuwamy napis troszkę do góry
-                offset_longitude = 0.0007  # przesuwamy napis troszkę w bok
-                mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
+                    # Znacznik z odległością w połowie trasy
+                    mid_point_index = len(coordinates) // 2
+                    mid_point = coordinates[mid_point_index]
+                    offset_latitude = 0.0007  # przesuwamy napis troszkę do góry
+                    offset_longitude = 0.0007  # przesuwamy napis troszkę w bok
+                    mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
 
-                folium.Marker(
-                    location=mid_point_with_offset,
-                    icon=folium.DivIcon(
-                        html=f"""
-                            <div style="
-                                font-size: 14px; 
-                                color: #D32F2F;
-                                font-weight: bold;
-                                background-color: rgba(255, 255, 255, 0.9);
-                                padding: 0.4em 0.8em;
-                                border-radius: 0.3em;
-                                text-align: center;
-                                font-family: Arial, sans-serif;
-                                box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
-                                display: inline-block;
-                                min-width: max-content;
-                                white-space: nowrap;
-                            ">
-                                {distance_text}
-                            </div>
-                        """
-                    )
-                ).add_to(self.m)
+                    folium.Marker(
+                        location=mid_point_with_offset,
+                        icon=folium.DivIcon(
+                            html=f"""
+                                <div style="
+                                    font-size: 14px; 
+                                    color: #D32F2F;
+                                    font-weight: bold;
+                                    background-color: rgba(255, 255, 255, 0.9);
+                                    padding: 0.4em 0.8em;
+                                    border-radius: 0.3em;
+                                    text-align: center;
+                                    font-family: Arial, sans-serif;
+                                    box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
+                                    display: inline-block;
+                                    min-width: max-content;
+                                    white-space: nowrap;
+                                ">
+                                    {distance_text}
+                                </div>
+                            """
+                        )
+                    ).add_to(self.m)
 
-        # Zwracamy kod HTML gotowy do wstawienia w przeglądarkę (w <div id="map">)
-        return self.m._repr_html_()
+            # Zwracamy kod HTML gotowy do wstawienia w przeglądarkę (w <div id="map">)
+            return self.m._repr_html_()
+        except Exception as e:
+            logging.error(f"Błąd podczas aktualizacji mapy: {e}")
+            self.m = self.create_map()
+            return self.m._repr_html_()
 
     def runThePage(self):
         self.app.run(host = "2a01:4f9:2b:289c::130", port=80)
+
+def force_memory_cleanup():
+    """Wymuś zwolnienie pamięci na Linuxie"""
+    gc.collect()
+    try:
+        libc = ctypes.CDLL("libc.so.6")
+        libc.malloc_trim(0)
+    except Exception as e:
+        logging.error(f"Memory trim failed: {e}")
