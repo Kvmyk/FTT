@@ -29,6 +29,7 @@
                 })
                 .catch(error => console.error('Error:', error));
 
+            // 2. Ładujemy mapę (iframe)
             fetch('/render_map')
                 .then(response => response.text())
                 .then(mapHtml => {
@@ -41,7 +42,7 @@
                         mapIframe.style.height = '100vh';
                         mapIframe.style.border = 'none';
                         
-                        // Add message listener to parent window
+                        // Nasłuchiwanie wiadomości z iframu
                         window.addEventListener('message', function(event) {
                             if (event.data.type === 'pathHover') {
                                 const nearestPinInfo = document.getElementById('nearestPinInfo');
@@ -51,19 +52,35 @@
                             }
                         });
 
-                        // Inject script into iframe
+                        // 3. Po załadowaniu zawartości iframu wstrzykujemy do niego skrypt
                         mapIframe.onload = function() {
                             try {
+                                // Wersja z MutationObserver – nasłuchuje zmian w DOM
                                 const script = `
-                                    const paths = document.querySelectorAll('path.leaflet-interactive');
-                                    paths.forEach(path => {
-                                        path.addEventListener('mouseover', () => {
-                                            window.parent.postMessage({type: 'pathHover', hover: true}, '*');
+                                    function attachHoverEvents() {
+                                        const paths = document.querySelectorAll('path.leaflet-interactive');
+                                        paths.forEach(path => {
+                                            // By nie dodawać wielokrotnie tych samych listenerów
+                                            if (!path.dataset.hoverBound) {
+                                                path.dataset.hoverBound = 'true';
+                                                path.addEventListener('mouseover', () => {
+                                                    window.parent.postMessage({type: 'pathHover', hover: true}, '*');
+                                                });
+                                                path.addEventListener('mouseout', () => {
+                                                    window.parent.postMessage({type: 'pathHover', hover: false}, '*');
+                                                });
+                                            }
                                         });
-                                        path.addEventListener('mouseout', () => {
-                                            window.parent.postMessage({type: 'pathHover', hover: false}, '*');
-                                        });
+                                    }
+
+                                    // Najpierw spróbujmy dodać eventy od razu...
+                                    attachHoverEvents();
+
+                                    // ...a potem obserwujmy, czy Leaflet nie dodał nowych elementów
+                                    const observer = new MutationObserver(() => {
+                                        attachHoverEvents();
                                     });
+                                    observer.observe(document.body, { childList: true, subtree: true });
                                 `;
                                 
                                 const iframeDocument = mapIframe.contentDocument || mapIframe.contentWindow.document;
@@ -78,7 +95,7 @@
                 })
                 .catch(err => console.error('Error fetching map:', err));
         });
-
+        
         document.getElementById('photoInput').addEventListener('change', function(e) {
             const container = document.getElementById('imagePreviewContainer');
             container.innerHTML = ''; // Wyczyść poprzednie podglądy
