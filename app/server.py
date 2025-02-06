@@ -15,8 +15,8 @@ from utils import get_coordinates, get_route, find_nearest_marker, haversine, fo
 logging.basicConfig(level=logging.DEBUG)
 
 # Ścieżki do ikon (umieszczonych np. w katalogu static)
-TOILET_ICON = os.path.join('static', 'toilet_icon.png')
-USER_ICON = os.path.join('static', 'user_icon.png')
+TOILET_ICON = os.path.join('toilet_icon.png')
+USER_ICON = os.path.join('user_icon.png')
 
 class Server:
     def __init__(self):
