@@ -1,10 +1,12 @@
 import psutil
 import time
+import gc
 from server import Server
 
 def monitor_memory():
     process = psutil.Process()
     while True:
+        gc.collect()    
         mem_info = process.memory_info()
         print(f"RSS: {mem_info.rss / 1024 ** 2:.2f} MB, VMS: {mem_info.vms / 1024 ** 2:.2f} MB")
         time.sleep(5)  # Sprawdzaj co 5 sekund
