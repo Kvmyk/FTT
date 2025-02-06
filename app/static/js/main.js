@@ -30,7 +30,6 @@ function sendPosition(position) {
     .then(html => {
         document.getElementById('map').innerHTML = html;
         document.getElementById('loadingOverlay').style.display = 'none';
-        initializeRouteHoverEffects(); // Add this line
     })
     .catch((error) => {
         console.error('Error:', error);
