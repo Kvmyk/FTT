@@ -224,37 +224,170 @@ class Server:
 
     def generate_popup_html(self, marker, is_within_range):
         """
-        Generuje HTML dla popup markerów używając szablonu Jinja2.
-        Uwaga: szablon można rozszerzyć o sekcję komentarzy, zdjęcia, itp.
+        Generuje HTML dla popupu markera toalety,
+        zawierający sekcję komentarzy oraz przycisk dodawania komentarza.
         """
-        template = """
-        <div style="width: 300px;">
-            <h2>{{ name }}</h2>
-            <p>{{ description }}</p>
-            {% if is_toilet %}
-                <p><strong>Płatna:</strong> {{ payable }}</p>
-                <p><strong>Tylko dla klientów:</strong> {{ onlyForClients }}</p>
-                <p><strong>Ocena:</strong> {{ rating }}</p>
-                <button onclick="window.parent.navigateToToilet({{ lat }}, {{ lon }})"
-                        style="background-color: red; color: white; padding: 10px; border: none; border-radius: 4px;"
-                        {% if not is_within_range %} disabled {% endif %}>
-                    Nawiguj
+        # Dane podstawowe
+        name = marker.get("name", "Unknown")
+        description = marker.get("description", "No description")
+        payable = "TAK" if marker.get("payable", False) else "NIE"
+        onlyForClients = "TAK" if marker.get("onlyForClients", False) else "NIE"
+        rating = marker.get("rating", "Brak oceny")
+        photo_base64 = marker.get("photo")
+        photo_html = ""
+        if photo_base64:
+            photo_html = (
+                f'<img src="data:image/jpeg;base64,{photo_base64}" '
+                f'style="max-width:150px; max-height:150px; object-fit:contain; '
+                f'border-radius:4px; display:block; margin:10px auto;">'
+            )
+        
+        # Przycisk nawigacji ("Nawiguj")
+        navigate_button_html = f"""
+        <button onclick="window.parent.navigateToToilet({marker['lat']}, {marker['lon']})"
+                style="
+                    opacity: {'1' if is_within_range else '0.7'};
+                    pointer-events: {'auto' if is_within_range else 'none'};
+                    filter: {'none' if is_within_range else 'brightness(0.8)'};
+                    width: 80%;
+                    background-color: red;
+                    color: white;
+                    padding: 14px 20px;
+                    margin: 8px 0;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-family: 'Roboto', sans-serif;
+                    font-weight: 300;
+                    transition: all 0.3s ease;
+                "
+                onmouseover="this.style.backgroundColor='#C92704'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
+                onmouseout="this.style.backgroundColor='red'; this.style.transform='none'; this.style.boxShadow='none'">
+            Nawiguj
+        </button>
+        """
+        
+        # Sekcja komentarzy
+        comments_list = marker.get("comments", [])
+        comments_html = f"""
+        <div id="comments-container-{marker['lat']}-{marker['lon']}">
+            <div id="comments-{marker['lat']}-{marker['lon']}"
+                style="max-height: 80px; overflow-y: hidden; font-family: Roboto, sans-serif;
+                        scrollbar-width: thin; scrollbar-color: #888 #f1f1f1; padding-right: 5px;
+                        -webkit-scrollbar-width: thin; -webkit-scrollbar-color: #888 #f1f1f1;">
+                <style>
+                    #comments-{marker['lat']}-{marker['lon']}::-webkit-scrollbar {{
+                        width: 8px;
+                    }}
+                    #comments-{marker['lat']}-{marker['lon']}::-webkit-scrollbar-track {{
+                        background: #f1f1f1;
+                        border-radius: 4px;
+                    }}
+                    #comments-{marker['lat']}-{marker['lon']}::-webkit-scrollbar-thumb {{
+                        background: #888;
+                        border-radius: 4px;
+                    }}
+                    #comments-{marker['lat']}-{marker['lon']}::-webkit-scrollbar-thumb:hover {{
+                        background: #555;
+                    }}
+                </style>
+        """
+        # Jeśli są jakieś komentarze – wyświetlamy pierwszy oraz (jeśli więcej) kolejne z podziałem linią
+        if comments_list:
+            first_comment = comments_list[0]
+            comments_html += f"""
+                <p><strong>Ocena:</strong> {first_comment.get('rating')}</p>
+                <p>{first_comment.get('comment')}</p>
+            """
+            if len(comments_list) > 1:
+                for c in comments_list[1:]:
+                    comments_html += f"""
+                    <hr style="border-top: 1px solid #ccc;" />
+                    <p><strong>Ocena:</strong> {c.get('rating')}</p>
+                    <p>{c.get('comment')}</p>
+                    """
+        comments_html += "</div>"
+        
+        # Jeśli jest więcej niż jeden komentarz – dodajemy przycisk rozwijania listy
+        if len(comments_list) > 1:
+            comments_html += f"""
+                <button onclick="
+                    var commentsDiv = document.getElementById('comments-{marker['lat']}-{marker['lon']}');
+                    var arrow = this.querySelector('span');
+                    if (commentsDiv.style.maxHeight === '80px') {{
+                        commentsDiv.style.maxHeight = '200px';
+                        commentsDiv.style.overflowY = 'scroll';
+                        arrow.textContent = '▲';
+                    }} else {{
+                        commentsDiv.style.maxHeight = '80px';
+                        commentsDiv.style.overflowY = 'hidden';
+                        arrow.textContent = '▼';
+                    }}"
+                    style="width: auto; background: none; color: #666; padding: 4px 8px;
+                        margin: 2px 0; border: none; cursor: pointer;
+                        font-family: 'Roboto', sans-serif; font-size: 12px;">
+                    <span>▼</span> Więcej komentarzy
                 </button>
-            {% endif %}
-        </div>
+            """
+        comments_html += "</div>"
+        
+        # Przycisk "Dodaj komentarz" (używamy współrzędnych jako identyfikatora)
+        comment_button_html = f"""
+        <button onclick="window.parent.openCommentModal({marker['lat']}, {marker['lon']})"
+                class="popup-button"
+                style="
+                    width: 80%;
+                    background-color: red;
+                    color: white;
+                    padding: 14px 20px;
+                    margin: 8px 0;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-family: 'Roboto', sans-serif;
+                    font-weight: 300;
+                    transition: all 0.3s ease;
+                "
+                onmouseover="this.style.backgroundColor='#C92704'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
+                onmouseout="this.style.backgroundColor='red'; this.style.transform='none'; this.style.boxShadow='none'">
+            Dodaj komentarz
+        </button>
         """
-        context = {
-            "name": marker.get("name", "Unknown"),
-            "description": marker.get("description", "No description"),
-            "payable": "TAK" if marker.get("payable", False) else "NIE",
-            "onlyForClients": "TAK" if marker.get("onlyForClients", False) else "NIE",
-            "rating": marker.get("rating", "Brak oceny"),
-            "lat": marker['lat'],
-            "lon": marker['lon'],
-            "is_toilet": marker.get("name", "") != "User Location",
-            "is_within_range": is_within_range
-        }
-        return render_template_string(template, **context)
+        
+        # Formatowanie całego popupu:
+        if comments_list:
+            wholePopUp = f"""
+            <div style="width: 300px; max-height:300px; overflow-y: auto;">
+                <h2>{name}</h2>
+                <p>{description}</p>
+                <p><strong>Płatna:</strong> {payable}</p>
+                <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                <p><strong>Ocena:</strong> {rating}</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                    {photo_html}
+                </div>
+                <h3 style="margin-top: 0;">Komentarze</h3>
+                {comments_html}
+                {navigate_button_html}
+                {comment_button_html}
+            </div>
+            """
+        else:
+            wholePopUp = f"""
+            <div style="width: 300px; max-height:300px; overflow-y: auto;">
+                <h2>{name}</h2>
+                <p>{description}</p>
+                <p><strong>Płatna:</strong> {payable}</p>
+                <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                <p><strong>Ocena:</strong> {rating}</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                    {photo_html}
+                </div>
+                {navigate_button_html}
+                {comment_button_html}
+            </div>
+            """
+        return wholePopUp
 
     def load_markers(self):
         """Wczytuje listę markerów z pliku data/data.json."""
