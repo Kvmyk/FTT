@@ -186,8 +186,7 @@ class Server:
         @self.app.route('/nearest_toilet_distance', methods=['GET'])
         def nearest_toilet_distance():
             """
-            Dodatkowy endpoint, który zwraca odległość do najbliższej toalety
-            (np. żeby wyświetlić w popupie).
+            Dodatkowy endpoint, który zwraca odległość do najbliższej toalety.
             """
             user_id = session.get('user_id')
             if not user_id:
@@ -197,27 +196,38 @@ class Server:
             user_data = session.get(user_id, {})
             user_marker = user_data.get('marker')
             if not user_marker:
-                return jsonify({'status': 'error', 'message': 'No user marker set'}), 404
+                # Return a default response instead of a 404 error if needed
+                response = jsonify({
+                    'status': 'success',
+                    'distance': '0 km',
+                    'name': 'Brak lokalizacji'
+                })
+                response.headers['Cache-Control'] = 'no-store'
+                return response, 200
 
             nearest_marker = find_nearest_marker(user_marker, self.markers)
             if not nearest_marker:
-                return jsonify({'status': 'error', 'message': 'No toilets found'}), 404
+                response = jsonify({'status': 'error', 'message': 'No toilets found'})
+                response.headers['Cache-Control'] = 'no-store'
+                return response, 404
 
             route = get_route(
                 user_marker['lat'], user_marker['lon'],
                 nearest_marker['lat'], nearest_marker['lon']
             )
             if not route:
-                return jsonify({'status': 'error', 'message': 'Route not found'}), 404
+                response = jsonify({'status': 'error', 'message': 'Route not found'})
+                response.headers['Cache-Control'] = 'no-store'
+                return response, 404
 
-            distance = route['routes'][0]['distance']  # metry
-            distance_text = format_distance_text(distance)
-
-            return jsonify({
+            distance = route['routes'][0]['distance']
+            response = jsonify({
                 'status': 'success',
-                'distance': distance_text,
-                'name': nearest_marker['name']
+                'distance': f"{distance / 1000:.2f} km",
+                'name': nearest_marker.get('name', 'Toaleta bez nazwy')
             })
+            response.headers['Cache-Control'] = 'no-store'
+            return response, 200
 
         @self.app.route('/submit', methods=['POST'])
         def submit():
