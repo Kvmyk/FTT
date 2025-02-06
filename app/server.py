@@ -10,7 +10,6 @@ import logging
 import threading
 import time
 import gc 
-import ctypes
 from flask_session import Session
 
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -30,7 +29,7 @@ class Server:
         # Configure server-side session storage (e.g., filesystem)
         self.app.config['SESSION_TYPE'] = 'filesystem'
         self.app.config['SESSION_PERMANENT'] = True
-        self.app.config['PERMANENT_SESSION_LIFETIME'] = 30  # 1 dzień (sekundy)
+        self.app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 dzień (sekundy)
         self.app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session')
         if not os.path.exists(self.app.config['SESSION_FILE_DIR']):
             os.makedirs(self.app.config['SESSION_FILE_DIR'])
@@ -59,28 +58,26 @@ class Server:
 
 
     def cleanup_session_files(self):
-        """Czyści stare pliki sesji"""
-        session_lifetime = 30  # 30 minut
+        session_lifetime = self.app.config.get('PERMANENT_SESSION_LIFETIME', 3600)
         session_dir = self.app.config.get('SESSION_FILE_DIR')
         if not session_dir or not os.path.isdir(session_dir):
+            logging.warning("Katalog sesji nie istnieje lub nie jest zdefiniowany.")
             return
-            
         now = time.time()
         for filename in os.listdir(session_dir):
             file_path = os.path.join(session_dir, filename)
             if os.path.isfile(file_path):
-                # Sprawdź czas ostatniej modyfikacji
-                if (now - os.path.getmtime(file_path)) > session_lifetime:
+                file_mtime = os.path.getmtime(file_path)
+                if (now - file_mtime) > session_lifetime:
                     try:
                         os.remove(file_path)
-                        gc.collect()  # Wymuś czyszczenie po każdym usuniętym pliku
-                        logging.debug(f"Usunięto plik sesji: {file_path}")
-                    except OSError as e:
-                        logging.error(f"Błąd podczas usuwania {file_path}: {e}")
+                        logging.debug(f"Usunięto stary plik sesji: {file_path}")
+                    except Exception as e:
+                        logging.error(f"Błąd podczas usuwania pliku {file_path}: {e}")
 
     # Pętla uruchamiana w tle, która co określony czas wywołuje cleanup sesji
     def cleanup_session_files_loop(self):
-        cleanup_interval = 30  # czyszczenie co 1 godzinę
+        cleanup_interval = 3600  # czyszczenie co 1 godzinę
         while True:
             self.cleanup_session_files()
             time.sleep(cleanup_interval)
@@ -346,27 +343,6 @@ class Server:
                 return jsonify({'status': 'success'})
             
             return jsonify({'status': 'error', 'message': 'Could not calculate route'})
-
-        @self.app.before_request
-        def check_session_status():
-            """Sprawdza status sesji przed każdym requestem"""
-            if 'last_activity' in session:
-                # Usuń sesję po 30 minutach nieaktywności
-                if time.time() - session['last_activity'] > 30:  # 30 minut
-                    session.clear()
-                    force_memory_cleanup()
-                    return
-            session['last_activity'] = time.time()
-
-        @self.app.route('/clear_session', methods=['POST'])
-        def clear_session():
-            """Endpoint do czyszczenia sesji (wywoływany przez JavaScript przy zamknięciu karty)"""
-            try:
-                session.clear()
-                force_memory_cleanup()
-                return jsonify({'status': 'success'})
-            except Exception as e:
-                return jsonify({'status': 'error', 'message': str(e)})
 
     def add_marker_to_map(self, marker):
         """
@@ -740,16 +716,7 @@ class Server:
         except Exception as e:
             logging.error(f"Błąd podczas aktualizacji mapy: {e}")
             self.m = self.create_map()
-            return self.m._repr_html_()
+            return self.m
 
     def runThePage(self):
         self.app.run(host = "2a01:4f9:2b:289c::130", port=80)
-
-def force_memory_cleanup():
-    """Wymuś zwolnienie pamięci na Linuxie"""
-    gc.collect()
-    try:
-        libc = ctypes.CDLL("libc.so.6")
-        libc.malloc_trim(0)
-    except Exception as e:
-        logging.error(f"Memory trim failed: {e}")
