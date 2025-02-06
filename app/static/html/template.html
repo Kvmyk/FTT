@@ -40,29 +40,38 @@
                         mapIframe.style.width = '100%';
                         mapIframe.style.height = '100vh';
                         mapIframe.style.border = 'none';
+                        
+                        // Add message listener to parent window
+                        window.addEventListener('message', function(event) {
+                            if (event.data.type === 'pathHover') {
+                                const nearestPinInfo = document.getElementById('nearestPinInfo');
+                                if (nearestPinInfo) {
+                                    nearestPinInfo.style.display = event.data.hover ? 'block' : 'none';
+                                }
+                            }
+                        });
 
+                        // Inject script into iframe
                         mapIframe.onload = function() {
                             try {
+                                const script = `
+                                    const paths = document.querySelectorAll('path.leaflet-interactive');
+                                    paths.forEach(path => {
+                                        path.addEventListener('mouseover', () => {
+                                            window.parent.postMessage({type: 'pathHover', hover: true}, '*');
+                                        });
+                                        path.addEventListener('mouseout', () => {
+                                            window.parent.postMessage({type: 'pathHover', hover: false}, '*');
+                                        });
+                                    });
+                                `;
+                                
                                 const iframeDocument = mapIframe.contentDocument || mapIframe.contentWindow.document;
-                                const paths = iframeDocument.querySelectorAll('path.leaflet-interactive');
-                                const nearestPinInfo = document.getElementById('nearestPinInfo');
-                                const nearestPinText = document.getElementById('nearestPinText');
-
-                                paths.forEach(path => {
-                                    path.addEventListener('mouseover', () => {
-                                        if (nearestPinInfo) {
-                                            nearestPinInfo.style.display = 'block';
-                                        }
-                                    });
-                                    
-                                    path.addEventListener('mouseout', () => {
-                                        if (nearestPinInfo) {
-                                            nearestPinInfo.style.display = 'none';
-                                        }
-                                    });
-                                });
+                                const scriptElement = iframeDocument.createElement('script');
+                                scriptElement.textContent = script;
+                                iframeDocument.body.appendChild(scriptElement);
                             } catch (e) {
-                                console.error('Error accessing iframe content:', e);
+                                console.error('Error injecting script:', e);
                             }
                         };
                     }
