@@ -23,13 +23,24 @@ function sendPosition(position) {
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
-        // Zamiast przeładowywać stronę, pobierz i zaktualizuj mapę
+        // Instead of reloading, update the map dynamically
         return fetch('/render_map');
     })
     .then(response => response.text())
     .then(html => {
         document.getElementById('map').innerHTML = html;
         document.getElementById('loadingOverlay').style.display = 'none';
+        // Now that the user location is set, call nearest_toilet_distance
+        return fetch('/nearest_toilet_distance');
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const nearestPinInfo = document.getElementById('nearestPinInfo');
+            const nearestPinText = document.getElementById('nearestPinText');
+            nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}`;
+            nearestPinInfo.classList.add('show');
+        }
     })
     .catch((error) => {
         console.error('Error:', error);
@@ -330,4 +341,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
