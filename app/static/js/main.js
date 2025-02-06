@@ -339,7 +339,7 @@ function initializeRouteHoverEffects() {
     
     paths.forEach(path => {
         path.addEventListener('mouseover', () => {
-            if (nearestPinInfo && path.classList.contains('leaflet-interactive')) {
+            if (nearestPinInfo && path.classList.contains('path.leaflet-interactive')) {
                 nearestPinInfo.classList.remove('hide');
                 nearestPinInfo.classList.add('show');
             }
