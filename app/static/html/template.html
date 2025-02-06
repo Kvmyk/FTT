@@ -29,7 +29,7 @@
                 })
                 .catch(error => console.error('Error:', error));
 
-                fetch('/render_map')
+            fetch('/render_map')
                 .then(response => response.text())
                 .then(mapHtml => {
                     // Wstaw wygenerowany HTML mapy
