@@ -189,6 +189,13 @@ class Server:
             Dodatkowy endpoint, który zwraca odległość do najbliższej toalety
             (np. żeby wyświetlić w popupie).
             """
+
+            if not user_id:
+                # Optionally, initialize a new session
+                user_id = str(uuid.uuid4())
+                session['user_id'] = user_id
+
+
             user_id = session.get('user_id')
             if not user_id:
                 return jsonify({'status': 'error', 'message': 'User not identified'}), 404
