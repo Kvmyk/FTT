@@ -72,6 +72,7 @@ class Server:
                 if (now - os.path.getmtime(file_path)) > session_lifetime:
                     try:
                         os.remove(file_path)
+                        gc.collect()  # Wymuś czyszczenie po każdym usuniętym pliku
                         logging.debug(f"Usunięto plik sesji: {file_path}")
                     except OSError as e:
                         logging.error(f"Błąd podczas usuwania {file_path}: {e}")
@@ -352,6 +353,7 @@ class Server:
                 # Usuń sesję po 30 minutach nieaktywności
                 if time.time() - session['last_activity'] > 30:  # 30 minut
                     session.clear()
+                    gc.collect()  # Wymuś czyszczenie
                     return
             session['last_activity'] = time.time()
 
@@ -360,6 +362,7 @@ class Server:
             """Endpoint do czyszczenia sesji (wywoływany przez JavaScript przy zamknięciu karty)"""
             try:
                 session.clear()
+                gc.collect()  # Wymuś czyszczenie
                 return jsonify({'status': 'success'})
             except Exception as e:
                 return jsonify({'status': 'error', 'message': str(e)})
