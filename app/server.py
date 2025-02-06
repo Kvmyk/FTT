@@ -747,7 +747,6 @@ class Server:
 
     def cleanup(self):
         self.m = None
-        self.markers = []
         gc.collect()
         force_memory_cleanup()
 
