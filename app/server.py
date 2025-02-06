@@ -452,6 +452,10 @@ class Server:
             
             return jsonify({'status': 'error', 'message': 'Could not calculate route'})
 
+        @self.app.route('/render_map', methods=['GET'])
+        def render_map():
+            return self.update_map()
+
         @self.app.after_request
         def add_header(response):
             response.headers['Cache-Control'] = 'no-store'
