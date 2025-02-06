@@ -37,7 +37,7 @@
                     mapContainer.innerHTML = mapHtml;
 
                     // Szukaj elementów .leaflet-interactive w kontenerze, a nie w iframe
-                    const paths = mapContainer.querySelectorAll('.leaflet-interactive');
+                    const paths = mapContainer.querySelectorAll('leaflet-interactive');
                     paths.forEach(path => {
                         path.addEventListener('mouseover', () => {
                             const nearestPinInfo = document.getElementById('nearestPinInfo');
