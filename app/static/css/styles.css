@@ -116,20 +116,20 @@ html, body {
     padding: 20px;
     border-radius: 5px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    font-family: 'Roboto', sans-serif;
-    font-weight: 300; /* Light */
+    max-height: 80vh; /* maksymalna wysokość */
+    overflow-y: auto; /* dodanie scrollowania */
+    width: 90%; /* szerokość modalu */
+    max-width: 500px; /* maksymalna szerokość */
 }
 
 #myModal textarea {
     width: 85%;
     padding: 10px;
     margin: 10px 0;
-    display: block;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-family: 'Roboto', sans-serif;
-    font-weight: 300;
+    resize: vertical; /* tylko pionowe rozszerzanie */
+    max-height: 200px; /* maksymalna wysokość textarea */
+    min-height: 100px; /* minimalna wysokość textarea */
+    overflow-y: auto; /* scrollowanie w textarea */
 }
 
 #commentModal {
