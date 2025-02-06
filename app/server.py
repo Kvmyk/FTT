@@ -79,7 +79,7 @@ class Server:
 
     # Pętla uruchamiana w tle, która co określony czas wywołuje cleanup sesji
     def cleanup_session_files_loop(self):
-        cleanup_interval = 3600  # czyszczenie co 1 godzinę
+        cleanup_interval = 30  # czyszczenie co 1 godzinę
         while True:
             self.cleanup_session_files()
             time.sleep(cleanup_interval)
