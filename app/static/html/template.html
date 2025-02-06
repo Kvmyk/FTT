@@ -19,39 +19,9 @@
                         const nearestPinText = document.getElementById('nearestPinText');
                         nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}`;
                         nearestPinInfo.classList.add('show');
-
-                        // Ukryj blok po 3 sekundach
-                        setTimeout(() => {
-                            nearestPinInfo.classList.remove('show');
-                            nearestPinInfo.classList.add('hide');
-                        }, 3000);
                     }
                 })
                 .catch(error => console.error('Error:', error));
-
-            fetch('/render_map')
-                .then(response => response.text())
-                .then(mapHtml => {
-                    // Wstaw wygenerowany HTML mapy
-                    const mapContainer = document.getElementById('map');
-                    mapContainer.innerHTML = mapHtml;
-
-                    // Szukaj elementów .leaflet-interactive w kontenerze, a nie w iframe
-                    const paths = mapContainer.querySelectorAll('leaflet-interactive');
-                    paths.forEach(path => {
-                        path.addEventListener('mouseover', () => {
-                            const nearestPinInfo = document.getElementById('nearestPinInfo');
-                            nearestPinInfo.classList.remove('hide');
-                            nearestPinInfo.classList.add('show');
-                        });
-                        path.addEventListener('mouseout', () => {
-                            const nearestPinInfo = document.getElementById('nearestPinInfo');
-                            nearestPinInfo.classList.remove('show');
-                            nearestPinInfo.classList.add('hide');
-                        });
-                    });
-                })
-                .catch(err => console.error('Error fetching map:', err));
         });
         
         document.getElementById('photoInput').addEventListener('change', function(e) {
