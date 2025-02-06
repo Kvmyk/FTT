@@ -444,7 +444,8 @@ class Server:
                     # Dodaj komentarz tylko, jeśli go wcześniej nie było
                     if not any(c for c in comments if c['comment'] == description and c['rating'] == rating):
                         comments.append({'comment': description, 'rating': rating})
-                    existing_marker['rating'] = rating  # Aktualizuj ocenę
+                        self.save_markers()
+                        gc.collect()
                     return
                     
             name = marker.get('name', 'Unknown')
