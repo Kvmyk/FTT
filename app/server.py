@@ -745,6 +745,12 @@ class Server:
     def runThePage(self):
         self.app.run(host = "2a01:4f9:2b:289c::130", port=80)
 
+    def cleanup(self):
+        self.m = None
+        self.markers = []
+        gc.collect()
+        force_memory_cleanup()
+
 def force_memory_cleanup():
     """Wymuś zwolnienie pamięci na Linuxie"""
     gc.collect()
