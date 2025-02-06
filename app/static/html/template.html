@@ -46,27 +46,17 @@
                         // Dodaj nasłuchiwanie po załadowaniu zawartości iframe
                         mapIframe.onload = function() {
                             const iframeDocument = mapIframe.contentDocument || mapIframe.contentWindow.document;
-                            const paths = iframeDocument.getElementsByClassName('route-path');
-                            
-                            Array.from(paths).forEach(path => {
-                                path.style.pointerEvents = 'auto';
-                                path.style.cursor = 'pointer';
-                                
-                                path.addEventListener('mouseover', function() {
+                            const paths = iframeDocument.querySelectorAll('path');
+                            paths.forEach(path => {
+                                path.addEventListener('mouseover', () => {
                                     const nearestPinInfo = document.getElementById('nearestPinInfo');
-                                    if (nearestPinInfo) {
-                                        nearestPinInfo.style.display = 'block';
-                                        nearestPinInfo.classList.remove('hide');
-                                        nearestPinInfo.classList.add('show');
-                                    }
+                                    nearestPinInfo.classList.remove('hide');
+                                    nearestPinInfo.classList.add('show');
                                 });
-
-                                path.addEventListener('mouseout', function() {
+                                path.addEventListener('mouseout', () => {
                                     const nearestPinInfo = document.getElementById('nearestPinInfo');
-                                    if (nearestPinInfo) {
-                                        nearestPinInfo.classList.remove('show');
-                                        nearestPinInfo.classList.add('hide');
-                                    }
+                                    nearestPinInfo.classList.remove('show');
+                                    nearestPinInfo.classList.add('hide');
                                 });
                             });
                         };
@@ -92,12 +82,6 @@
                 }
             }
         });
-
-        window.addEventListener('beforeunload', function() {
-            // Wyślij request do wyczyszczenia sesji
-            navigator.sendBeacon('/clear_session');
-        });
-
     </script>
 </head>
 <body>
