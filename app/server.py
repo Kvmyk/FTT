@@ -59,7 +59,7 @@ class Server:
 
     def cleanup_session_files(self):
         """Czyści stare pliki sesji"""
-        session_lifetime = 1800  # 30 minut
+        session_lifetime = 30  # 30 minut
         session_dir = self.app.config.get('SESSION_FILE_DIR')
         if not session_dir or not os.path.isdir(session_dir):
             return
@@ -350,7 +350,7 @@ class Server:
             """Sprawdza status sesji przed każdym requestem"""
             if 'last_activity' in session:
                 # Usuń sesję po 30 minutach nieaktywności
-                if time.time() - session['last_activity'] > 1800:  # 30 minut
+                if time.time() - session['last_activity'] > 30:  # 30 minut
                     session.clear()
                     return
             session['last_activity'] = time.time()
