@@ -123,9 +123,15 @@ html, body {
 }
 
 #myModal textarea {
-    /* istniejące style */
-    resize: vertical; /* pozwól tylko na pionowe rozszerzanie */
-    max-height: 200px; /* maksymalna wysokość textarea */
+    width: 85%;
+    padding: 10px;
+    margin: 10px 0;
+    display: block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;
 }
 
 #commentModal {
