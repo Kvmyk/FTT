@@ -167,17 +167,17 @@ html, body {
 
 #nearestPinInfo {
     position: fixed;
-    bottom: 10px;
-    left: 10px;
-    background-color: white;
-    padding: 10px;
-    border: 1px solid black;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
     border-radius: 5px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    z-index: 1001;
-    display: none;
-    opacity: 0;
-    transition: opacity 1s ease-in-out; /* Zwiększ czas trwania przejścia */
+    z-index: 1000;
+    display: block;
+    opacity: 1;
+    transition: opacity 1s ease-in-out;
     font-family: 'Roboto', sans-serif;
     font-weight: 300; /* Light */
 }
