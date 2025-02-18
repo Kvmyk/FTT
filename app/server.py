@@ -237,6 +237,7 @@ class Server:
             description = data.get('description', '')
             payable = data.get('payable', 'false').lower() == 'true'
             onlyForClients = data.get('onlyForClients', 'false').lower() == 'true'
+            forDisabled = data.get('forDisabled', 'false').lower() == 'true'
             rating = data.get('rating', '0')
             photo = request.files.get('photos')  # może być None
             photo_base64 = None
@@ -254,7 +255,8 @@ class Server:
                     "payable": payable,
                     "onlyForClients": onlyForClients,
                     "rating": rating,
-                    "photo": photo_base64
+                    "photo": photo_base64,
+                    "forDisabled": forDisabled 
                 }
 
                 # Dodajemy do globalnej listy
@@ -461,6 +463,7 @@ class Server:
                 description = marker.get('description', 'No description')
                 payable = "TAK" if marker.get('payable', False) else "NIE"
                 onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
+                forDisabled = "TAK" if marker.get('forDisabled', False) else "NIE"
                 rating = marker.get('rating', 'Brak oceny')
                 photo_base64 = marker.get('photo', None)
                 comments_list = marker.get('comments', [])
@@ -568,6 +571,7 @@ class Server:
                             <p>{description}</p>
                             <p><strong>Płatna:</strong> {payable}</p>
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                            <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
                             <p><strong>Ocena:</strong> {rating}</p>
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
@@ -584,6 +588,7 @@ class Server:
                             <p>{description}</p>
                             <p><strong>Płatna:</strong> {payable}</p>
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
+                            <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
                             <p><strong>Ocena:</strong> {rating}</p>
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
