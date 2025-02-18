@@ -498,7 +498,6 @@ class Server:
                         """
 
             comments_html += "</div>"
-            super = 0
             if len(comments_list) > 1:
                 comments_html += f"""
                     <button onclick="
@@ -568,8 +567,8 @@ class Server:
                         <p>{description}</p>
                         <p><strong>Płatna:</strong> {payable}</p>
                         <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                        <p><strong>Ocena:</strong> {rating}</p>
                         <p><strong>Dla niepełnosprawnych:</strong> {forDisabled}</p>
+                        <p><strong>Ocena:</strong> {rating}</p>
                         <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                             {photo_html}
                         </div>
