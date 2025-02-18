@@ -330,3 +330,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+function applyFilters() {
+    const filters = {
+        payable: document.getElementById('filterPayable').checked,
+        onlyForClients: document.getElementById('filterOnlyForClients').checked,
+        forDisabled: document.getElementById('filterForDisabled').checked,
+        minRating: parseInt(document.getElementById('filterMinRating').value) || null
+    };
+
+    fetch('/filter_markers', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(filters)
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('map').innerHTML = html;
+    })
+    .catch(error => console.error('Error:', error));
+}

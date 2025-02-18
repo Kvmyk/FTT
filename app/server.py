@@ -336,6 +336,15 @@ class Server:
             
             return jsonify({'status': 'error', 'message': 'Could not calculate route'})
 
+        @self.app.route('/filter_markers', methods=['POST'])
+        def filter_markers():
+            filters = request.json
+            filtered_markers = self.filter_markers(filters)
+            self.m = self.create_map()
+            for marker in filtered_markers:
+                self.add_marker_to_map(marker)
+            return self.m._repr_html_()
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.
@@ -690,6 +699,20 @@ class Server:
 
         # Zwracamy kod HTML gotowy do wstawienia w przeglądarkę (w <div id="map">)
         return self.m._repr_html_()
+
+    def filter_markers(self, filters):
+        filtered_markers = []
+        for marker in self.markers:
+            if filters.get('payable') is not None and marker.get('payable') != filters['payable']:
+                continue
+            if filters.get('onlyForClients') is not None and marker.get('onlyForClients') != filters['onlyForClients']:
+                continue
+            if filters.get('forDisabled') is not None and marker.get('forDisabled') != filters['forDisabled']:
+                continue
+            if filters.get('minRating') is not None and marker.get('rating') < filters['minRating']:
+                continue
+            filtered_markers.append(marker)
+        return filtered_markers
 
     def runThePage(self):
         self.app.run(host = "2a01:4f9:2b:289c::130", port=80)
