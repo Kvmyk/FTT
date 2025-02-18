@@ -103,6 +103,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeCommentModal').addEventListener('click', function() {
         document.getElementById('commentModal').style.display = 'none';
     });
+
+    document.getElementById('closeFilterModal').addEventListener('click', closeFilterModal);
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('filterModal')) {
+            closeFilterModal();
+        }
+    };
 });
 
 function validateRating() {
@@ -351,4 +358,12 @@ function applyFilters() {
         document.getElementById('map').innerHTML = html;
     })
     .catch(error => console.error('Error:', error));
+}
+
+function openFilterModal() {
+    document.getElementById('filterModal').style.display = 'block';
+}
+
+function closeFilterModal() {
+    document.getElementById('filterModal').style.display = 'none';
 }

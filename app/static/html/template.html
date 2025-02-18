@@ -85,13 +85,6 @@
     </script>
 </head>
 <body>
-    <div id="filterForm">
-        <label><input type="checkbox" id="filterPayable">Płatna</label>
-        <label><input type="checkbox" id="filterOnlyForClients">Tylko dla klientów</label>
-        <label><input type="checkbox" id="filterForDisabled">Dla niepełnosprawnych</label>
-        <label>Minimalna ocena: <input type="number" id="filterMinRating" min="1" max="10"></label>
-        <button onclick="applyFilters()">Zastosuj filtry</button>
-    </div>
     <div class="circle-plus">+</div>
     <div id="nearestPinInfo">
         <p id="nearestPinText"></p>
@@ -101,6 +94,19 @@
     <div id="loadingOverlay">
         <img src="/static/html/Logo.png" alt="Logo" class="logo">
         <div class="spinner"></div>
+    </div>
+    <button id="filterButton" class="popup-button" onclick="openFilterModal()">Filtry</button>
+    <div id="filterModal" class="modal">
+        <div class="modal-content">
+            <span id="closeFilterModal" class="close">&times;</span>
+            <div id="filterForm">
+                <label><input type="checkbox" id="filterPayable">Płatna</label>
+                <label><input type="checkbox" id="filterOnlyForClients">Tylko dla klientów</label>
+                <label><input type="checkbox" id="filterForDisabled">Dla niepełnosprawnych</label>
+                <label>Minimalna ocena: <input type="number" id="filterMinRating" min="1" max="10"></label>
+                <button id="applyFilterButton" class="popup-button" onclick="applyFilters()">Zastosuj filtry</button>
+            </div>
+        </div>
     </div>
     <div id="myModal">
         <span id="closeModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
