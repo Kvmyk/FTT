@@ -498,7 +498,7 @@ class Server:
                         """
 
             comments_html += "</div>"
-
+            super = 1
             if len(comments_list) > 1:
                 comments_html += f"""
                     <button onclick="
