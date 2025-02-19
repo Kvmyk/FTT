@@ -64,7 +64,7 @@ html, body {
     border: 3px solid red;
     border-radius: 50%;
     color: red;
-    font-size: 20px; /* Zwiększ rozmiar ikony */
+    font-size: 16px; /* Zwiększ rozmiar ikony */
     position: fixed;
     top: 60px; /* Ustawienie poniżej przycisku circle-plus */
     right: 10px;
