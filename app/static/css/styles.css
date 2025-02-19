@@ -61,10 +61,10 @@ html, body {
     width: 40px;
     height: 40px;
     background-color: white;
-    border: 3px solid blue;
+    border: 3px solid red;
     border-radius: 50%;
-    color: blue;
-    font-size: 16px;
+    color: red;
+    font-size: 20px; /* Zwiększ rozmiar ikony */
     position: fixed;
     top: 60px; /* Ustawienie poniżej przycisku circle-plus */
     right: 10px;
