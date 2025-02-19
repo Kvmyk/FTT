@@ -398,6 +398,11 @@ label {
     #loadingOverlay .logo {
         width: 200px;
     }
+    .filter-button {
+        width: 30px;
+        height: 30px;
+        font-size: 20px;
+    }
 }
 
 /* Tablets */
