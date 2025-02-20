@@ -267,13 +267,29 @@ class Server:
                 # Zapisujemy do pliku data.json
                 self.save_markers()
 
-                # Obliczamy trasę do najbliższego markera, jeśli użytkownik ma swój marker
+                # Pobierz filtry z sesji
                 user_id = session.get('user_id')
                 if user_id:
                     user_data = session.get(user_id, {})
+                    filters = user_data.get('filters', {})
+                    filter_payable = filters.get('filterPayable', False)
+                    filter_for_clients = filters.get('filterForClients', False)
+                    filter_for_disabled = filters.get('filterForDisabled', False)
+
+                    # Filtrowanie markerów
+                    markers_to_search = self.original_markers
+                    if filter_payable or filter_for_clients or filter_for_disabled:
+                        markers_to_search = [
+                            marker for marker in self.original_markers
+                            if (not filter_payable or marker.get('payable', False)) and
+                               (not filter_for_clients or marker.get('onlyForClients', False)) and
+                               (not filter_for_disabled or marker.get('forDisabled', False))
+                        ]
+
+                    # Obliczamy trasę do najbliższego markera, jeśli użytkownik ma swój marker
                     user_marker = user_data.get('marker')
                     if user_marker:
-                        nearest_marker = find_nearest_marker(user_marker, self.markers)
+                        nearest_marker = find_nearest_marker(user_marker, markers_to_search)
                         if nearest_marker:
                             route = get_route(
                                 user_marker['lat'], user_marker['lon'],
@@ -714,7 +730,7 @@ class Server:
                     self.add_marker_to_map(user_marker)
 
                 route = user_data.get('current_route')
-                if route and len(self.markers) > 0:
+                if route and len(markers_to_add) > 0:
                     coordinates = [
                         (coord[1], coord[0])
                         for coord in route['routes'][0]['geometry']['coordinates']
