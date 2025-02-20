@@ -375,3 +375,32 @@ function applyFilters() {
         }
     });
 }
+
+function showAllToilets() {
+    // Wyczyść wszystkie filtry
+    document.getElementById('filterPayable').checked = false;
+    document.getElementById('filterForClients').checked = false;
+    document.getElementById('filterForDisabled').checked = false;
+
+    // Wyślij żądanie do serwera, aby przywrócić wszystkie markery
+    fetch('/apply_filters', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            filterPayable: false,
+            filterForClients: false,
+            filterForDisabled: false
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('filterModal').style.display = 'none';
+            window.location.reload();
+        } else {
+            console.error('Error:', data.message);
+        }
+    });
+}
