@@ -549,3 +549,16 @@ iframe {
 #closeFilterModal:hover {
     color: #000;
 }
+
+/* Style dla nowego checkboxa filtrowania po ratingu */
+#filterRating {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    display: block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;
+}

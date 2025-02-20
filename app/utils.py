@@ -33,7 +33,8 @@ def get_route(start_lat, start_lon, end_lat, end_lon):
         return response.json()
     else:
         return None
-
+    
+@lru_cache(maxsize=128)
 def find_nearest_marker(user_location, markers):
     min_distance = float('inf')
     nearest_marker = None
