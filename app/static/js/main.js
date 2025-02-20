@@ -360,10 +360,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function applyFilters() {
-    const filterPayable = document.getElementById('filterPayable').checked;
-    const filterForClients = document.getElementById('filterForClients').checked;
-    const filterForDisabled = document.getElementById('filterForDisabled').checked;
     const filterRating = document.getElementById('filterRating').value;
+    const rating = parseInt(filterRating, 10);
+
+    if (rating < 1 || rating > 10) {
+        alert('Ocena musi być w zakresie od 1 do 10.');
+        return;
+    }
 
     fetch('/apply_filters', {
         method: 'POST',
@@ -371,10 +374,10 @@ function applyFilters() {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            filterPayable: filterPayable,
-            filterForClients: filterForClients,
-            filterForDisabled: filterForDisabled,
-            filterRating: filterRating
+            filterPayable: document.getElementById('filterPayable').checked,
+            filterForClients: document.getElementById('filterForClients').checked,
+            filterForDisabled: document.getElementById('filterForDisabled').checked,
+            filterRating: rating
         })
     })
     .then(response => response.json())
