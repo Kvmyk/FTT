@@ -125,7 +125,7 @@ class Server:
         """Zapisuje obecne 'globalne' markery do pliku data.json."""
         try:
             with open(os.path.join('data', 'data.json'), 'w', encoding='utf-8') as file:
-                json.dump(self.markers, file, ensure_ascii=False, indent=4)
+                json.dump(self.original_markers, file, ensure_ascii=False, indent=4)
         except Exception as e:
             logging.error(f"Błąd przy zapisie do data.json: {e}")
 
@@ -262,18 +262,17 @@ class Server:
 
                 # Dodajemy do globalnej listy
                 self.markers.append(new_marker)
+                self.original_markers.append(new_marker)  # Dodajemy do oryginalnej listy
+
                 # Zapisujemy do pliku data.json
                 self.save_markers()
 
-                # Odświeżamy mapę (opcjonalnie)
-                self.update_map()
-
-                # Ewentualnie wyliczamy trasę do najbliższego
+                # Obliczamy trasę do najbliższego markera, jeśli użytkownik ma swój marker
                 user_id = session.get('user_id')
                 if user_id:
                     user_data = session.get(user_id, {})
                     user_marker = user_data.get('marker')
-                    if user_marker and len(self.markers) > 0:  # Sprawdzamy, czy jest więcej niż jeden marker
+                    if user_marker:
                         nearest_marker = find_nearest_marker(user_marker, self.markers)
                         if nearest_marker:
                             route = get_route(
@@ -283,9 +282,12 @@ class Server:
                             if route:
                                 self.add_route_to_map(route)
 
-                return jsonify({'status': 'success', 'lat': lat, 'lon': lon})
+                # Odświeżamy mapę (opcjonalnie)
+                self.update_map()
+
+                return jsonify({'status': 'success'})
             else:
-                return jsonify({'status': 'error', 'message': 'Location not found'})
+                return jsonify({'status': 'error', 'message': 'Nie udało się ustalić współrzędnych.'})
 
         @self.app.after_request
         def add_header(response):
