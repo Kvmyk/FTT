@@ -256,17 +256,10 @@ class Server:
             onlyForClients = data.get('onlyForClients', 'false').lower() == 'true'
             forDisabled = data.get('forDisabled', 'false').lower() == 'true'
             rating = data.get('rating', '0')
-            photos = request.files.getlist('photos')  # może być None
-            photo_base64_list = []
-
-            for photo in photos:
-                if photo and (photo.mimetype == 'image/jpeg' or photo.mimetype == 'image/png'):
-                    if photo.content_length > 5 * 1024 * 1024:  # 5 MB limit
-                        return jsonify({'status': 'error', 'message': 'Rozmiar pliku nie może przekraczać 5 MB.'})
-                    photo_base64 = base64.b64encode(photo.read()).decode('utf-8')
-                    photo_base64_list.append(photo_base64)
-                else:
-                    return jsonify({'status': 'error', 'message': 'Dozwolone są tylko pliki w formacie .jpg i .png.'})
+            photo = request.files.get('photos')  # może być None
+            photo_base64 = None
+            if photo:
+                photo_base64 = base64.b64encode(photo.read()).decode('utf-8')
 
             # Ustalenie współrzędnych na podstawie userInput (np. nazwy miejsca)
             lat, lon = get_coordinates(userInput)
@@ -279,7 +272,7 @@ class Server:
                     "payable": payable,
                     "onlyForClients": onlyForClients,
                     "rating": rating,
-                    "photo": photo_base64_list,
+                    "photo": photo_base64,
                     "forDisabled": forDisabled 
                 }
 
@@ -544,11 +537,11 @@ class Server:
                 onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
                 forDisabled = "TAK" if marker.get('forDisabled', False) else "NIE"
                 rating = marker.get('rating', 'Brak oceny')
-                photo_base64_list = marker.get('photo', [])
+                photo_base64 = marker.get('photo', None)
                 comments_list = marker.get('comments', [])
                 photo_html = ""
-                for photo_base64 in photo_base64_list:
-                    photo_html += f"""
+                if photo_base64:
+                    photo_html = f"""
                         <img src="data:image/jpeg;base64,{photo_base64}" 
                             style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
                                     object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
