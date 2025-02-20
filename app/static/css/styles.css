@@ -428,6 +428,10 @@ label {
         width: 50%;
         max-width: 600px;
     }
+    #filterModal {
+        width: 70%;
+        max-width: 450px;
+    }
 }
 
 @media screen and (max-height: 600px) {
