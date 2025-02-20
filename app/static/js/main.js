@@ -414,3 +414,62 @@ function showAllToilets() {
         }
     });
 }
+
+function resizeImage(file, maxWidth, maxHeight, callback) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width *= maxHeight / height;
+                    height = maxHeight;
+                }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob(callback, file.type, 0.8);
+        }
+        img.src = event.target.result;
+    }
+    reader.readAsDataURL(file);
+}
+
+document.getElementById('photoInput').addEventListener('change', function(e) {
+    const container = document.getElementById('imagePreviewContainer');
+    container.innerHTML = ''; // Wyczyść poprzednie podglądy
+
+    const files = Array.from(this.files);
+    const resizedFiles = [];
+
+    files.forEach(file => {
+        if (file.type.startsWith('image/')) {
+            resizeImage(file, 800, 800, function(resizedBlob) {
+                resizedFiles.push(resizedBlob);
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.className = 'imagePreview';
+                    container.appendChild(img);
+                }
+                reader.readAsDataURL(resizedBlob);
+            });
+        }
+    });
+
+    this.files = new FileList(...resizedFiles);
+});
