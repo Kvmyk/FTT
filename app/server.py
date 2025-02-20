@@ -303,7 +303,7 @@ class Server:
                             if (not filter_payable or marker.get('payable', False)) and
                                (not filter_for_clients or marker.get('onlyForClients', False)) and
                                (not filter_for_disabled or marker.get('forDisabled', False)) and
-                               (marker.get('rating', 0) >= filter_rating)
+                               (int(marker.get('rating', 0)) >= int(filter_rating))
                         ]
 
                     # Obliczamy trasę do najbliższego markera, jeśli użytkownik ma swój marker
