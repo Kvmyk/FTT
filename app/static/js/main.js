@@ -153,6 +153,7 @@ function submitModal() {
 
     var paidInput = document.getElementById('paidInput').checked;
     var customersOnlyInput = document.getElementById('customersOnlyInput').checked;
+    var disabilityInput = document.getElementById('disabilityInput').checked;
     var photoInput = document.getElementById('photoInput').files;
 
     var formData = new FormData();
@@ -161,7 +162,7 @@ function submitModal() {
     formData.append('rating', ratingInput);
     formData.append('payable', paidInput);
     formData.append('onlyForClients', customersOnlyInput);
-    formData.append('forDisabled', disabilityInput);
+    formData.append('forDisabled', disabilityInput);  // Dodajemy pole forDisabled
     for (var i = 0; i < photoInput.length; i++) {
         formData.append('photos', photoInput[i]);
     }
@@ -172,18 +173,13 @@ function submitModal() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Success:', data);
         if (data.status === 'success') {
+            document.getElementById('myModal').style.display = 'none';
             window.location.reload();
         } else {
-            alert(data.message);
+            console.error('Error:', data.message);
         }
-    })
-    .catch((error) => {
-        console.error('Error:', error);
     });
-
-    document.getElementById('myModal').style.display = 'none';
 }
 
 function openCommentModal(lat, lon) {
