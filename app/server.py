@@ -363,15 +363,15 @@ class Server:
             filter_for_clients = data.get('filterForClients', False)
             filter_for_disabled = data.get('filterForDisabled', False)
 
-            if not filter_payable and not filter_for_clients and not filter_for_disabled:
-                self.markers = self.original_markers.copy()  # Przywróć oryginalną listę markerów
-            else:
-                self.markers = [
-                    marker for marker in self.original_markers
-                    if (not filter_payable or marker.get('payable', False)) and
-                       (not filter_for_clients or marker.get('onlyForClients', False)) and
-                       (not filter_for_disabled or marker.get('forDisabled', False))
-                ]
+            user_id = session.get('user_id')
+            if user_id:
+                user_data = session.get(user_id, {})
+                user_data['filters'] = {
+                    'filterPayable': filter_payable,
+                    'filterForClients': filter_for_clients,
+                    'filterForDisabled': filter_for_disabled
+                }
+                session[user_id] = user_data
 
             self.update_map()
 
@@ -664,7 +664,7 @@ class Server:
     def update_map(self):
         """Aktualizuje mapę, najpierw ją usuwając"""
         try:
-            # Wyczyść starą mape
+            # Wyczyść starą mapę
             if hasattr(self, 'm') and self.m is not None:
                 del self.m
                 self.m = None
@@ -686,7 +686,24 @@ class Server:
 
             # Dodaj markery i trasy
             # Dodajemy globalne markery (toalety)
-            for marker in self.markers:
+            markers_to_add = self.markers
+
+            if user_id:
+                user_data = session.get(user_id, {})
+                filters = user_data.get('filters', {})
+                filter_payable = filters.get('filterPayable', False)
+                filter_for_clients = filters.get('filterForClients', False)
+                filter_for_disabled = filters.get('filterForDisabled', False)
+
+                if filter_payable or filter_for_clients or filter_for_disabled:
+                    markers_to_add = [
+                        marker for marker in self.original_markers
+                        if (not filter_payable or marker.get('payable', False)) and
+                           (not filter_for_clients or marker.get('onlyForClients', False)) and
+                           (not filter_for_disabled or marker.get('forDisabled', False))
+                    ]
+
+            for marker in markers_to_add:
                 self.add_marker_to_map(marker)
 
             # Dodajemy marker + trasę użytkownika
