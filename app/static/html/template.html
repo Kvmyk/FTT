@@ -90,8 +90,9 @@
         <label><input type="checkbox" id="filterPayable">Płatna</label>
         <label><input type="checkbox" id="filterForClients">Tylko dla klientów</label>
         <label><input type="checkbox" id="filterForDisabled">Dla niepełnosprawnych</label>
+        <label>Minimalna ocena: <input type="number" id="filterRating" min="0" max="10" value="0"></label>
         <button onclick="applyFilters()">Zastosuj filtry</button>
-        <button onclick="showAllToilets()">Pokaż wszystkie toalety</button> <!-- Nowy przycisk -->
+        <button onclick="showAllToilets()">Pokaż wszystkie toalety</button>
     </div>
     <img src="data:image/jpeg;base64,{photo_base64}" loading="lazy" class="marker-image">
 </body>
