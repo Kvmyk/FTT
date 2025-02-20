@@ -746,15 +746,13 @@ class Server:
                 filter_payable = filters.get('filterPayable', False)
                 filter_for_clients = filters.get('filterForClients', False)
                 filter_for_disabled = filters.get('filterForDisabled', False)
-                filter_rating = filters.get('filterRating', 0)
 
-                if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
+                if filter_payable or filter_for_clients or filter_for_disabled:
                     markers_to_add = [
                         marker for marker in self.original_markers
                         if (not filter_payable or marker.get('payable', False)) and
                            (not filter_for_clients or marker.get('onlyForClients', False)) and
-                           (not filter_for_disabled or marker.get('forDisabled', False)) and
-                           (marker.get('rating', 0) >= filter_rating)
+                           (not filter_for_disabled or marker.get('forDisabled', False))
                     ]
 
             for marker in markers_to_add:
