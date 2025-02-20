@@ -161,6 +161,7 @@ function submitModal() {
     formData.append('rating', ratingInput);
     formData.append('payable', paidInput);
     formData.append('onlyForClients', customersOnlyInput);
+    formData.append('forDisabled', disabilityInput);
     for (var i = 0; i < photoInput.length; i++) {
         formData.append('photos', photoInput[i]);
     }
