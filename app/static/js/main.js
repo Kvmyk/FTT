@@ -162,9 +162,19 @@ function submitModal() {
     formData.append('rating', ratingInput);
     formData.append('payable', paidInput);
     formData.append('onlyForClients', customersOnlyInput);
-    formData.append('forDisabled', disabilityInput);  // Dodajemy pole forDisabled
+    formData.append('forDisabled', disabilityInput);
+
     for (var i = 0; i < photoInput.length; i++) {
-        formData.append('photos', photoInput[i]);
+        var file = photoInput[i];
+        if (file.size > 5 * 1024 * 1024) { // 5 MB limit
+            alert('Rozmiar pliku nie może przekraczać 5 MB.');
+            return;
+        }
+        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+            alert('Dozwolone są tylko pliki w formacie .jpg i .png.');
+            return;
+        }
+        formData.append('photos', file);
     }
 
     fetch('/submit', {
