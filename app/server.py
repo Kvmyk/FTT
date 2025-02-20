@@ -43,6 +43,7 @@ class Server:
 
         # Ładujemy globalne markery z pliku data.json (toalety)
         self.markers = self.load_markers()
+        self.original_markers = self.markers.copy()  # Przechowujemy oryginalną listę markerów
 
         # Inicjalizacja mapy jako None
         self.m = None
@@ -360,14 +361,16 @@ class Server:
             filter_for_clients = data.get('filterForClients', False)
             filter_for_disabled = data.get('filterForDisabled', False)
 
-            filtered_markers = [
-                marker for marker in self.markers
-                if (not filter_payable or marker.get('payable', False)) and
-                   (not filter_for_clients or marker.get('onlyForClients', False)) and
-                   (not filter_for_disabled or marker.get('forDisabled', False))
-            ]
+            if not filter_payable and not filter_for_clients and not filter_for_disabled:
+                self.markers = self.original_markers.copy()  # Przywróć oryginalną listę markerów
+            else:
+                self.markers = [
+                    marker for marker in self.original_markers
+                    if (not filter_payable or marker.get('payable', False)) and
+                       (not filter_for_clients or marker.get('onlyForClients', False)) and
+                       (not filter_for_disabled or marker.get('forDisabled', False))
+                ]
 
-            self.markers = filtered_markers
             self.update_map()
 
             return jsonify({'status': 'success'})
