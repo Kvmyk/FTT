@@ -363,7 +363,6 @@ function applyFilters() {
     const filterPayable = document.getElementById('filterPayable').checked;
     const filterForClients = document.getElementById('filterForClients').checked;
     const filterForDisabled = document.getElementById('filterForDisabled').checked;
-    const filterRating = document.getElementById('filterRating').value;
 
     fetch('/apply_filters', {
         method: 'POST',
@@ -373,8 +372,7 @@ function applyFilters() {
         body: JSON.stringify({
             filterPayable: filterPayable,
             filterForClients: filterForClients,
-            filterForDisabled: filterForDisabled,
-            filterRating: filterRating
+            filterForDisabled: filterForDisabled
         })
     })
     .then(response => response.json())
