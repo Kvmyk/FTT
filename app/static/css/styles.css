@@ -552,7 +552,7 @@ iframe {
 
 /* Style dla nowego checkboxa filtrowania po ratingu */
 #filterRating {
-    width: 50%; /* Zmniejszona szerokość */
+    width: 30%; /* Zmniejszona szerokość */
     padding: 10px;
     margin: 10px 0;
     display: block;

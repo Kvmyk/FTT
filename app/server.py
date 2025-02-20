@@ -414,6 +414,7 @@ class Server:
             filter_payable = data.get('filterPayable', False)
             filter_for_clients = data.get('filterForClients', False)
             filter_for_disabled = data.get('filterForDisabled', False)
+            filter_rating = data.get('filterRating', 0)
 
             user_id = session.get('user_id')
             if user_id:
@@ -421,7 +422,8 @@ class Server:
                 user_data['filters'] = {
                     'filterPayable': filter_payable,
                     'filterForClients': filter_for_clients,
-                    'filterForDisabled': filter_for_disabled
+                    'filterForDisabled': filter_for_disabled,
+                    'filterRating': filter_rating
                 }
                 session[user_id] = user_data
 
