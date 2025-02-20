@@ -82,5 +82,15 @@
     </div>
     <!-- Filter Button -->
     <div class="filter-button"><i class="fas fa-filter"></i></div>
+
+    <!-- Filter Modal -->
+    <div id="filterModal" style="display:none;">
+        <span id="closeFilterModal" style="cursor:pointer; float:right; font-size:20px;">&times;</span>
+        <h3>Filtry</h3>
+        <label><input type="checkbox" id="filterPayable">Płatna</label><br>
+        <label><input type="checkbox" id="filterForClients">Tylko dla klientów</label><br>
+        <label><input type="checkbox" id="filterForDisabled">Dla niepełnosprawnych</label><br>
+        <button onclick="applyFilters()">Zastosuj filtry</button>
+    </div>
 </body>
 </html>

@@ -353,6 +353,25 @@ class Server:
             
             return jsonify({'status': 'error', 'message': 'Could not calculate route'})
 
+        @self.app.route('/apply_filters', methods=['POST'])
+        def apply_filters():
+            data = request.json
+            filter_payable = data.get('filterPayable', False)
+            filter_for_clients = data.get('filterForClients', False)
+            filter_for_disabled = data.get('filterForDisabled', False)
+
+            filtered_markers = [
+                marker for marker in self.markers
+                if (not filter_payable or marker.get('payable', False)) and
+                   (not filter_for_clients or marker.get('onlyForClients', False)) and
+                   (not filter_for_disabled or marker.get('forDisabled', False))
+            ]
+
+            self.markers = filtered_markers
+            self.update_map()
+
+            return jsonify({'status': 'success'})
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.

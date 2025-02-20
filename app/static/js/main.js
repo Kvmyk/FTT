@@ -341,3 +341,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Obsługa przycisku filtrów
+    document.querySelector('.filter-button').addEventListener('click', function() {
+        document.getElementById('filterModal').style.display = 'block';
+    });
+    document.getElementById('closeFilterModal').addEventListener('click', function() {
+        document.getElementById('filterModal').style.display = 'none';
+    });
+});
+
+function applyFilters() {
+    const filterPayable = document.getElementById('filterPayable').checked;
+    const filterForClients = document.getElementById('filterForClients').checked;
+    const filterForDisabled = document.getElementById('filterForDisabled').checked;
+
+    fetch('/apply_filters', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            filterPayable: filterPayable,
+            filterForClients: filterForClients,
+            filterForDisabled: filterForDisabled
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('filterModal').style.display = 'none';
+            window.location.reload();
+        } else {
+            console.error('Error:', data.message);
+        }
+    });
+}
