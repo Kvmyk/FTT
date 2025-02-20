@@ -166,8 +166,24 @@ class Server:
             user_data["marker"] = user_marker
             session[user_id] = user_data
 
+            # Pobierz filtry z sesji
+            filters = user_data.get('filters', {})
+            filter_payable = filters.get('filterPayable', False)
+            filter_for_clients = filters.get('filterForClients', False)
+            filter_for_disabled = filters.get('filterForDisabled', False)
+
+            # Filtrowanie markerów
+            markers_to_search = self.original_markers
+            if filter_payable or filter_for_clients or filter_for_disabled:
+                markers_to_search = [
+                    marker for marker in self.original_markers
+                    if (not filter_payable or marker.get('payable', False)) and
+                       (not filter_for_clients or marker.get('onlyForClients', False)) and
+                       (not filter_for_disabled or marker.get('forDisabled', False))
+                ]
+
             # Obliczamy trasę do najbliższego markera
-            nearest_marker = find_nearest_marker(user_marker, self.markers)
+            nearest_marker = find_nearest_marker(user_marker, markers_to_search)
             if nearest_marker:
                 route = get_route(
                     user_marker['lat'], user_marker['lon'],
@@ -356,6 +372,22 @@ class Server:
             }
             user_data['marker'] = user_marker
             
+            # Pobierz filtry z sesji
+            filters = user_data.get('filters', {})
+            filter_payable = filters.get('filterPayable', False)
+            filter_for_clients = filters.get('filterForClients', False)
+            filter_for_disabled = filters.get('filterForDisabled', False)
+
+            # Filtrowanie markerów
+            markers_to_search = self.original_markers
+            if filter_payable or filter_for_clients or filter_for_disabled:
+                markers_to_search = [
+                    marker for marker in self.original_markers
+                    if (not filter_payable or marker.get('payable', False)) and
+                       (not filter_for_clients or marker.get('onlyForClients', False)) and
+                       (not filter_for_disabled or marker.get('forDisabled', False))
+                ]
+
             # Wyznacz trasę do wybranej toalety
             route = get_route(
                 data['user_lat'], 
