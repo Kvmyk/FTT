@@ -10,6 +10,7 @@ import logging
 import threading
 import time
 from flask_session import Session
+from flask_compress import Compress
 
 from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
@@ -23,6 +24,7 @@ user_icon = os.path.join('user_icon.png')
 class Server:
     def __init__(self):
         self.app = Flask(__name__, static_url_path='/static')
+        Compress(self.app)
         self.app.secret_key = "twoj_sekretny_klucz"  # klucz do sesji - niezbędny
         
         # Configure server-side session storage (e.g., filesystem)
