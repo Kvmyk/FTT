@@ -248,11 +248,6 @@ class Server:
 
         @self.app.route('/submit', methods=['POST'])
         def submit():
-            """
-            Dodaje nową toaletę do globalnej listy i zapisuje do data.json.
-            Następnie, jeśli user ma swój marker, przeliczamy trasę do nowego 
-            (albo najbliższego) markera.
-            """
             data = request.form
             userInput = data.get('userInput', '')
             description = data.get('description', '')
@@ -268,62 +263,70 @@ class Server:
             # Ustalenie współrzędnych na podstawie userInput (np. nazwy miejsca)
             lat, lon = get_coordinates(userInput)
             if lat and lon:
-                new_marker = {
-                    "lat": lat,
-                    "lon": lon,
-                    "name": userInput,
-                    "description": description,
-                    "payable": payable,
-                    "onlyForClients": onlyForClients,
-                    "rating": rating,
-                    "photo": photo_base64,
-                    "forDisabled": forDisabled 
-                }
+                # Sprawdź czy marker o tych współrzędnych już istnieje
+                existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
+                if existing_marker:
+                    # Jeśli nie ma sekcji komentarzy, utwórz ją
+                    existing_marker.setdefault('comments', [])
+                    # Dodaj nowy komentarz z opisem i oceną
+                    existing_marker['comments'].append({
+                        'comment': description,
+                        'rating': rating
+                    })
+                    self.save_markers()
+                    # Możesz również przeliczyć trasę lub zrobić update mapy
+                    self.update_map()
+                    return jsonify({'status': 'success', 'message': 'Dodano komentarz do istniejącego markera.'})
+                else:
+                    # Jeśli marker nie istnieje, utwórz nowy
+                    new_marker = {
+                        "lat": lat,
+                        "lon": lon,
+                        "name": userInput,
+                        "description": description,
+                        "payable": payable,
+                        "onlyForClients": onlyForClients,
+                        "rating": rating,
+                        "photo": photo_base64,
+                        "forDisabled": forDisabled 
+                    }
+                    # Dodaj marker do globalnej listy
+                    self.markers.append(new_marker)
+                    self.original_markers.append(new_marker)
+                    self.save_markers()
+                    
+                    # Obsługa filtrów i obliczanie trasy, jeśli marker użytkownika istnieje
+                    user_id = session.get('user_id')
+                    if user_id:
+                        user_data = session.get(user_id, {})
+                        filters = user_data.get('filters', {})
+                        filter_payable = filters.get('filterPayable', False)
+                        filter_for_clients = filters.get('filterForClients', False)
+                        filter_for_disabled = filters.get('filterForDisabled', False)
+                        filter_rating = filters.get('filterRating', 0)
 
-                # Dodajemy do globalnej listy
-                self.markers.append(new_marker)
-                self.original_markers.append(new_marker)  # Dodajemy do oryginalnej listy
+                        markers_to_search = self.original_markers
+                        if filter_payable or filter_for_clients or filter_for_disabled or int(filter_rating) > 0:
+                            markers_to_search = [
+                                marker for marker in self.original_markers
+                                if (not filter_payable or marker.get('payable', False)) and
+                                (not filter_for_clients or marker.get('onlyForClients', False)) and
+                                (not filter_for_disabled or marker.get('forDisabled', False)) and
+                                (int(marker.get('rating', 0)) >= int(filter_rating))
+                            ]
 
-                # Zapisujemy do pliku data.json
-                self.save_markers()
-
-                # Pobierz filtry z sesji
-                user_id = session.get('user_id')
-                if user_id:
-                    user_data = session.get(user_id, {})
-                    filters = user_data.get('filters', {})
-                    filter_payable = filters.get('filterPayable', False)
-                    filter_for_clients = filters.get('filterForClients', False)
-                    filter_for_disabled = filters.get('filterForDisabled', False)
-                    filter_rating = filters.get('filterRating', 0)
-
-                    # Filtrowanie markerów
-                    markers_to_search = self.original_markers
-                    if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
-                        markers_to_search = [
-                            marker for marker in self.original_markers
-                            if (not filter_payable or marker.get('payable', False)) and
-                               (not filter_for_clients or marker.get('onlyForClients', False)) and
-                               (not filter_for_disabled or marker.get('forDisabled', False)) and
-                               (int(marker.get('rating', 0)) >= int(filter_rating))
-                        ]
-
-                    # Obliczamy trasę do najbliższego markera, jeśli użytkownik ma swój marker
-                    user_marker = user_data.get('marker')
-                    if user_marker:
-                        nearest_marker = find_nearest_marker(user_marker, markers_to_search)
-                        if nearest_marker:
-                            route = get_route(
-                                user_marker['lat'], user_marker['lon'],
-                                nearest_marker['lat'], nearest_marker['lon']
-                            )
-                            if route:
-                                self.add_route_to_map(route)
-
-                # Odświeżamy mapę (opcjonalnie)
-                self.update_map()
-
-                return jsonify({'status': 'success'})
+                        user_marker = user_data.get('marker')
+                        if user_marker:
+                            nearest_marker = find_nearest_marker(user_marker, markers_to_search)
+                            if nearest_marker:
+                                route = get_route(
+                                    user_marker['lat'], user_marker['lon'],
+                                    nearest_marker['lat'], nearest_marker['lon']
+                                )
+                                if route:
+                                    self.add_route_to_map(route)
+                    self.update_map()
+                    return jsonify({'status': 'success'})
             else:
                 return jsonify({'status': 'error', 'message': 'Nie udało się ustalić współrzędnych.'})
 
