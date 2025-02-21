@@ -351,9 +351,11 @@ class Server:
             for marker in self.markers:
                 if marker['lat'] == lat and marker['lon'] == lon:
                     marker.setdefault('comments', []).append({'comment': comment, 'rating': rating})
-                    # Recompute rating as: (base rating + sum of comment ratings) / (1 + number of comments)
+                    # Jeżeli nie zapisano jeszcze oryginalnej oceny, zachowujemy ją jako base_rating
+                    if 'base_rating' not in marker:
+                        marker['base_rating'] = marker.get('rating', rating)
                     try:
-                        base_rating = float(marker.get('rating', 0))
+                        base_rating = float(marker.get('base_rating', 0))
                     except ValueError:
                         base_rating = 0
                     comment_ratings = []
@@ -363,7 +365,7 @@ class Server:
                         except ValueError:
                             pass
                     computed_rating = (base_rating + sum(comment_ratings)) / (1 + len(comment_ratings))
-                    # Overwrite the marker's rating with the computed average
+                    # Zapisujemy uśrednioną ocenę w polu rating
                     marker['rating'] = f"{computed_rating:.1f}"
                     self.save_markers()
                     return jsonify({'status': 'success'})
