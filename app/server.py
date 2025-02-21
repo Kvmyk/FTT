@@ -378,22 +378,6 @@ class Server:
             }
             user_data['marker'] = user_marker
             
-            # Pobierz filtry z sesji
-            filters = user_data.get('filters', {})
-            filter_payable = filters.get('filterPayable', False)
-            filter_for_clients = filters.get('filterForClients', False)
-            filter_for_disabled = filters.get('filterForDisabled', False)
-
-            # Filtrowanie markerów
-            markers_to_search = self.original_markers
-            if filter_payable or filter_for_clients or filter_for_disabled:
-                markers_to_search = [
-                    marker for marker in self.original_markers
-                    if (not filter_payable or marker.get('payable', False)) and
-                       (not filter_for_clients or marker.get('onlyForClients', False)) and
-                       (not filter_for_disabled or marker.get('forDisabled', False))
-                ]
-
             # Wyznacz trasę do wybranej toalety
             route = get_route(
                 data['user_lat'], 
