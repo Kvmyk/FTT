@@ -263,16 +263,13 @@ class Server:
             # Ustalenie współrzędnych na podstawie userInput (np. nazwy miejsca)
             lat, lon = get_coordinates(userInput)
             if lat and lon:
-                # Sprawdź czy marker o tych współrzędnych już istnieje
                 existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
                 if existing_marker:
-                    # Marker już istnieje – dodajemy opis i ocenę jako komentarz do sekcji komentarzy
                     existing_marker.setdefault('comments', []).append({
                         'comment': description,
                         'rating': rating
                     })
                 else:
-                    # Marker nie istnieje – tworzymy nowy
                     new_marker = {
                         "lat": lat,
                         "lon": lon,
@@ -286,10 +283,8 @@ class Server:
                     }
                     self.markers.append(new_marker)
                     self.original_markers.append(new_marker)
-                # Zapisujemy do pliku data.json
                 self.save_markers()
                 
-                # Pobierz filtry z sesji jeśli istnieją i przelicz trasę
                 user_id = session.get('user_id')
                 if user_id:
                     user_data = session.get(user_id, {})
@@ -299,7 +294,7 @@ class Server:
                     filter_for_disabled = filters.get('filterForDisabled', False)
                     filter_rating = filters.get('filterRating', 0)
                     markers_to_search = self.original_markers
-                    if filter_payable or filter_for_clients or filter_for_disabled or int(filter_rating) > 0:
+                    if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
                         markers_to_search = [
                             marker for marker in self.original_markers
                             if (not filter_payable or marker.get('payable', False)) and
@@ -307,8 +302,9 @@ class Server:
                                (not filter_for_disabled or marker.get('forDisabled', False)) and
                                (int(marker.get('rating', 0)) >= int(filter_rating))
                         ]
+                    # Tylko jeśli filtr nie zwróci pustej listy, generujemy trasę
                     user_marker = user_data.get('marker')
-                    if user_marker:
+                    if user_marker and markers_to_search:
                         nearest_marker = find_nearest_marker(user_marker, markers_to_search)
                         if nearest_marker:
                             route = get_route(
@@ -317,9 +313,7 @@ class Server:
                             )
                             if route:
                                 self.add_route_to_map(route)
-                # Odśwież mapę
                 self.update_map()
-
                 return jsonify({'status': 'success'})
             else:
                 return jsonify({'status': 'error', 'message': 'Nie udało się ustalić współrzędnych.'})
