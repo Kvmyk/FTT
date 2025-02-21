@@ -248,11 +248,6 @@ class Server:
 
         @self.app.route('/submit', methods=['POST'])
         def submit():
-            """
-            Dodaje nową toaletę do globalnej listy i zapisuje do data.json.
-            Następnie, jeśli user ma swój marker, przeliczamy trasę do nowego 
-            (albo najbliższego) markera.
-            """
             data = request.form
             userInput = data.get('userInput', '')
             description = data.get('description', '')
@@ -268,26 +263,33 @@ class Server:
             # Ustalenie współrzędnych na podstawie userInput (np. nazwy miejsca)
             lat, lon = get_coordinates(userInput)
             if lat and lon:
-                new_marker = {
-                    "lat": lat,
-                    "lon": lon,
-                    "name": userInput,
-                    "description": description,
-                    "payable": payable,
-                    "onlyForClients": onlyForClients,
-                    "rating": rating,
-                    "photo": photo_base64,
-                    "forDisabled": forDisabled 
-                }
-
-                # Dodajemy do globalnej listy
-                self.markers.append(new_marker)
-                self.original_markers.append(new_marker)  # Dodajemy do oryginalnej listy
-
+                # Sprawdź czy marker o tych współrzędnych już istnieje
+                existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
+                if existing_marker:
+                    # Marker już istnieje – dodajemy opis i ocenę jako komentarz do sekcji komentarzy
+                    existing_marker.setdefault('comments', []).append({
+                        'comment': description,
+                        'rating': rating
+                    })
+                else:
+                    # Marker nie istnieje – tworzymy nowy
+                    new_marker = {
+                        "lat": lat,
+                        "lon": lon,
+                        "name": userInput,
+                        "description": description,
+                        "payable": payable,
+                        "onlyForClients": onlyForClients,
+                        "rating": rating,
+                        "photo": photo_base64,
+                        "forDisabled": forDisabled 
+                    }
+                    self.markers.append(new_marker)
+                    self.original_markers.append(new_marker)
                 # Zapisujemy do pliku data.json
                 self.save_markers()
-
-                # Pobierz filtry z sesji
+                
+                # Pobierz filtry z sesji jeśli istnieją i przelicz trasę
                 user_id = session.get('user_id')
                 if user_id:
                     user_data = session.get(user_id, {})
@@ -296,10 +298,8 @@ class Server:
                     filter_for_clients = filters.get('filterForClients', False)
                     filter_for_disabled = filters.get('filterForDisabled', False)
                     filter_rating = filters.get('filterRating', 0)
-
-                    # Filtrowanie markerów
                     markers_to_search = self.original_markers
-                    if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
+                    if filter_payable or filter_for_clients or filter_for_disabled or int(filter_rating) > 0:
                         markers_to_search = [
                             marker for marker in self.original_markers
                             if (not filter_payable or marker.get('payable', False)) and
@@ -307,8 +307,6 @@ class Server:
                                (not filter_for_disabled or marker.get('forDisabled', False)) and
                                (int(marker.get('rating', 0)) >= int(filter_rating))
                         ]
-
-                    # Obliczamy trasę do najbliższego markera, jeśli użytkownik ma swój marker
                     user_marker = user_data.get('marker')
                     if user_marker:
                         nearest_marker = find_nearest_marker(user_marker, markers_to_search)
@@ -319,8 +317,7 @@ class Server:
                             )
                             if route:
                                 self.add_route_to_map(route)
-
-                # Odświeżamy mapę (opcjonalnie)
+                # Odśwież mapę
                 self.update_map()
 
                 return jsonify({'status': 'success'})
