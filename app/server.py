@@ -518,9 +518,9 @@ class Server:
                 onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
                 forDisabled = "TAK" if marker.get('forDisabled', False) else "NIE"
                 try:
-                    base_rating = float(marker.get('rating', 0))
+                    base_rating = float(marker.get('base_rating', marker.get('rating', 0)))
                 except ValueError:
-                    base_rating = None
+                    base_rating = 0
 
                 comment_list = marker.get('comments', [])
                 comment_ratings = []
@@ -530,10 +530,10 @@ class Server:
                     except ValueError:
                         pass
 
-                if base_rating is not None and comment_ratings:
+                if comment_ratings:
                     computed_rating = (base_rating + sum(comment_ratings)) / (1 + len(comment_ratings))
                     rating_display = f"{computed_rating:.1f}"
-                elif base_rating is not None:
+                elif base_rating:
                     rating_display = f"{base_rating:.1f}"
                 else:
                     rating_display = "Brak oceny"
