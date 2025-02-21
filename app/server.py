@@ -173,17 +173,17 @@ class Server:
             filter_payable = filters.get('filterPayable', False)
             filter_for_clients = filters.get('filterForClients', False)
             filter_for_disabled = filters.get('filterForDisabled', False)
-            filter_rating = int(filters.get('filterRating', 0))
+            filter_rating = float(filters.get('filterRating', 0))
 
             # Filtrowanie markerów
             markers_to_search = self.original_markers
-            if filter_payable or filter_for_clients or filter_for_disabled or float(filter_rating) > 0:
+            if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
                 markers_to_search = [
                     marker for marker in self.original_markers
                     if (not filter_payable or marker.get('payable', False)) and
                        (not filter_for_clients or marker.get('onlyForClients', False)) and
                        (not filter_for_disabled or marker.get('forDisabled', False)) and
-                       (float(marker.get('rating', 0)) >= float(filter_rating))
+                       (float(marker.get('rating', 0)) >= filter_rating)
                 ]
 
             # Obliczamy trasę do najbliższego markera
@@ -292,7 +292,7 @@ class Server:
                     filter_payable = filters.get('filterPayable', False)
                     filter_for_clients = filters.get('filterForClients', False)
                     filter_for_disabled = filters.get('filterForDisabled', False)
-                    filter_rating = filters.get('filterRating', 0)
+                    filter_rating = float(filters.get('filterRating', 0))
                     markers_to_search = self.original_markers
                     if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
                         markers_to_search = [
@@ -300,7 +300,7 @@ class Server:
                             if (not filter_payable or marker.get('payable', False)) and
                                (not filter_for_clients or marker.get('onlyForClients', False)) and
                                (not filter_for_disabled or marker.get('forDisabled', False)) and
-                               (int(marker.get('rating', 0)) >= int(filter_rating))
+                               (float(marker.get('rating', 0)) >= filter_rating)
                         ]
                     # Exclude the user's own marker if present
                     user_marker = user_data.get('marker')
@@ -406,7 +406,7 @@ class Server:
             filter_payable = data.get('filterPayable', False)
             filter_for_clients = data.get('filterForClients', False)
             filter_for_disabled = data.get('filterForDisabled', False)
-            filter_rating = data.get('filterRating', 0)
+            filter_rating = float(data.get('filterRating', 0))
 
             user_id = session.get('user_id')
             if user_id:
@@ -739,7 +739,7 @@ class Server:
                 filter_payable = filters.get('filterPayable', False)
                 filter_for_clients = filters.get('filterForClients', False)
                 filter_for_disabled = filters.get('filterForDisabled', False)
-                filter_rating = int(filters.get('filterRating', 0))
+                filter_rating = float(filters.get('filterRating', 0))
 
                 if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
                     markers_to_add = [
@@ -747,7 +747,7 @@ class Server:
                         if (not filter_payable or marker.get('payable', False)) and
                            (not filter_for_clients or marker.get('onlyForClients', False)) and
                            (not filter_for_disabled or marker.get('forDisabled', False)) and
-                           (int(marker.get('rating', 0)) >= filter_rating)
+                           (float(marker.get('rating', 0)) >= filter_rating)
                     ]
 
             for marker in markers_to_add:
