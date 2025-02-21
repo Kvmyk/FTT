@@ -368,20 +368,16 @@ class Server:
                 user_id = str(uuid.uuid4())
                 session['user_id'] = user_id
             
-            # Aktualizuj marker użytkownika
+            # Get the user's location from session rather than overriding it
             user_data = session.get(user_id, {})
-            user_marker = {
-                "lat": data['user_lat'],
-                "lon": data['user_lon'],
-                "name": "User Location",
-                "description": "This is your location"
-            }
-            user_data['marker'] = user_marker
+            user_marker = user_data.get('marker')
+            if not user_marker:
+                return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
             
-            # Używamy bezpośrednio współrzędnych docelowych z żądania
+            # Use the target coordinates from the request to calculate the route
             route = get_route(
-                data['user_lat'], 
-                data['user_lon'],
+                user_marker['lat'], 
+                user_marker['lon'],
                 data['target_lat'], 
                 data['target_lon']
             )
@@ -735,62 +731,63 @@ class Server:
                 user_marker = user_data.get('marker')
                 if user_marker:
                     self.add_marker_to_map(user_marker)
-                    if not user_data.get('current_route'):
-                        nearest_marker = find_nearest_marker(user_marker, markers_to_add)
-                        if nearest_marker:
-                            route = get_route(
-                                user_marker['lat'], user_marker['lon'],
-                                nearest_marker['lat'], nearest_marker['lon']
-                            )
-                            if route:
-                                user_data['current_route'] = route
-                                session[user_id] = user_data  # Zapisz dane w sesji
 
-                                coordinates = [
-                                    (coord[1], coord[0])
-                                    for coord in route['routes'][0]['geometry']['coordinates']
-                                ]
-                                distance = route['routes'][0]['distance']  # w metrach
-                                distance_text = f"{distance / 1000:.2f} km"
+                    # Obliczamy trasę do najbliższego markera z przefiltrowanej listy
+                    nearest_marker = find_nearest_marker(user_marker, markers_to_add)
+                    if nearest_marker:
+                        route = get_route(
+                            user_marker['lat'], user_marker['lon'],
+                            nearest_marker['lat'], nearest_marker['lon']
+                        )
+                        if route:
+                            user_data['current_route'] = route
+                            session[user_id] = user_data  # Zapisz dane w sesji
 
-                                # Rysujemy czerwoną polilinię
-                                folium.PolyLine(
-                                    locations=coordinates,
-                                    color='#d00000',
-                                    weight=5,
-                                    opacity=0.7
-                                ).add_to(self.m)
+                            coordinates = [
+                                (coord[1], coord[0])
+                                for coord in route['routes'][0]['geometry']['coordinates']
+                            ]
+                            distance = route['routes'][0]['distance']  # w metrach
+                            distance_text = f"{distance / 1000:.2f} km"
 
-                                # Znacznik z odległością w połowie trasy
-                                mid_point_index = len(coordinates) // 2
-                                mid_point = coordinates[mid_point_index]
-                                offset_latitude = 0.0007  # przesuwamy napis troszkę do góry
-                                offset_longitude = 0.0007  # przesuwamy napis troszkę w bok
-                                mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
+                            # Rysujemy czerwoną polilinię
+                            folium.PolyLine(
+                                locations=coordinates,
+                                color='#d00000',
+                                weight=5,
+                                opacity=0.7
+                            ).add_to(self.m)
 
-                                folium.Marker(
-                                    location=mid_point_with_offset,
-                                    icon=folium.DivIcon(
-                                        html=f"""
-                                            <div style="
-                                                font-size: 14px; 
-                                                color: #D32F2F;
-                                                font-weight: bold;
-                                                background-color: rgba(255, 255, 255, 0.9);
-                                                padding: 0.4em 0.8em;
-                                                border-radius: 0.3em;
-                                                text-align: center;
-                                                font-family: Arial, sans-serif;
-                                                box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
-                                                display: inline-block;
-                                                min-width: max-content;
-                                                white-space: nowrap;
-                                            ">
-                                                {distance_text}
-                                            </div>
-                                        """
-                                    )
-                                ).add_to(self.m)
+                            # Znacznik z odległością w połowie trasy
+                            mid_point_index = len(coordinates) // 2
+                            mid_point = coordinates[mid_point_index]
+                            offset_latitude = 0.0007  # przesuwamy napis troszkę do góry
+                            offset_longitude = 0.0007  # przesuwamy napis troszkę w bok
+                            mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
+
+                            folium.Marker(
+                                location=mid_point_with_offset,
+                                icon=folium.DivIcon(
+                                    html=f"""
+                                        <div style="
+                                            font-size: 14px; 
+                                            color: #D32F2F;
+                                            font-weight: bold;
+                                            background-color: rgba(255, 255, 255, 0.9);
+                                            padding: 0.4em 0.8em;
+                                            border-radius: 0.3em;
+                                            text-align: center;
+                                            font-family: Arial, sans-serif;
+                                            box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
+                                            display: inline-block;
+                                            min-width: max-content;
+                                            white-space: nowrap;
+                                        ">
+                                            {distance_text}
+                                        </div>
+                                    """
+                                )
+                            ).add_to(self.m)
 
             # Zwracamy kod HTML gotowy do wstawienia w przeglądarkę (w <div id="map">)
             return self.m._repr_html_()
