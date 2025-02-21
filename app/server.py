@@ -378,7 +378,7 @@ class Server:
             }
             user_data['marker'] = user_marker
             
-            # Wyznacz trasę do wybranej toalety
+            # Wyznacz trasę bezpośrednio do wybranego markera
             route = get_route(
                 data['user_lat'], 
                 data['user_lon'],
@@ -388,8 +388,8 @@ class Server:
             
             if route:
                 user_data['current_route'] = route
-                session[user_id] = user_data  # Zapisz dane w sesji
-                self.update_map()  # Zaktualizuj mapę
+                session[user_id] = user_data
+                self.update_map()
                 return jsonify({'status': 'success'})
             
             return jsonify({'status': 'error', 'message': 'Could not calculate route'})

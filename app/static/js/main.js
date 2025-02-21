@@ -267,16 +267,6 @@ window.navigateToToilet = function(targetLat, targetLon) {
                 const userLat = position.coords.latitude;
                 const userLon = position.coords.longitude;
                 
-                // Oblicz odległość używając funkcji haversine (dodaj tę funkcję)
-                const distance = calculateDistance(userLat, userLon, targetLat, targetLon);
-                const distanceKm = distance / 1000;
-
-                if (distanceKm > 30000) {
-                    alert('Nie możesz nawigować do tej toalety - znajduje się dalej niż w promieniu 3km od Twojej lokalizacji.');
-                    return;
-                }
-                
-                // Jeśli odległość jest OK, kontynuuj nawigację
                 fetch('/navigate', {
                     method: 'POST',
                     headers: {
@@ -296,14 +286,10 @@ window.navigateToToilet = function(targetLat, targetLon) {
                             .then(response => response.text())
                             .then(html => {
                                 document.getElementById('map').innerHTML = html;
-                            })
-                            .catch(error => console.error('Error updating map:', error));
-                    } else {
-                        alert('Nie udało się wyznaczyć trasy');
+                            });
                     }
                 });
-            },
-            (error) => alert('Nie udało się pobrać lokalizacji: ' + error.message)
+            }
         );
     }
 };
