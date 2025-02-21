@@ -468,15 +468,11 @@ class Server:
                 lat = marker['lat']
                 lon = marker['lon']
 
-                if is_within_range:
-                    onclick_attr = f"window.parent.navigateToToilet({lat}, {lon})"
-                    disabled_attr = ""
-                else:
-                    onclick_attr = ""
-                    disabled_attr = 'disabled="disabled"'
+                onclick_attr = f"window.parent.navigateToToilet({lat}, {lon})"
+                disabled_attr = "" if is_within_range else 'disabled="disabled"'
 
                 navigate_button_html = f"""
-                    <button onclick="window.parent.navigateToToilet({lat}, {lon})"
+                    <button onclick="{onclick_attr}"
                             class="popup-button" 
                             style="
                                 opacity: {'1' if is_within_range else '0.7'};
@@ -496,7 +492,7 @@ class Server:
                             "
                             onmouseover="this.style.backgroundColor='#C92704';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
                             onmouseout="this.style.backgroundColor='red';this.style.transform='none';this.style.boxShadow='none'"
-                            >
+                            {disabled_attr}>
                         Nawiguj
                     </button>
                     {f'<span style="color: #d32f2f; font-size: 12px; margin-left: 8px;">Toaleta znajduje się dalej niż 10km</span>' if not is_within_range else ''}
@@ -508,21 +504,6 @@ class Server:
                     icon_size=(50, 50), 
                     shadow_size=(50, 50)
                 )
-                lat = marker['lat']
-                lon = marker['lon']
-                existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
-
-                if existing_marker and marker != existing_marker:
-                    # Dodaj komentarz i ocenę do istniejącego markera
-                    description = marker.get('description')
-                    rating = marker.get('rating')
-                    if description and rating:
-                        comments = existing_marker.setdefault('comments', [])
-                        # Dodaj komentarz tylko, jeśli go wcześniej nie było
-                        if not any(c for c in comments if c['comment'] == description and c['rating'] == rating):
-                            comments.append({'comment': description, 'rating': rating})
-                        return
-                        
                 name = marker.get('name', 'Unknown')
                 description = marker.get('description', 'No description')
                 payable = "TAK" if marker.get('payable', False) else "NIE"
