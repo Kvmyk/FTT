@@ -302,17 +302,23 @@ class Server:
                                (not filter_for_disabled or marker.get('forDisabled', False)) and
                                (int(marker.get('rating', 0)) >= int(filter_rating))
                         ]
-                    # Tylko jeśli filtr nie zwróci pustej listy, generujemy trasę
+                    # Exclude the user's own marker if present
                     user_marker = user_data.get('marker')
-                    if user_marker and markers_to_search:
-                        nearest_marker = find_nearest_marker(user_marker, markers_to_search)
-                        if nearest_marker:
-                            route = get_route(
-                                user_marker['lat'], user_marker['lon'],
-                                nearest_marker['lat'], nearest_marker['lon']
-                            )
-                            if route:
-                                self.add_route_to_map(route)
+                    if user_marker:
+                        filtered_markers = [
+                            marker for marker in markers_to_search 
+                            if marker.get('name', '') != "User Location"
+                        ]
+                        # Only generate route if there are markers (different than the user marker)
+                        if filtered_markers:
+                            nearest_marker = find_nearest_marker(user_marker, filtered_markers)
+                            if nearest_marker:
+                                route = get_route(
+                                    user_marker['lat'], user_marker['lon'],
+                                    nearest_marker['lat'], nearest_marker['lon']
+                                )
+                                if route:
+                                    self.add_route_to_map(route)
                 self.update_map()
                 return jsonify({'status': 'success'})
             else:
