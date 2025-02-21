@@ -269,6 +269,21 @@ class Server:
                         'comment': description,
                         'rating': rating
                     })
+                    # Zapamiętujemy pierwotną ocenę, jeśli jeszcze nie została zapisana
+                    if 'base_rating' not in existing_marker:
+                        existing_marker['base_rating'] = existing_marker.get('rating', rating)
+                    try:
+                        base_rating = float(existing_marker.get('base_rating', 0))
+                    except ValueError:
+                        base_rating = 0
+                    comment_ratings = []
+                    for c in existing_marker.get('comments', []):
+                        try:
+                            comment_ratings.append(float(c.get('rating', 0)))
+                        except ValueError:
+                            pass
+                    computed_rating = (base_rating + sum(comment_ratings)) / (1 + len(comment_ratings))
+                    existing_marker['rating'] = f"{computed_rating:.1f}"
                 else:
                     new_marker = {
                         "lat": lat,
