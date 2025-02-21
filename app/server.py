@@ -378,7 +378,7 @@ class Server:
             }
             user_data['marker'] = user_marker
             
-            # Wyznacz trasę bezpośrednio do wybranego markera
+            # Używamy bezpośrednio współrzędnych docelowych z żądania
             route = get_route(
                 data['user_lat'], 
                 data['user_lon'],
@@ -754,17 +754,33 @@ class Server:
                 user_marker = user_data.get('marker')
                 if user_marker:
                     self.add_marker_to_map(user_marker)
-
-                    # Obliczamy trasę do najbliższego markera z przefiltrowanej listy
-                    nearest_marker = find_nearest_marker(user_marker, markers_to_add)
-                    if nearest_marker:
-                        route = get_route(
-                            user_marker['lat'], user_marker['lon'],
-                            nearest_marker['lat'], nearest_marker['lon']
-                        )
-                        if route:
-                            user_data['current_route'] = route
-                            session[user_id] = user_data  # Zapisz dane w sesji
+                    
+                    # Sprawdź czy jest już zapisana trasa w sesji
+                    current_route = user_data.get('current_route')
+                    
+                    if current_route:
+                        # Użyj istniejącej trasy zamiast szukać najbliższego markera
+                        coordinates = [
+                            (coord[1], coord[0])
+                            for coord in current_route['routes'][0]['geometry']['coordinates']
+                        ]
+                        distance = current_route['routes'][0]['distance']
+                    else:
+                        # Tylko jeśli nie ma zapisanej trasy, szukaj najbliższego markera
+                        nearest_marker = find_nearest_marker(user_marker, markers_to_add)
+                        if nearest_marker:
+                            route = get_route(
+                                user_marker['lat'], user_marker['lon'],
+                                nearest_marker['lat'], nearest_marker['lon']
+                            )
+                            if route:
+                                user_data['current_route'] = route
+                                session[user_id] = user_data
+                                coordinates = [
+                                    (coord[1], coord[0])
+                                    for coord in route['routes'][0]['geometry']['coordinates']
+                                ]
+                                distance = route['routes'][0]['distance']
 
                             coordinates = [
                                 (coord[1], coord[0])
