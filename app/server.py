@@ -176,15 +176,13 @@ class Server:
             filter_rating = int(filters.get('filterRating', 0))
 
             # Filtrowanie markerów
-            markers_to_search = self.original_markers
-            if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
-                markers_to_search = [
-                    marker for marker in self.original_markers
-                    if (not filter_payable or marker.get('payable', False)) and
-                       (not filter_for_clients or marker.get('onlyForClients', False)) and
-                       (not filter_for_disabled or marker.get('forDisabled', False)) and
-                       (int(marker.get('rating', 0)) >= filter_rating)
-                ]
+            markers_to_search = [
+                marker for marker in self.original_markers
+                if (not filter_payable or marker.get('payable', False)) and
+                   (not filter_for_clients or marker.get('onlyForClients', False)) and
+                   (not filter_for_disabled or marker.get('forDisabled', False)) and
+                   (float(marker.get('rating') or 0) >= float(filter_rating))
+            ]
 
             # Obliczamy trasę do najbliższego markera
             nearest_marker = find_nearest_marker(user_marker, markers_to_search)
