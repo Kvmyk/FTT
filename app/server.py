@@ -351,9 +351,22 @@ class Server:
             for marker in self.markers:
                 if marker['lat'] == lat and marker['lon'] == lon:
                     marker.setdefault('comments', []).append({'comment': comment, 'rating': rating})
+                    # Recompute rating as: (base rating + sum of comment ratings) / (1 + number of comments)
+                    try:
+                        base_rating = float(marker.get('rating', 0))
+                    except ValueError:
+                        base_rating = 0
+                    comment_ratings = []
+                    for c in marker.get('comments', []):
+                        try:
+                            comment_ratings.append(float(c.get('rating', 0)))
+                        except ValueError:
+                            pass
+                    computed_rating = (base_rating + sum(comment_ratings)) / (1 + len(comment_ratings))
+                    # Overwrite the marker's rating with the computed average
+                    marker['rating'] = f"{computed_rating:.1f}"
                     self.save_markers()
                     return jsonify({'status': 'success'})
-
             return jsonify({'status': 'error', 'message': 'Marker not found'}), 404
 
         @self.app.route('/navigate', methods=['POST'])
