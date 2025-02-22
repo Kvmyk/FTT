@@ -23,6 +23,18 @@
                     }
                 })
                 .catch(error => console.error('Error:', error));
+
+                fetch('/navigate')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const nearestPinInfo = document.getElementById('nearestPinInfo');
+                        const nearestPinText = document.getElementById('nearestPinText');
+                        nearestPinText.innerText = `Od twojej lokalizacji do wyznaczonego markera jest ${data.distance} - ${data.name}`;
+                        nearestPinInfo.classList.add('show');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
         });
         
         document.getElementById('photoInput').addEventListener('change', function(e) {
