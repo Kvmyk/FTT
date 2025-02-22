@@ -217,6 +217,8 @@ html, body {
     transition: opacity 0.3s ease-in-out;
     font-family: 'Roboto', sans-serif;
     font-weight: 300; /* Light */
+    width: 90%;
+    max-width: 500px;
 }
 
 #nearestPinInfo.show {
@@ -404,9 +406,6 @@ label {
         font-size: 16px;
     }
     
-    #nearestPinInfo {
-        width: 60%;
-    }
 }
 
 /* Tablets */
@@ -419,10 +418,7 @@ label {
     #myModal {
         width: 70%;
     }
-    
-    #nearestPinInfo {
-        width: 60%;
-    }
+
 }
 
 /* Larger screens */
@@ -441,9 +437,7 @@ label {
         max-width: 450px;
     }
     
-    #nearestPinInfo {
-        width: 60%;
-    }
+
 }
 
 @media screen and (max-height: 600px) {
