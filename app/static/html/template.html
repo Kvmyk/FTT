@@ -72,7 +72,11 @@
         <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10" required>
         <input type="file" id="photoInput" accept=".jpg,.png" multiple>
         <div id="imagePreviewContainer"></div>
-        <label><input type="checkbox" id="useUserLocation">Użyj mojej lokalizacji</label>
+        <label class="switch">
+          <input type="checkbox" id="useUserLocation">
+          <span class="slider"></span>
+          Użyj mojej lokalizacji
+        </label>
         <button onclick="submitModal()">Gotowe</button>
     </div>
 
