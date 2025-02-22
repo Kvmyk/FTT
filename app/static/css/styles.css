@@ -569,6 +569,7 @@ iframe {
   display: inline-block;
   width: 40px;
   height: 20px;
+  vertical-align: middle; /* Ustawienie pionowego wyrównania */
 }
 
 /* Ukrycie domyślnego checkboxa */
@@ -612,6 +613,13 @@ input:checked + .slider {
 /* Przesunięcie kółka po zaznaczeniu */
 input:checked + .slider:before {
   transform: translateX(20px);
+}
+
+/* Styl dla tekstu obok slidera */
+.switch-label {
+  display: inline-block;
+  margin-left: 10px;
+  vertical-align: middle; /* Ustawienie pionowego wyrównania */
 }
 
 /* Styl dla kontenera slidera */
