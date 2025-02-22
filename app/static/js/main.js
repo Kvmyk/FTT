@@ -178,7 +178,7 @@ function submitModal() {
             formData.append('photos', photoInput[i]);
         }
 
-        fetch('/add_marker', {
+        fetch('/submit', {
             method: 'POST',
             body: formData
         })
