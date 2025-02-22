@@ -222,7 +222,25 @@ class Server:
                 response.headers['Cache-Control'] = 'no-store'
                 return response, 202
 
-            nearest_marker = find_nearest_marker(user_marker, self.markers)
+            # Pobierz filtry z sesji
+            filters = user_data.get('filters', {})
+            filter_payable = filters.get('filterPayable', False)
+            filter_for_clients = filters.get('filterForClients', False)
+            filter_for_disabled = filters.get('filterForDisabled', False)
+            filter_rating = float(filters.get('filterRating', 0))
+
+            # Filtrowanie markerów
+            markers_to_search = self.original_markers
+            if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
+                markers_to_search = [
+                    marker for marker in self.original_markers
+                    if (not filter_payable or marker.get('payable', False)) and
+                       (not filter_for_clients or marker.get('onlyForClients', False)) and
+                       (not filter_for_disabled or marker.get('forDisabled', False)) and
+                       (float(marker.get('rating', 0)) >= filter_rating)
+                ]
+
+            nearest_marker = find_nearest_marker(user_marker, markers_to_search)
             if not nearest_marker:
                 response = jsonify({'status': 'error', 'message': 'No toilets found'})
                 response.headers['Cache-Control'] = 'no-store'
