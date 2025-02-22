@@ -5,6 +5,8 @@ import math
 import requests
 import logging
 
+logging.basicConfig(level=logging.INFO)
+
 geolocator = Nominatim(user_agent="test")
 
 @lru_cache(maxsize=100)
@@ -48,7 +50,7 @@ def is_hate_speech(text):
         response.raise_for_status()  # Sprawdź, czy odpowiedź jest poprawna
         result = response.json()
         logging.info(f"Response from hate speech analysis: {result}")
-        return result.get('status') == 'hate'
+        return result.get('label') == 'hate'
     except requests.RequestException as e:
         logging.error(f"Błąd podczas analizy mowy nienawiści: {e}")
         return False  # Domyślnie zwracamy False w przypadku błędu
