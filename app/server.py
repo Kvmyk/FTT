@@ -194,7 +194,7 @@ class Server:
                     nearest_marker['lat'], nearest_marker['lon']
                 )
                 if route:
-                    self.add_route_to_map(route)
+                    self.add_route_to_map(route, nearest_marker)
 
             return jsonify({
                 'status': 'success',
@@ -333,7 +333,7 @@ class Server:
                                     nearest_marker['lat'], nearest_marker['lon']
                                 )
                                 if route:
-                                    self.add_route_to_map(route)
+                                    self.add_route_to_map(route, nearest_marker)
                 self.update_map()
                 return jsonify({'status': 'success'})
             else:
@@ -410,7 +410,13 @@ class Server:
             )
             
             if route:
+                nearest_marker = {
+                    'lat': data['target_lat'],
+                    'lon': data['target_lon'],
+                    'name': data.get('target_name', 'Toaleta bez nazwy')
+                }
                 user_data['current_route'] = route
+                user_data['nearest_marker'] = nearest_marker  # Zapisz najbliższy marker
                 session[user_id] = user_data
                 self.update_map()
                 return jsonify({'status': 'success'})
@@ -707,7 +713,7 @@ class Server:
             # Można dodać dodatkową obsługę innych wyjątków
         
 
-    def add_route_to_map(self, route):
+    def add_route_to_map(self, route, nearest_marker):
         """
         Zapisuje JEDNĄ trasę (current_route) w sesji aktualnego użytkownika
         i (opcjonalnie) od razu wywołuje update_map().
@@ -719,6 +725,7 @@ class Server:
 
         user_data = session.get(user_id, {})
         user_data['current_route'] = route
+        user_data['nearest_marker'] = nearest_marker  # Zapisz najbliższy marker
         session[user_id] = user_data
 
         # Opcjonalnie można odświeżyć mapę już teraz
@@ -785,10 +792,12 @@ class Server:
                     # Jeśli lista przefiltrowanych markerów jest pusta, usuń trasę
                     if not filtered_markers:
                         user_data['current_route'] = None
+                        user_data['nearest_marker'] = None  # Usuń najbliższy marker
                         session[user_id] = user_data
                     else:
                         # Używamy trasy zapisanej w sesji, jeśli istnieje
                         route = user_data.get('current_route')
+                        nearest_marker = user_data.get('nearest_marker')
                         if not route:
                             nearest_marker = find_nearest_marker(user_marker, filtered_markers)
                             if nearest_marker:
@@ -798,6 +807,7 @@ class Server:
                                 )
                                 if route:
                                     user_data['current_route'] = route
+                                    user_data['nearest_marker'] = nearest_marker
                                     session[user_id] = user_data
 
                         if route:
@@ -840,6 +850,32 @@ class Server:
                                             white-space: nowrap;
                                         ">
                                             {distance_text}
+                                        </div>
+                                    """
+                                )
+                            ).add_to(self.m)
+
+                            # Zaktualizuj tekst "NearestPinInfo"
+                            nearest_pin_info = f"Od twojej lokalizacji do najbliższej toalety jest {distance_text} - {nearest_marker.get('name', 'Toaleta bez nazwy')}"
+                            folium.Marker(
+                                location=[user_marker['lat'], user_marker['lon']],
+                                icon=folium.DivIcon(
+                                    html=f"""
+                                        <div id="nearestPinInfo" style="
+                                            font-size: 14px; 
+                                            color: #D32F2F;
+                                            font-weight: bold;
+                                            background-color: rgba(255, 255, 255, 0.9);
+                                            padding: 0.4em 0.8em;
+                                            border-radius: 0.3em;
+                                            text-align: center;
+                                            font-family: Arial, sans-serif;
+                                            box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
+                                            display: inline-block;
+                                            min-width: max-content;
+                                            white-space: nowrap;
+                                        ">
+                                            {nearest_pin_info}
                                         </div>
                                     """
                                 )
