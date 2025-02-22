@@ -3,6 +3,7 @@ from geopy.geocoders import Nominatim
 from functools import lru_cache
 import math
 import requests
+import logging
 
 geolocator = Nominatim(user_agent="test")
 
@@ -42,12 +43,15 @@ def is_hate_speech(text):
     data = {
         "text": text
     }
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code == 200:
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()  # Sprawdź, czy odpowiedź jest poprawna
         result = response.json()
+        logging.info(f"Response from hate speech analysis: {result}")
         return result.get('status') == 'hate'
-    else:
-        return False
+    except requests.RequestException as e:
+        logging.error(f"Błąd podczas analizy mowy nienawiści: {e}")
+        return False  # Domyślnie zwracamy False w przypadku błędu
     
 def find_nearest_marker(user_location, markers):
     min_distance = float('inf')
