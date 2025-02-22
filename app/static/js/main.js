@@ -22,23 +22,41 @@ function sendPosition(position) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Success:', data);
-        // Instead of reloading, update the map dynamically
         return fetch('/render_map');
     })
     .then(response => response.text())
     .then(html => {
         document.getElementById('map').innerHTML = html;
         document.getElementById('loadingOverlay').style.display = 'none';
-        // Now that the user location is set, call nearest_toilet_distance
-        return fetch('/nearest_toilet_distance');
+        // Sprawdź, czy jest zapisany wybrany marker
+        const targetLat = localStorage.getItem('targetLat');
+        const targetLon = localStorage.getItem('targetLon');
+
+        if (targetLat && targetLon) {
+            // Jeśli trasa dotyczy wybranego markera, pobierz i wyświetl informację o nim
+            return fetch('/navigate_toilet_distance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_lat: position.coords.latitude,
+                    user_lon: position.coords.longitude,
+                    target_lat: parseFloat(targetLat),
+                    target_lon: parseFloat(targetLon)
+                })
+            });
+        } else {
+            // W przeciwnym razie wyświetl trasę do najbliższego
+            return fetch('/nearest_toilet_distance');
+        }
     })
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
             const nearestPinInfo = document.getElementById('nearestPinInfo');
             const nearestPinText = document.getElementById('nearestPinText');
-            nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}`;
+            nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}`;
             nearestPinInfo.classList.add('show');
         }
     })
@@ -261,6 +279,10 @@ function animateRoute(map, coordinates) {
   }
 
 window.navigateToToilet = function(targetLat, targetLon) {
+    // Zapis docelowych współrzędnych w localStorage
+    localStorage.setItem('targetLat', targetLat);
+    localStorage.setItem('targetLon', targetLon);
+
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
