@@ -18,7 +18,7 @@
                     if (data.status === 'success') {
                         const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}. Szacowany czas dotarcia: ${data.duration} minut pieszo.`;
+                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}. Szacowany czas dotarcia: ${data.duration} min pieszo.`;
                         nearestPinInfo.classList.add('show');
                     }
                 })
