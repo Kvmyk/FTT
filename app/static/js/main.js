@@ -310,7 +310,7 @@ function navigateToToilet(targetLat, targetLon) {
                     if (data.status === 'success') {
                         const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}`;
+                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}. Szacowany czas dotarcia: ${data.duration} minut.`;
                         nearestPinInfo.classList.add('show');
                     }
                 })
