@@ -11,32 +11,36 @@
 
     <script src="/static/js/main.js"></script> 
     <script>
+        let currentRoute = null;
+
         document.addEventListener('DOMContentLoaded', function() {
             fetch('/nearest_toilet_distance')
                 .then(response => response.json())
                 .then(data => {
-                    if (data.status === 'success') {
-                        const nearestPinInfo = document.getElementById('nearestPinInfo');
-                        const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}`;
-                        nearestPinInfo.classList.add('show');
+                    if (data.status === 'success' && !currentRoute) {
+                        updateNearestPinInfo(data.distance, data.name);
                     }
                 })
                 .catch(error => console.error('Error:', error));
 
-                fetch('/navigate')
+            fetch('/navigate')
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        const nearestPinInfo = document.getElementById('nearestPinInfo');
-                        const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do wyznaczonego markera jest ${data.distance} - ${data.name}`;
-                        nearestPinInfo.classList.add('show');
+                        currentRoute = { distance: data.distance, name: data.name };
+                        updateNearestPinInfo(data.distance, data.name);
                     }
                 })
                 .catch(error => console.error('Error:', error));
         });
-        
+
+        function updateNearestPinInfo(distance, name) {
+            const nearestPinInfo = document.getElementById('nearestPinInfo');
+            const nearestPinText = document.getElementById('nearestPinText');
+            nearestPinText.innerText = `Od twojej lokalizacji do ${currentRoute ? 'wyznaczonego markera' : 'najbliższej toalety'} jest ${distance} - ${name}`;
+            nearestPinInfo.classList.add('show');
+        }
+
         document.getElementById('photoInput').addEventListener('change', function(e) {
             const container = document.getElementById('imagePreviewContainer');
             container.innerHTML = ''; // Wyczyść poprzednie podglądy
