@@ -443,26 +443,24 @@ class Server:
         @self.app.route('/navigate_toilet_distance', methods=['POST'])
         def navigate_toilet_distance():
             data = request.json
-            userLat = float(data.get('user_lat'))
-            userLon = float(data.get('user_lon'))
-            targetLat = float(data.get('target_lat'))
-            targetLon = float(data.get('target_lon'))
+            user_lat = data['user_lat']
+            user_lon = data['user_lon']
+            target_lat = data['target_lat']
+            target_lon = data['target_lon']
 
-            route = get_route(userLat, userLon, targetLat, targetLon)
-            if not route:
+            route = get_route(user_lat, user_lon, target_lat, target_lon)
+            if route:
+                distance = route['routes'][0]['distance']  # w metrach
+                duration = route['routes'][0]['duration'] / 60  # w minutach
+                distance_text = format_distance_text(distance)
+                return jsonify({
+                    'status': 'success',
+                    'distance': distance_text,
+                    'duration': f"{duration:.2f}",
+                    'name': 'Wybrany marker'
+                })
+            else:
                 return jsonify({'status': 'error', 'message': 'Route not found'}), 404
-
-            distance = route['routes'][0]['distance']
-
-            # Wyszukaj marker po współrzędnych
-            chosen_marker = next((m for m in self.markers if m['lat'] == targetLat and m['lon'] == targetLon), None)
-            name = chosen_marker['name'] if chosen_marker else 'Wybrana toaleta'
-
-            return jsonify({
-                'status': 'success',
-                'distance': f"{distance / 1000:.2f} km",
-                'name': name
-            })
 
     def add_marker_to_map(self, marker):
         """
