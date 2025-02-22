@@ -34,6 +34,15 @@ def get_route(start_lat, start_lon, end_lat, end_lon):
     else:
         return None
     
+def is_hate_speech(text):
+    url = "http://localhost:5001/analyze"
+    response = requests.post(url, json={"text": text})
+    if response.status_code == 200:
+        result = response.json()
+        return result.get('status') == 'hate'
+    else:
+        return False
+    
 def find_nearest_marker(user_location, markers):
     min_distance = float('inf')
     nearest_marker = None

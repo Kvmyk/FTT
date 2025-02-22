@@ -13,7 +13,7 @@ from flask_session import Session
 from flask_compress import Compress
 
 from flask import Flask, send_from_directory, jsonify, request, session
-from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text
+from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text, is_hate_speech
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -463,6 +463,18 @@ class Server:
             self.update_map()
 
             return jsonify({'status': 'success'})
+
+        @self.app.route('/check_profanity', methods=['POST'])
+        def check_profanity():
+            data = request.json
+            text = data.get('text', '')
+
+            # Tutaj dodaj logikę sprawdzania mowy nienawiści za pomocą modelu AI
+            # Na potrzeby przykładu zakładamy, że funkcja `is_hate_speech` sprawdza mowę nienawiści
+            if is_hate_speech(text):
+                return jsonify({'status': 'hate'})
+            else:
+                return jsonify({'status': 'neutral'})
 
         @self.app.route('/navigate_toilet_distance', methods=['POST'])
         def navigate_toilet_distance():
