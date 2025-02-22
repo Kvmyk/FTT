@@ -467,11 +467,14 @@ class Server:
                 distance = route['routes'][0]['distance']  # w metrach
                 duration = route['routes'][0]['duration'] / 60  # w minutach
                 distance_text = format_distance_text(distance)
+
+                target_marker = next((marker for marker in self.markers if marker['lat'] == target_lat and marker['lon'] == target_lon), None)
+                target_name = target_marker['name'] if target_marker else 'Unknown'
                 return jsonify({
                     'status': 'success',
                     'distance': distance_text,
                     'duration': f"{duration:.2f}",
-                    'name': data['name']
+                    'name': target_name
                 })
             else:
                 return jsonify({'status': 'error', 'message': 'Route not found'}), 404
