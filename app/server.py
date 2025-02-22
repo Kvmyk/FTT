@@ -471,7 +471,7 @@ class Server:
                     'status': 'success',
                     'distance': distance_text,
                     'duration': f"{duration:.2f}",
-                    'name': 'Wybrany marker'
+                    'name': data['name']
                 })
             else:
                 return jsonify({'status': 'error', 'message': 'Route not found'}), 404
