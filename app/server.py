@@ -275,10 +275,6 @@ class Server:
             if photo:
                 photo_base64 = base64.b64encode(photo.read()).decode('utf-8')
 
-            # Sprawdzenie mowy nienawiści w opisie
-            if is_hate_speech(description):
-                return jsonify({'status': 'error', 'message': 'Opis zawiera mowę nienawiści i nie może zostać dodany.'}), 400
-
             if useUserLocation:
                 user_id = session.get('user_id')
                 if not user_id:
@@ -390,10 +386,6 @@ class Server:
             lon = float(data.get('lon'))
             comment = data.get('comment')
             rating = data.get('rating')
-
-            # Sprawdzenie mowy nienawiści w komentarzu
-            if is_hate_speech(comment):
-                return jsonify({'status': 'error', 'message': 'Komentarz zawiera mowę nienawiści i nie może zostać dodany.'}), 400
 
             for marker in self.markers:
                 if marker['lat'] == lat and marker['lon'] == lon:
