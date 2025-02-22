@@ -3,10 +3,8 @@ from geopy.geocoders import Nominatim
 from functools import lru_cache
 import math
 import requests
-from flask import Flask, request, jsonify
 
 geolocator = Nominatim(user_agent="test")
-app = Flask(__name__)
 
 @lru_cache(maxsize=100)
 def get_coordinates(location):
@@ -49,18 +47,8 @@ def is_hate_speech(text):
         result = response.json()
         return result.get('status') == 'hate'
     else:
-        return result.get('status') == 'neutral'
+        return False
     
-@app.route('/check_profanity', methods=['POST'])
-def check_profanity():
-    data = request.json
-    text = data.get('text', '')
-
-    if is_hate_speech(text):
-        return jsonify({'status': 'hate'})
-    else:
-        return jsonify({'status': 'neutral'})
-
 def find_nearest_marker(user_location, markers):
     min_distance = float('inf')
     nearest_marker = None
