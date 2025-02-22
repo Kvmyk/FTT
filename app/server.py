@@ -440,6 +440,30 @@ class Server:
 
             return jsonify({'status': 'success'})
 
+        @self.app.route('/navigate_toilet_distance', methods=['POST'])
+        def navigate_toilet_distance():
+            data = request.json
+            userLat = float(data.get('user_lat'))
+            userLon = float(data.get('user_lon'))
+            targetLat = float(data.get('target_lat'))
+            targetLon = float(data.get('target_lon'))
+
+            route = get_route(userLat, userLon, targetLat, targetLon)
+            if not route:
+                return jsonify({'status': 'error', 'message': 'Route not found'}), 404
+
+            distance = route['routes'][0]['distance']
+
+            # Wyszukaj marker po współrzędnych
+            chosen_marker = next((m for m in self.markers if m['lat'] == targetLat and m['lon'] == targetLon), None)
+            name = chosen_marker['name'] if chosen_marker else 'Wybrana toaleta'
+
+            return jsonify({
+                'status': 'success',
+                'distance': f"{distance / 1000:.2f} km",
+                'name': name
+            })
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.
