@@ -36,7 +36,13 @@ def get_route(start_lat, start_lon, end_lat, end_lon):
     
 def is_hate_speech(text):
     url = "http://localhost:5001/analyze"
-    response = requests.post(url, json={"text": text})
+    headers = {
+        "Content-Type": "application/json"
+    }
+    data = {
+        "text": text
+    }
+    response = requests.post(url, headers=headers, json=data)
     if response.status_code == 200:
         result = response.json()
         return result.get('status') == 'hate'
