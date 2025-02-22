@@ -570,6 +570,7 @@ iframe {
   width: 30px;
   height: 15px;
   vertical-align: middle; /* Ustawienie pionowego wyrównania */
+  margin-top: -2px; /* Przesunięcie slidera wyżej */
 }
 
 /* Ukrycie domyślnego checkboxa */
