@@ -138,43 +138,26 @@ function validateCommentRating() {
 
 
 function submitModal() {
-    var userInput = document.getElementById('userInput').value;
-    var descriptionInput = document.getElementById('descriptionInput').value;
-    var ratingInput = document.getElementById('ratingInput').value;
+    const useUserLocation = document.getElementById('useUserLocation').checked;
+    const userInput = document.getElementById('userInput').value;
+    const description = document.getElementById('descriptionInput').value;
+    const payable = document.getElementById('paidInput').checked;
+    const onlyForClients = document.getElementById('customersOnlyInput').checked;
+    const forDisabled = document.getElementById('disabilityInput').checked;
+    const rating = document.getElementById('ratingInput').value;
+    const photoInput = document.getElementById('photoInput').files;
+    const formData = new FormData();
 
-    if (!userInput || !descriptionInput || !ratingInput) {
-        alert('Wszystkie pola muszą być wypełnione.');
-        return;
-    }
-
-    if (!validateRating()) {
-        return;
-    }
-
-    var paidInput = document.getElementById('paidInput').checked;
-    var customersOnlyInput = document.getElementById('customersOnlyInput').checked;
-    var disabilityInput = document.getElementById('disabilityInput').checked;
-    var photoInput = document.getElementById('photoInput').files;
-
-    var formData = new FormData();
     formData.append('userInput', userInput);
-    formData.append('description', descriptionInput);
-    formData.append('rating', ratingInput);
-    formData.append('payable', paidInput);
-    formData.append('onlyForClients', customersOnlyInput);
-    formData.append('forDisabled', disabilityInput);
+    formData.append('description', description);
+    formData.append('payable', payable);
+    formData.append('onlyForClients', onlyForClients);
+    formData.append('forDisabled', forDisabled);
+    formData.append('rating', rating);
+    formData.append('useUserLocation', useUserLocation);
 
-    for (var i = 0; i < photoInput.length; i++) {
-        var file = photoInput[i];
-        if (file.size > 5 * 1024 * 1024) { // 5 MB limit
-            alert('Rozmiar pliku nie może przekraczać 5 MB.');
-            return;
-        }
-        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
-            alert('Dozwolone są tylko pliki w formacie .jpg i .png.');
-            return;
-        }
-        formData.append('photos', file);
+    for (let i = 0; i < photoInput.length; i++) {
+        formData.append('photos', photoInput[i]);
     }
 
     fetch('/submit', {

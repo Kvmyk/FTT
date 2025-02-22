@@ -269,89 +269,99 @@ class Server:
             onlyForClients = data.get('onlyForClients', 'false').lower() == 'true'
             forDisabled = data.get('forDisabled', 'false').lower() == 'true'
             rating = data.get('rating', '0')
+            useUserLocation = data.get('useUserLocation', 'false').lower() == 'true'
             photo = request.files.get('photos')  # może być None
             photo_base64 = None
             if photo:
                 photo_base64 = base64.b64encode(photo.read()).decode('utf-8')
 
-            # Ustalenie współrzędnych na podstawie userInput (np. nazwy miejsca)
-            lat, lon = get_coordinates(userInput)
-            if lat and lon:
-                existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
-                if existing_marker:
-                    existing_marker.setdefault('comments', []).append({
-                        'comment': description,
-                        'rating': rating
-                    })
-                    # Zapamiętujemy pierwotną ocenę, jeśli jeszcze nie została zapisana
-                    if 'base_rating' not in existing_marker:
-                        existing_marker['base_rating'] = existing_marker.get('rating', rating)
-                    try:
-                        base_rating = float(existing_marker.get('base_rating', 0))
-                    except ValueError:
-                        base_rating = 0
-                    comment_ratings = []
-                    for c in existing_marker.get('comments', []):
-                        try:
-                            comment_ratings.append(float(c.get('rating', 0)))
-                        except ValueError:
-                            pass
-                    computed_rating = (base_rating + sum(comment_ratings)) / (1 + len(comment_ratings))
-                    existing_marker['rating'] = f"{computed_rating:.1f}"
-                else:
-                    new_marker = {
-                        "lat": lat,
-                        "lon": lon,
-                        "name": userInput,
-                        "description": description,
-                        "payable": payable,
-                        "onlyForClients": onlyForClients,
-                        "rating": rating,
-                        "photo": photo_base64,
-                        "forDisabled": forDisabled 
-                    }
-                    self.markers.append(new_marker)
-                    self.original_markers.append(new_marker)
-                self.save_markers()
-                
+            if useUserLocation:
                 user_id = session.get('user_id')
-                if user_id:
-                    user_data = session.get(user_id, {})
-                    filters = user_data.get('filters', {})
-                    filter_payable = filters.get('filterPayable', False)
-                    filter_for_clients = filters.get('filterForClients', False)
-                    filter_for_disabled = filters.get('filterForDisabled', False)
-                    filter_rating = float(filters.get('filterRating', 0))
-                    markers_to_search = self.original_markers
-                    if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
-                        markers_to_search = [
-                            marker for marker in self.original_markers
-                            if (not filter_payable or marker.get('payable', False)) and
-                               (not filter_for_clients or marker.get('onlyForClients', False)) and
-                               (not filter_for_disabled or marker.get('forDisabled', False)) and
-                               (float(marker.get('rating', 0)) >= filter_rating)
-                        ]
-                    # Exclude the user's own marker if present
-                    user_marker = user_data.get('marker')
-                    if user_marker:
-                        filtered_markers = [
-                            marker for marker in markers_to_search 
-                            if marker.get('name', '') != "User Location"
-                        ]
-                        # Only generate route if there are markers (different than the user marker)
-                        if filtered_markers:
-                            nearest_marker = find_nearest_marker(user_marker, filtered_markers)
-                            if nearest_marker:
-                                route = get_route(
-                                    user_marker['lat'], user_marker['lon'],
-                                    nearest_marker['lat'], nearest_marker['lon']
-                                )
-                                if route:
-                                    self.add_route_to_map(route)
-                self.update_map()
-                return jsonify({'status': 'success'})
+                if not user_id:
+                    return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
+
+                user_data = session.get(user_id, {})
+                user_marker = user_data.get('marker')
+                if not user_marker:
+                    return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
+
+                lat = user_marker['lat']
+                lon = user_marker['lon']
             else:
-                return jsonify({'status': 'error', 'message': 'Nie udało się ustalić współrzędnych.'})
+                lat, lon = get_coordinates(userInput)
+                if not lat or not lon:
+                    return jsonify({'status': 'error', 'message': 'Nie udało się ustalić współrzędnych.'})
+
+            existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
+            if existing_marker:
+                existing_marker.setdefault('comments', []).append({
+                    'comment': description,
+                    'rating': rating
+                })
+                if 'base_rating' not in existing_marker:
+                    existing_marker['base_rating'] = existing_marker.get('rating', rating)
+                try:
+                    base_rating = float(existing_marker.get('base_rating', 0))
+                except ValueError:
+                    base_rating = 0
+                comment_ratings = []
+                for c in existing_marker.get('comments', []):
+                    try:
+                        comment_ratings.append(float(c.get('rating', 0)))
+                    except ValueError:
+                        pass
+                computed_rating = (base_rating + sum(comment_ratings)) / (1 + len(comment_ratings))
+                existing_marker['rating'] = f"{computed_rating:.1f}"
+            else:
+                new_marker = {
+                    "lat": lat,
+                    "lon": lon,
+                    "name": userInput,
+                    "description": description,
+                    "payable": payable,
+                    "onlyForClients": onlyForClients,
+                    "rating": rating,
+                    "photo": photo_base64,
+                    "forDisabled": forDisabled 
+                }
+                self.markers.append(new_marker)
+                self.original_markers.append(new_marker)
+            self.save_markers()
+
+            user_id = session.get('user_id')
+            if user_id:
+                user_data = session.get(user_id, {})
+                filters = user_data.get('filters', {})
+                filter_payable = filters.get('filterPayable', False)
+                filter_for_clients = filters.get('filterForClients', False)
+                filter_for_disabled = filters.get('filterForDisabled', False)
+                filter_rating = float(filters.get('filterRating', 0))
+                markers_to_search = self.original_markers
+                if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
+                    markers_to_search = [
+                        marker for marker in self.original_markers
+                        if (not filter_payable or marker.get('payable', False)) and
+                           (not filter_for_clients or marker.get('onlyForClients', False)) and
+                           (not filter_for_disabled or marker.get('forDisabled', False)) and
+                           (float(marker.get('rating', 0)) >= filter_rating)
+                    ]
+                user_marker = user_data.get('marker')
+                if user_marker:
+                    filtered_markers = [
+                        marker for marker in markers_to_search 
+                        if marker.get('name', '') != "User Location"
+                    ]
+                    if filtered_markers:
+                        nearest_marker = find_nearest_marker(user_marker, filtered_markers)
+                        if nearest_marker:
+                            route = get_route(
+                                user_marker['lat'], user_marker['lon'],
+                                nearest_marker['lat'], nearest_marker['lon']
+                            )
+                            if route:
+                                self.add_route_to_map(route)
+            self.update_map()
+            return jsonify({'status': 'success'})
 
         @self.app.after_request
         def add_header(response):
