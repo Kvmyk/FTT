@@ -38,7 +38,7 @@ function sendPosition(position) {
         if (data.status === 'success') {
             const nearestPinInfo = document.getElementById('nearestPinInfo');
             const nearestPinText = document.getElementById('nearestPinText');
-            nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}. Szacowany czas dotarcia: ${data.duration} minut.`;
+            nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}. Szacowany czas dotarcia: ${data.duration} minut pieszo.`;
             nearestPinInfo.classList.add('show');
         }
     })
@@ -310,7 +310,7 @@ function navigateToToilet(targetLat, targetLon) {
                     if (data.status === 'success') {
                         const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}. Szacowany czas dotarcia: ${data.duration} minut.`;
+                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}. Szacowany czas dotarcia: ${data.duration} minut pieszo.`;
                         nearestPinInfo.classList.add('show');
                     }
                 })
