@@ -136,42 +136,61 @@ function validateCommentRating() {
     return true;
 }
 
+function checkProfanity(text) {
+    return fetch('/check_profanity', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text })
+    })
+    .then(response => response.json());
+}
 
 function submitModal() {
-    const useUserLocation = document.getElementById('useUserLocation').checked;
-    const userInput = document.getElementById('userInput').value;
     const description = document.getElementById('descriptionInput').value;
-    const payable = document.getElementById('paidInput').checked;
-    const onlyForClients = document.getElementById('customersOnlyInput').checked;
-    const forDisabled = document.getElementById('disabilityInput').checked;
-    const rating = document.getElementById('ratingInput').value;
-    const photoInput = document.getElementById('photoInput').files;
-    const formData = new FormData();
 
-    formData.append('userInput', userInput);
-    formData.append('description', description);
-    formData.append('payable', payable);
-    formData.append('onlyForClients', onlyForClients);
-    formData.append('forDisabled', forDisabled);
-    formData.append('rating', rating);
-    formData.append('useUserLocation', useUserLocation);
-
-    for (let i = 0; i < photoInput.length; i++) {
-        formData.append('photos', photoInput[i]);
-    }
-
-    fetch('/submit', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            document.getElementById('myModal').style.display = 'none';
-            window.location.reload();
-        } else {
-            console.error('Error:', data.message);
+    checkProfanity(description).then(data => {
+        if (data.status === 'hate') {
+            alert('Opis zawiera mowę nienawiści i nie może zostać dodany.');
+            return;
         }
+
+        // Kontynuuj dodawanie pina, jeśli opis jest neutralny
+        const useUserLocation = document.getElementById('useUserLocation').checked;
+        const userInput = document.getElementById('userInput').value;
+        const payable = document.getElementById('paidInput').checked;
+        const onlyForClients = document.getElementById('customersOnlyInput').checked;
+        const forDisabled = document.getElementById('disabilityInput').checked;
+        const rating = document.getElementById('ratingInput').value;
+        const photoInput = document.getElementById('photoInput').files;
+        const formData = new FormData();
+
+        formData.append('userInput', userInput);
+        formData.append('description', description);
+        formData.append('payable', payable);
+        formData.append('onlyForClients', onlyForClients);
+        formData.append('forDisabled', forDisabled);
+        formData.append('rating', rating);
+        formData.append('useUserLocation', useUserLocation);
+
+        for (let i = 0; i < photoInput.length; i++) {
+            formData.append('photos', photoInput[i]);
+        }
+
+        fetch('/add_marker', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('myModal').style.display = 'none';
+                window.location.reload();
+            } else {
+                console.error('Error:', data.message);
+            }
+        });
     });
 }
 
@@ -194,8 +213,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function submitComment() {
-    var comment = document.getElementById('commentText').value;
-    var rating = document.getElementById('commentRating').value;
+    const comment = document.getElementById('commentText').value;
+    const rating = document.getElementById('commentRating').value;
+
     if (!comment || !rating) {
         alert('Wszystkie pola muszą być wypełnione.');
         return;
@@ -205,30 +225,37 @@ function submitComment() {
         return;
     }
 
-    var lat = document.getElementById('commentModal').dataset.lat;
-    var lon = document.getElementById('commentModal').dataset.lon;
-
-    
-    var formData = new FormData();
-    formData.append('lat', lat);
-    formData.append('lon', lon);
-    formData.append('comment', comment);
-    formData.append('rating', rating);
-
-    fetch('/add_comment', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            document.getElementById('commentModal').style.display = 'none';
-            window.location.reload();
-        } else {
-            console.error('Error:', data.message);
+    checkProfanity(comment).then(data => {
+        if (data.status === 'hate') {
+            alert('Komentarz zawiera mowę nienawiści i nie może zostać dodany.');
+            return;
         }
+
+        const lat = document.getElementById('commentModal').dataset.lat;
+        const lon = document.getElementById('commentModal').dataset.lon;
+
+        const formData = new FormData();
+        formData.append('lat', lat);
+        formData.append('lon', lon);
+        formData.append('comment', comment);
+        formData.append('rating', rating);
+
+        fetch('/add_comment', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('commentModal').style.display = 'none';
+                window.location.reload();
+            } else {
+                console.error('Error:', data.message);
+            }
+        });
     });
 }
+
 function animateRoute(map, coordinates) {
     let currentIndex = 0;
     let polyline = L.polyline([], { color: 'red', weight: 5 }).addTo(map);
