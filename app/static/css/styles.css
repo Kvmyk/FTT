@@ -217,7 +217,7 @@ html, body {
     transition: opacity 0.3s ease-in-out;
     font-family: 'Roboto', sans-serif;
     font-weight: 300; /* Light */
-    width: 65%;
+    width: 70%;
     max-width: 550px;
 }
 
