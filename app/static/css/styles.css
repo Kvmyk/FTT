@@ -403,6 +403,10 @@ label {
         height: 30px;
         font-size: 16px;
     }
+    
+    #nearestPinInfo {
+        width: 90%;
+    }
 }
 
 /* Tablets */
@@ -414,6 +418,10 @@ label {
     
     #myModal {
         width: 70%;
+    }
+    
+    #nearestPinInfo {
+        width: 80%;
     }
 }
 
@@ -431,6 +439,10 @@ label {
     #filterModal {
         width: 70%;
         max-width: 450px;
+    }
+    
+    #nearestPinInfo {
+        width: 70%;
     }
 }
 
