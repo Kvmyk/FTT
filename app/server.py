@@ -228,23 +228,19 @@ class Server:
                 response.headers['Cache-Control'] = 'no-store'
                 return response, 404
 
-            route = get_route(
-                user_marker['lat'], user_marker['lon'],
-                nearest_marker['lat'], nearest_marker['lon']
-            )
-            if not route:
-                response = jsonify({'status': 'error', 'message': 'Route not found'})
-                response.headers['Cache-Control'] = 'no-store'
-                return response, 404
-
-            distance = route['routes'][0]['distance']
-            response = jsonify({
-                'status': 'success',
-                'distance': f"{distance / 1000:.2f} km",
-                'name': nearest_marker.get('name', 'Toaleta bez nazwy')
-            })
-            response.headers['Cache-Control'] = 'no-store'
-            return response, 200
+            route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
+            if route:
+                distance = route['routes'][0]['distance']  # w metrach
+                duration = route['routes'][0]['duration'] / 60  # w minutach
+                distance_text = format_distance_text(distance)
+                return jsonify({
+                    'status': 'success',
+                    'distance': distance_text,
+                    'duration': f"{duration:.2f}",
+                    'name': nearest_marker['name']
+                })
+            else:
+                return jsonify({'status': 'error', 'message': 'Route not found'}), 404
 
         @self.app.route('/submit', methods=['POST'])
         def submit():
