@@ -254,7 +254,7 @@ class Server:
                 return jsonify({
                     'status': 'success',
                     'distance': distance_text,
-                    'duration': f"{duration:.2f}",
+                    'duration': f"{duration:.0f}",
                     'name': nearest_marker['name']
                 })
             else:
@@ -495,7 +495,7 @@ class Server:
                 return jsonify({
                     'status': 'success',
                     'distance': distance_text,
-                    'duration': f"{duration:.2f}",
+                    'duration': f"{duration:.0f}",
                     'name': target_name
                 })
             else:
