@@ -10,6 +10,16 @@ function sendPosition(position) {
     localStorage.setItem('lat', position.coords.latitude);
     localStorage.setItem('lon', position.coords.longitude);
 
+    if (!isInOpoleProvince(userLat, userLon)) {
+        alert('Znajdujesz się poza województwem opolskim. Nawigacja jest dostępna tylko w województwie opolskim.');
+        return;
+    }
+
+    if (!isInOpoleProvince(targetLat, targetLon)) {
+        alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
+        return;
+    }
+
     fetch('/location', {
         method: 'POST',
         headers: {
@@ -270,6 +280,19 @@ function animateRoute(map, coordinates) {
     drawSegment();
   }
 
+function isInOpoleProvince(lat, lon) {
+    // Granice województwa opolskiego (przybliżone)
+    const opoleBounds = {
+        north: 51.0,
+        south: 49.5,
+        west: 16.5,
+        east: 18.5
+    };
+
+    return lat >= opoleBounds.south && lat <= opoleBounds.north &&
+           lon >= opoleBounds.west && lon <= opoleBounds.east;
+}
+
 function navigateToToilet(targetLat, targetLon) {
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
@@ -279,7 +302,18 @@ function navigateToToilet(targetLat, targetLon) {
             (position) => {
                 const userLat = position.coords.latitude;
                 const userLon = position.coords.longitude;
-                
+
+                if (!isInOpoleProvince(userLat, userLon)) {
+                    alert('Znajdujesz się poza województwem opolskim. Nawigacja jest dostępna tylko w województwie opolskim.');
+                    return;
+                }
+
+                if (!isInOpoleProvince(targetLat, targetLon)) {
+                    alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
+                    return;
+                }
+
+
                 fetch('/navigate', {
                     method: 'POST',
                     headers: {
