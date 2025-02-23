@@ -189,10 +189,13 @@ class Server:
             # Obliczamy trasę do najbliższego markera
             nearest_marker = find_nearest_marker(user_marker, markers_to_search)
             if nearest_marker:
-                route = get_route(
-                    user_marker['lat'], user_marker['lon'],
-                    nearest_marker['lat'], nearest_marker['lon']
-                )
+                if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
+                    route = None
+                else:
+                    route = get_route(
+                        user_marker['lat'], user_marker['lon'],
+                        nearest_marker['lat'], nearest_marker['lon']
+                    )
                 if route:
                     self.add_route_to_map(route)
 
