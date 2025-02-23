@@ -499,3 +499,19 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
 
     this.files = new FileList(...resizedFiles);
 });
+
+function increaseRating() {
+    const ratingInput = document.getElementById('ratingInput');
+    let rating = parseInt(ratingInput.value, 10);
+    if (rating < 10) {
+        ratingInput.value = rating + 1;
+    }
+}
+
+function decreaseRating() {
+    const ratingInput = document.getElementById('ratingInput');
+    let rating = parseInt(ratingInput.value, 10);
+    if (rating > 1) {
+        ratingInput.value = rating - 1;
+    }
+}

@@ -679,7 +679,30 @@ input:checked + .slider {
 input:checked + .slider:before {
   transform: translateX(26px);
 }
-y
+
+/* Style dla przycisków zmiany oceny */
+.rating-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border: 3px solid red;
+    border-radius: 50%;
+    color: red;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, background-color 0.2s;
+    margin: 0 5px; /* Dodanie odstępu między przyciskami */
+}
+
+.rating-button:hover {
+    transform: scale(1.1);
+    background-color: #EEEEEE;
+}
+
 /* Efekt hover dla przycisków */
 button:hover, .popup-button:hover, #commentModal button:hover, #myModal button:hover {
     background-color: #C92704;
