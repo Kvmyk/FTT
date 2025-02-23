@@ -48,9 +48,6 @@ function sendPosition(position) {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            const nearestPinLat = data.nearest_pin_lat;
-            const nearestPinLon = data.nearest_pin_lon;
-
             const nearestPinInfo = document.getElementById('nearestPinInfo');
             const nearestPinText = document.getElementById('nearestPinText');
             nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
