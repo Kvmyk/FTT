@@ -612,11 +612,6 @@ iframe {
   border-radius: 50%;
 }
 
-/* Zmiana koloru suwaka po zaznaczeniu */
-input:checked + .slider {
-  background-color: #2196F3;
-}
-
 /* Przesunięcie kółka po zaznaczeniu */
 input:checked + .slider:before {
   transform: translateX(15px);
@@ -744,21 +739,21 @@ button:hover, .popup-button:hover, #commentModal button:hover, #myModal button:h
 
 /* Styl dla outer spinner */
 input[type="number"]::-webkit-outer-spin-button {
-    background: red; /* Przykładowy kolor tła */
-    border: 1px solid #ccc; /* Przykładowa ramka */
-    border-radius: 4px; /* Przykładowe zaokrąglenie */
+    background: red !important; /* Przykładowy kolor tła */
+    border: 1px solid #ccc !important; /* Przykładowa ramka */
+    border-radius: 4px !important; /* Przykładowe zaokrąglenie */
 }
 
 /* Styl dla inner spinner */
 input[type="number"]::-webkit-inner-spin-button {
-    background: red; /* Przykładowy kolor tła */
-    border: 1px solid #ccc; /* Przykładowa ramka */
-    border-radius: 4px; /* Przykładowe zaokrąglenie */
+    background: red !important; /* Przykładowy kolor tła */
+    border: 1px solid #ccc !important; /* Przykładowa ramka */
+    border-radius: 4px !important; /* Przykładowe zaokrąglenie */
 }
 
 /* Styl dla outer spinner w Firefox */
 input[type="number"] {
-    -moz-appearance: textfield;
+    -moz-appearance: textfield !important;
 }
 
 /* Animacje dla elementów pojawiających się i znikających */
