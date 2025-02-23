@@ -12,7 +12,16 @@
     <script src="/static/js/main.js"></script> 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            
+
+            const nearestPinLat = data.nearest_pin_lat;
+            const nearestPinLon = data.nearest_pin_lon;
+
+            if (!isInOpoleProvince(nearestPinLat, nearestPinLon)) {
+                alert('Najbliższy marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
+                return;
+            }
+
+
             fetch('/nearest_toilet_distance')
                 .then(response => response.json())
                 .then(data => {
