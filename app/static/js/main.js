@@ -103,41 +103,97 @@ function sendPosition(position) {
     localStorage.setItem('lat', position.coords.latitude);
     localStorage.setItem('lon', position.coords.longitude);
 
-    fetch('/location', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude
+    // Najpierw sprawdź czy jest zapisana nawigacja
+    const savedTargetLat = localStorage.getItem('targetLat');
+    const savedTargetLon = localStorage.getItem('targetLon');
+    const isNavigating = localStorage.getItem('navigationActive') === 'true';
+
+    if (isNavigating && savedTargetLat && savedTargetLon) {
+        // Jeśli jest aktywna nawigacja, użyj zapisanego celu
+        fetch('/navigate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user_lat: position.coords.latitude,
+                user_lon: position.coords.longitude,
+                target_lat: parseFloat(savedTargetLat),
+                target_lon: parseFloat(savedTargetLon)
+            })
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Success:', data);
-        // Instead of reloading, update the map dynamically
-        return fetch('/render_map');
-    })
-    .then(response => response.text())
-    .then(html => {
-        document.getElementById('map').innerHTML = html;
-        document.getElementById('loadingOverlay').style.display = 'none';
-        // Now that the user location is set, call nearest_toilet_distance
-        return fetch('/nearest_toilet_distance');
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            const nearestPinInfo = document.getElementById('nearestPinInfo');
-            const nearestPinText = document.getElementById('nearestPinText');
-            nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-            nearestPinInfo.classList.add('show');
-        }
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                return fetch('/render_map');
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('map').innerHTML = html;
+            document.getElementById('loadingOverlay').style.display = 'none';
+            // Użyj /navigate_toilet_distance zamiast /nearest_toilet_distance
+            return fetch('/navigate_toilet_distance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_lat: position.coords.latitude,
+                    user_lon: position.coords.longitude,
+                    target_lat: parseFloat(savedTargetLat),
+                    target_lon: parseFloat(savedTargetLon)
+                })
+            });
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const nearestPinInfo = document.getElementById('nearestPinInfo');
+                const nearestPinText = document.getElementById('nearestPinText');
+                nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                nearestPinInfo.classList.add('show');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    } else {
+        // Standardowe zachowanie - najbliższa toaleta
+        fetch('/location', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                lat: position.coords.latitude,
+                lon: position.coords.longitude
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            // Instead of reloading, update the map dynamically
+            return fetch('/render_map');
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('map').innerHTML = html;
+            document.getElementById('loadingOverlay').style.display = 'none';
+            // Now that the user location is set, call nearest_toilet_distance
+            return fetch('/nearest_toilet_distance');
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const nearestPinInfo = document.getElementById('nearestPinInfo');
+                const nearestPinText = document.getElementById('nearestPinText');
+                nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                nearestPinInfo.classList.add('show');
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
 }
 
 function showError(error) {
