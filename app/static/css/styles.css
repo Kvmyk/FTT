@@ -744,8 +744,6 @@ button:hover, .popup-button:hover, #commentModal button:hover, #myModal button:h
 
 /* Styl dla outer spinner */
 input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
     background: red; /* Przykładowy kolor tła */
     border: 1px solid #ccc; /* Przykładowa ramka */
     border-radius: 4px; /* Przykładowe zaokrąglenie */
@@ -753,8 +751,6 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Styl dla inner spinner */
 input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
     background: red; /* Przykładowy kolor tła */
     border: 1px solid #ccc; /* Przykładowa ramka */
     border-radius: 4px; /* Przykładowe zaokrąglenie */
