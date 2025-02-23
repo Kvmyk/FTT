@@ -679,7 +679,7 @@ input:checked + .slider {
 input:checked + .slider:before {
   transform: translateX(26px);
 }
-y
+
 /* Efekt hover dla przycisków */
 button:hover, .popup-button:hover, #commentModal button:hover, #myModal button:hover {
     background-color: #C92704;
@@ -727,6 +727,42 @@ button:hover, .popup-button:hover, #commentModal button:hover, #myModal button:h
     #loadingOverlay .logo {
         width: 200px;
     }
+}
+
+/* Animacje dla elementów pojawiających się i znikających */
+#nearestPinInfo, #loadingOverlay, .modal-backdrop {
+    transition: opacity 0.3s ease-in-out;
+}
+
+#nearestPinInfo.show, #loadingOverlay.show, .modal-backdrop.show {
+    opacity: 1;
+}
+
+#nearestPinInfo.hide, #loadingOverlay.hide, .modal-backdrop.hide {
+    opacity: 0;
+}
+
+/* Styl dla outer spinner */
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+    background: red; /* Przykładowy kolor tła */
+    border: 1px solid #ccc; /* Przykładowa ramka */
+    border-radius: 4px; /* Przykładowe zaokrąglenie */
+}
+
+/* Styl dla inner spinner */
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+    background: red; /* Przykładowy kolor tła */
+    border: 1px solid #ccc; /* Przykładowa ramka */
+    border-radius: 4px; /* Przykładowe zaokrąglenie */
+}
+
+/* Styl dla outer spinner w Firefox */
+input[type="number"] {
+    -moz-appearance: textfield;
 }
 
 /* Animacje dla elementów pojawiających się i znikających */
