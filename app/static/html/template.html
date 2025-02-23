@@ -29,6 +29,8 @@
                         const nearestPinText = document.getElementById('nearestPinText');
                         nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                         nearestPinInfo.classList.add('show');
+                    } else if (data.status === 'region_error') {
+                        alert(data.message);
                     }
                 })
                 .catch(error => console.error('Error:', error));
