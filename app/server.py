@@ -175,7 +175,18 @@ class Server:
             filter_for_disabled = filters.get('filterForDisabled', False)
             filter_rating = float(filters.get('filterRating', 0))
 
-            # Filtrowanie markerów
+            # Sprawdź czy użytkownik jest w woj. opolskim
+            if not isInOpoleProvince(data['lat'], data['lon']):
+                logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
+                user_data['current_route'] = None
+                session[user_id] = user_data
+                return jsonify({
+                    'status': 'success',
+                    'lat': user_marker['lat'],
+                    'lon': user_marker['lon']
+                })
+
+            # Filtrowanie markerów i generowanie trasy tylko dla użytkowników z woj. opolskiego
             markers_to_search = self.original_markers
             if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
                 markers_to_search = [
@@ -186,16 +197,13 @@ class Server:
                        (float(marker.get('rating', 0)) >= filter_rating)
                 ]
 
-            # Obliczamy trasę do najbliższego markera
+            # Obliczamy trasę TYLKO dla użytkowników z woj. opolskiego
             nearest_marker = find_nearest_marker(user_marker, markers_to_search)
             if nearest_marker:
-                if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
-                    route = None
-                else:
-                    route = get_route(
-                        user_marker['lat'], user_marker['lon'],
-                        nearest_marker['lat'], nearest_marker['lon']
-                    )
+                route = get_route(
+                    user_marker['lat'], user_marker['lon'],
+                    nearest_marker['lat'], nearest_marker['lon']
+                )
                 if route:
                     self.add_route_to_map(route)
 
