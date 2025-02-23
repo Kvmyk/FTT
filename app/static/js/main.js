@@ -504,9 +504,10 @@ function isInOpoleProvince(lat, lon) {
 }
 
 function navigateToToilet(targetLat, targetLon) {
+    // Zapisz cel nawigacji i ustaw flagę
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
-
+    localStorage.setItem('navigationActive', 'true'); // Dodana flaga
 
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -524,29 +525,16 @@ function navigateToToilet(targetLat, targetLon) {
                     return;
                 }
 
-                fetch('/navigate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        user_lat: userLat,
-                        user_lon: userLon,
-                        target_lat: targetLat,
-                        target_lon: targetLon
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        return fetch('/render_map');
-                    }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('map').innerHTML = html;
-                    // Dodatkowy fetch do /navigate_toilet_distance
-                    return fetch('/navigate_toilet_distance', {
+                // Sprawdź czy śledzenie jest aktywne
+                const isTracking = document.getElementById('locationTrackingToggle').checked;
+                
+                if (isTracking) {
+                    // Jeśli śledzenie jest aktywne, zrestartuj je z nowym celem
+                    stopIntelligentTracking();
+                    startIntelligentTracking();
+                } else {
+                    // Standardowa nawigacja bez śledzenia
+                    fetch('/navigate', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -554,21 +542,43 @@ function navigateToToilet(targetLat, targetLon) {
                         body: JSON.stringify({
                             user_lat: userLat,
                             user_lon: userLon,
-                            target_lat: parseFloat(targetLat),
-                            target_lon: parseFloat(targetLon)
+                            target_lat: targetLat,
+                            target_lon: targetLon
                         })
-                    });
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const nearestPinInfo = document.getElementById('nearestPinInfo');
-                        const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                        nearestPinInfo.classList.add('show');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            return fetch('/render_map');
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('map').innerHTML = html;
+                        return fetch('/navigate_toilet_distance', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                user_lat: userLat,
+                                user_lon: userLon,
+                                target_lat: parseFloat(targetLat),
+                                target_lon: parseFloat(targetLon)
+                            })
+                        });
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const nearestPinInfo = document.getElementById('nearestPinInfo');
+                            const nearestPinText = document.getElementById('nearestPinText');
+                            nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                            nearestPinInfo.classList.add('show');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
             }
         );
     }
