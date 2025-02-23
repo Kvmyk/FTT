@@ -433,27 +433,32 @@ class Server:
         def navigate():
             data = request.json
             user_id = session.get('user_id')
-            if user_id:
-                user_data = session.get(user_id, {})
-                user_data['selected_marker'] = {
-                    'lat': data['target_lat'],
-                    'lon': data['target_lon']
-                }
-                session[user_id] = user_data
-                
-                # Aktualizacja trasy
-                user_marker = user_data.get('marker')
-                if user_marker:
-                    route = get_route(
-                        user_marker['lat'], user_marker['lon'],
-                        data['target_lat'], data['target_lon']
-                    )
-                    if route:
-                        user_data['current_route'] = route
-                        session[user_id] = user_data
-                        return jsonify({'status': 'success'})
             
-            return jsonify({'status': 'error'})
+            if not user_id:
+                user_id = str(uuid.uuid4())
+                session['user_id'] = user_id
+            
+            # Get the user's location from session rather than overriding it
+            user_data = session.get(user_id, {})
+            user_marker = user_data.get('marker')
+            if not user_marker:
+                return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
+            
+            # Use the target coordinates from the request to calculate the route
+            route = get_route(
+                user_marker['lat'], 
+                user_marker['lon'],
+                data['target_lat'], 
+                data['target_lon']
+            )
+            
+            if route:
+                user_data['current_route'] = route
+                session[user_id] = user_data
+                self.update_map()
+                return jsonify({'status': 'success'})
+            
+            return jsonify({'status': 'error', 'message': 'Could not calculate route'})
 
         @self.app.route('/apply_filters', methods=['POST'])
         def apply_filters():
@@ -867,25 +872,22 @@ class Server:
                         # Używamy trasy zapisanej w sesji, jeśli istnieje
                         route = user_data.get('current_route')
                         if not route:
-                            selected_marker = user_data.get('selected_marker')
-                            
-                            if selected_marker:
-                                # Użyj zapisanego markera zamiast szukać najbliższego
-                                route = get_route(
-                                    user_marker['lat'], user_marker['lon'],
-                                    selected_marker['lat'], selected_marker['lon']
-                                )
-                            else:
-                                # Użyj najbliższego markera jak dotychczas
-                                nearest_marker = find_nearest_marker(user_marker, filtered_markers)
-                                route = get_route(
-                                    user_marker['lat'], user_marker['lon'],
-                                    nearest_marker['lat'], nearest_marker['lon']
-                                )
-
-                            if route:
-                                user_data['current_route'] = route
-                                session[user_id] = user_data
+                            nearest_marker = find_nearest_marker(user_marker, filtered_markers)
+                            if nearest_marker:
+                                # Sprawdzamy województwo przed jakimkolwiek generowaniem trasy
+                                if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
+                                    logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
+                                    user_data['current_route'] = None
+                                    session[user_id] = user_data
+                                    route = None
+                                else:
+                                    route = get_route(
+                                        user_marker['lat'], user_marker['lon'],
+                                        nearest_marker['lat'], nearest_marker['lon']
+                                    )
+                                    if route:
+                                        user_data['current_route'] = route
+                                        session[user_id] = user_data
 
                         # Wyświetlamy trasę tylko jeśli route istnieje i marker jest w województwie
                         if route:

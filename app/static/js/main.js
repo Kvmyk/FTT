@@ -19,6 +19,78 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * c; // w metrach
 }
 
+function startIntelligentTracking() {
+    if (!navigator.geolocation) {
+        console.error('Geolokalizacja nie jest wspierana przez tę przeglądarkę.');
+        return;
+    }
+
+    // Zatrzymaj poprzednie śledzenie jeśli istnieje
+    stopIntelligentTracking();
+
+    watchId = navigator.geolocation.watchPosition(
+        (position) => {
+            const currentPosition = {
+                lat: position.coords.latitude,
+                lon: position.coords.longitude
+            };
+
+            // Sprawdź czy jest to pierwsza pozycja lub czy użytkownik przemieścił się znacząco
+            if (!lastPosition || calculateDistance(
+                lastPosition.lat, lastPosition.lon,
+                currentPosition.lat, currentPosition.lon
+            ) > MIN_DISTANCE) {
+                lastPosition = currentPosition;
+                
+                // Wyślij nową pozycję przez AJAX
+                fetch('/location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(currentPosition)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Aktualizuj mapę i informacje o najbliższej toalecie
+                        return fetch('/render_map');
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                    return fetch('/nearest_toilet_distance');
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const nearestPinInfo = document.getElementById('nearestPinInfo');
+                        const nearestPinText = document.getElementById('nearestPinText');
+                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        nearestPinInfo.classList.add('show');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        },
+        (error) => console.error('Error:', error),
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: UPDATE_INTERVAL
+        }
+    );
+}
+
+function stopIntelligentTracking() {
+    if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        lastPosition = null;
+    }
+}
+
 function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(sendPosition, showError, { enableHighAccuracy: true });
@@ -123,27 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
     localStorage.removeItem('lon');
     localStorage.removeItem('locationUpdated');
 
-    // Sprawdź czy jest aktywna nawigacja
-    const navigationActive = localStorage.getItem('navigationActive') === 'true';
-    const targetLat = localStorage.getItem('targetLat');
-    const targetLon = localStorage.getItem('targetLon');
-
-    if (navigationActive && targetLat && targetLon) {
-        // Odtwórz zapisaną nawigację
-        navigateToToilet(parseFloat(targetLat), parseFloat(targetLon));
-    } else {
-        // Standardowe zachowanie - znajdź najbliższą toaletę
-        getLocation();
-    }
-
-    // Wyczyść stan nawigacji przy kliknięciu w przycisk filtrów lub dodawania nowego markera
-    document.querySelector('.filter-button').addEventListener('click', function() {
-        localStorage.removeItem('navigationActive');
-    });
-
-    document.querySelector('.circle-plus').addEventListener('click', function() {
-        localStorage.removeItem('navigationActive');
-    });
+    getLocation();
 
     document.querySelector('.circle-plus').addEventListener('click', function() {
         document.getElementById('myModal').style.display = 'block';
@@ -171,6 +223,11 @@ document.addEventListener('DOMContentLoaded', function() {
         trackingToggle.checked = true;
         startIntelligentTracking();
     }
+});
+
+// Zapisz stan przełącznika
+document.getElementById('locationTrackingToggle').addEventListener('change', function() {
+    localStorage.setItem('trackingEnabled', this.checked);
 });
 
 function validateRating() {
@@ -341,10 +398,8 @@ function isInOpoleProvince(lat, lon) {
 }
 
 function navigateToToilet(targetLat, targetLon) {
-    // Zapisz dane wybranego markera
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
-    localStorage.setItem('navigationActive', 'true'); // Nowa flaga
 
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -371,8 +426,7 @@ function navigateToToilet(targetLat, targetLon) {
                         user_lat: userLat,
                         user_lon: userLon,
                         target_lat: targetLat,
-                        target_lon: targetLon,
-                        is_selected_target: true // Nowy parametr
+                        target_lon: targetLon
                     })
                 })
                 .then(response => response.json())
@@ -411,85 +465,6 @@ function navigateToToilet(targetLat, targetLon) {
             }
         );
     }
-}
-
-function startIntelligentTracking() {
-    if (!navigator.geolocation) {
-        console.error('Geolokalizacja nie jest wspierana przez tę przeglądarkę.');
-        return;
-    }
-
-    // Zatrzymaj poprzednie śledzenie jeśli istnieje
-    stopIntelligentTracking();
-
-    watchId = navigator.geolocation.watchPosition(
-        (position) => {
-            const currentPosition = {
-                lat: position.coords.latitude,
-                lon: position.coords.longitude
-            };
-
-            // Sprawdź czy jest to pierwsza pozycja lub czy użytkownik przemieścił się znacząco
-            if (!lastPosition || calculateDistance(
-                lastPosition.lat, lastPosition.lon,
-                currentPosition.lat, currentPosition.lon
-            ) > MIN_DISTANCE) {
-                lastPosition = currentPosition;
-                
-                // Wyślij nową pozycję przez AJAX
-                fetch('/location', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(currentPosition)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Aktualizuj mapę i informacje o najbliższej toalecie
-                        return fetch('/render_map');
-                    }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('map').innerHTML = html;
-                    return fetch('/nearest_toilet_distance');
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const nearestPinInfo = document.getElementById('nearestPinInfo');
-                        const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                        nearestPinInfo.classList.add('show');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        },
-        (error) => console.error('Error:', error),
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: UPDATE_INTERVAL
-        }
-    );
-}
-
-function stopIntelligentTracking() {
-    if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-        lastPosition = null;
-        clearNavigation(); // Dodane czyszczenie nawigacji
-    }
-}
-
-function clearNavigation() {
-    localStorage.removeItem('targetLat');
-    localStorage.removeItem('targetLon');
-    localStorage.removeItem('navigationActive');
 }
 
 // Dodaj po załadowaniu mapy
@@ -645,9 +620,4 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
     });
 
     this.files = new FileList(...resizedFiles);
-});
-
-// Zapisz stan przełącznika
-document.getElementById('locationTrackingToggle').addEventListener('change', function() {
-    localStorage.setItem('trackingEnabled', this.checked);
 });
