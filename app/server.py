@@ -485,8 +485,11 @@ class Server:
             user_lon = data['user_lon']
             target_lat = data['target_lat']
             target_lon = data['target_lon']
-
-            route = get_route(user_lat, user_lon, target_lat, target_lon)
+            
+            if not isInOpoleProvince(target_lat, target_lon):
+                route = None
+            else:
+                route = get_route(user_lat, user_lon, target_lat, target_lon)
             if route:
                 distance = route['routes'][0]['distance']  # w metrach
                 duration = route['routes'][0]['duration'] / 60  # w minutach

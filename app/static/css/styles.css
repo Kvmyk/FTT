@@ -751,10 +751,7 @@ input[type="number"]::-webkit-inner-spin-button {
     border-radius: 4px !important; /* Przykładowe zaokrąglenie */
 }
 
-/* Styl dla outer spinner w Firefox */
-input[type="number"] {
-    -moz-appearance: textfield !important;
-}
+
 
 /* Animacje dla elementów pojawiających się i znikających */
 #nearestPinInfo, #loadingOverlay, .modal-backdrop {
