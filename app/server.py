@@ -13,7 +13,7 @@ from flask_session import Session
 from flask_compress import Compress
 
 from flask import Flask, send_from_directory, jsonify, request, session
-from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text, is_hate_speech
+from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text, is_hate_speech, isInOpoleProvince
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -202,22 +202,6 @@ class Server:
             })
 
         @self.app.route('/nearest_toilet_distance', methods=['GET'])
-
-        def isInOpoleProvince(lat, lon):
-            """
-            Sprawdza, czy podane współrzędne znajdują się w granicach województwa opolskiego.
-            """
-            # Granice województwa opolskiego (przybliżone)
-            opole_bounds = {
-                'north': 51.0,
-                'south': 49.5,
-                'west': 16.5,
-                'east': 18.5
-            }
-
-            return opole_bounds['south'] <= lat <= opole_bounds['north'] and \
-                opole_bounds['west'] <= lon <= opole_bounds['east']
-
         def nearest_toilet_distance():
             user_id = session.get('user_id')
             if not user_id:

@@ -71,3 +71,18 @@ def format_distance_text(distance):
         return f"{int(distance)} m"
     else:
         return f"{distance/1000:.2f} km"
+    
+def isInOpoleProvince(lat, lon):
+        """
+        Sprawdza, czy podane współrzędne znajdują się w granicach województwa opolskiego.
+        """
+        # Granice województwa opolskiego (przybliżone)
+        opole_bounds = {
+            'north': 51.0,
+            'south': 49.5,
+            'west': 16.5,
+            'east': 18.5
+        }
+
+        return opole_bounds['south'] <= lat <= opole_bounds['north'] and \
+            opole_bounds['west'] <= lon <= opole_bounds['east']
