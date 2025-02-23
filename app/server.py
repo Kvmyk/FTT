@@ -108,7 +108,6 @@ class Server:
         )
         return self.m
 
-
     def load_markers(self):
         """Wczytuje listę toalet (markerów) z pliku data.json."""
         try:
@@ -203,10 +202,23 @@ class Server:
             })
 
         @self.app.route('/nearest_toilet_distance', methods=['GET'])
+
+        def isInOpoleProvince(lat, lon):
+            """
+            Sprawdza, czy podane współrzędne znajdują się w granicach województwa opolskiego.
+            """
+            # Granice województwa opolskiego (przybliżone)
+            opole_bounds = {
+                'north': 51.0,
+                'south': 49.5,
+                'west': 16.5,
+                'east': 18.5
+            }
+
+            return opole_bounds['south'] <= lat <= opole_bounds['north'] and \
+                opole_bounds['west'] <= lon <= opole_bounds['east']
+
         def nearest_toilet_distance():
-            """
-            Dodatkowy endpoint, który zwraca odległość do najbliższej toalety.
-            """
             user_id = session.get('user_id')
             if not user_id:
                 user_id = str(uuid.uuid4())
@@ -222,14 +234,12 @@ class Server:
                 response.headers['Cache-Control'] = 'no-store'
                 return response, 202
 
-            # Pobierz filtry z sesji
             filters = user_data.get('filters', {})
             filter_payable = filters.get('filterPayable', False)
             filter_for_clients = filters.get('filterForClients', False)
             filter_for_disabled = filters.get('filterForDisabled', False)
             filter_rating = float(filters.get('filterRating', 0))
 
-            # Filtrowanie markerów
             markers_to_search = self.original_markers
             if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
                 markers_to_search = [
@@ -241,15 +251,15 @@ class Server:
                 ]
 
             nearest_marker = find_nearest_marker(user_marker, markers_to_search)
-            if not nearest_marker:
-                response = jsonify({'status': 'error', 'message': 'No toilets found'})
+            if not nearest_marker or not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
+                response = jsonify({'status': 'error', 'message': 'No toilets found in Opole province'})
                 response.headers['Cache-Control'] = 'no-store'
                 return response, 404
 
             route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
             if route:
-                distance = route['routes'][0]['distance']  # w metrach
-                duration = route['routes'][0]['duration'] / 60  # w minutach
+                distance = route['routes'][0]['distance']
+                duration = route['routes'][0]['duration'] / 60
                 distance_text = format_distance_text(distance)
                 return jsonify({
                     'status': 'success',
@@ -786,6 +796,21 @@ class Server:
 
         # Opcjonalnie można odświeżyć mapę już teraz
         self.update_map()
+
+    def isInOpoleProvince(lat, lon):
+        """
+        Sprawdza, czy podane współrzędne znajdują się w granicach województwa opolskiego.
+        """
+        # Granice województwa opolskiego (przybliżone)
+        opole_bounds = {
+            'north': 51.0,
+            'south': 49.5,
+            'west': 16.5,
+            'east': 18.5
+        }
+
+        return opole_bounds['south'] <= lat <= opole_bounds['north'] and \
+            opole_bounds['west'] <= lon <= opole_bounds['east']
 
     def update_map(self):
         """Aktualizuje mapę, najpierw ją usuwając"""
