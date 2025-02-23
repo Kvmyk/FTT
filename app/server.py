@@ -189,16 +189,12 @@ class Server:
             # Obliczamy trasę do najbliższego markera
             nearest_marker = find_nearest_marker(user_marker, markers_to_search)
             if nearest_marker:
-                # Sprawdź, czy marker znajduje się w województwie opolskim
-                if isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
-                    route = get_route(
-                        user_marker['lat'], user_marker['lon'],
-                        nearest_marker['lat'], nearest_marker['lon']
-                    )
-                    if route:
-                        self.add_route_to_map(route)
-                else:
-                    logging.warning("Najbliższy marker jest poza województwem opolskim – nie generuję trasy.")
+                route = get_route(
+                    user_marker['lat'], user_marker['lon'],
+                    nearest_marker['lat'], nearest_marker['lon']
+                )
+                if route:
+                    self.add_route_to_map(route)
 
             return jsonify({
                 'status': 'success',
@@ -249,6 +245,14 @@ class Server:
                 response = jsonify({'status': 'error', 'message': 'No toilets found'})
                 response.headers['Cache-Control'] = 'no-store'
                 return response, 404
+
+            if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
+                response = jsonify({
+                    'status': 'region_error',
+                    'message': 'Marker poza województwem opolskim. Trasa nie zostanie wygenerowana.'
+                })
+                response.headers['Cache-Control'] = 'no-store'
+                return response, 400
 
             route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
             if route:
