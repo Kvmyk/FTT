@@ -7,11 +7,8 @@ function getLocation() {
 }
 
 function sendPosition(position) {
-    const userLat = position.coords.latitude;
-    const userLon = position.coords.longitude;
-
-    localStorage.setItem('lat', userLat);
-    localStorage.setItem('lon', userLon);
+    localStorage.setItem('lat', position.coords.latitude);
+    localStorage.setItem('lon', position.coords.longitude);
 
     fetch('/location', {
         method: 'POST',
@@ -19,8 +16,8 @@ function sendPosition(position) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            lat: userLat,
-            lon: userLon
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
         })
     })
     .then(response => response.json())
@@ -34,28 +31,11 @@ function sendPosition(position) {
         document.getElementById('map').innerHTML = html;
         document.getElementById('loadingOverlay').style.display = 'none';
         // Now that the user location is set, call nearest_toilet_distance
-        return fetch('/nearest_toilet_distance', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                user_lat: userLat,
-                user_lon: userLon
-            })
-        });
+        return fetch('/nearest_toilet_distance');
     })
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            const nearestPinLat = data.nearest_pin_lat;
-            const nearestPinLon = data.nearest_pin_lon;
-
-            if (!isInOpoleProvince(nearestPinLat, nearestPinLon)) {
-                alert('Najbliższy marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
-                return;
-            }
-
             const nearestPinInfo = document.getElementById('nearestPinInfo');
             const nearestPinText = document.getElementById('nearestPinText');
             nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
@@ -276,13 +256,27 @@ function submitComment() {
     });
 }
 
+function animateRoute(map, coordinates) {
+    let currentIndex = 0;
+    let polyline = L.polyline([], { color: 'red', weight: 5 }).addTo(map);
+
+    function drawSegment() {
+      if (currentIndex < coordinates.length) {
+        polyline.addLatLng(L.latLng(coordinates[currentIndex]));
+        currentIndex++;
+        requestAnimationFrame(drawSegment);
+      }
+    }
+    drawSegment();
+  }
+
 function isInOpoleProvince(lat, lon) {
     // Granice województwa opolskiego (przybliżone)
     const opoleBounds = {
-        north: 51.1944,  // 51°11′40″ N
-        south: 49.9722,  // 49°58′20″ N
-        west: 16.9078,   // 16°54′28″ E
-        east: 18.6953    // 18°41′43″ E
+        north: 51.0,
+        south: 49.5,
+        west: 16.5,
+        east: 18.5
     };
 
     return lat >= opoleBounds.south && lat <= opoleBounds.north &&
@@ -308,7 +302,6 @@ function navigateToToilet(targetLat, targetLon) {
                     alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
                     return;
                 }
-
 
                 fetch('/navigate', {
                     method: 'POST',
