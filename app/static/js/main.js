@@ -60,7 +60,7 @@ function startIntelligentTracking() {
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('map').innerHTML = html;
-                    return fetch('/navigate_toilet_distance');
+                    return fetch('/nearest_toilet_distance');
                 })
                 .then(response => response.json())
                 .then(data => {
