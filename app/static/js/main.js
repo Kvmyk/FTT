@@ -123,7 +123,27 @@ document.addEventListener('DOMContentLoaded', function() {
     localStorage.removeItem('lon');
     localStorage.removeItem('locationUpdated');
 
-    getLocation();
+    // Sprawdź czy jest aktywna nawigacja
+    const navigationActive = localStorage.getItem('navigationActive') === 'true';
+    const targetLat = localStorage.getItem('targetLat');
+    const targetLon = localStorage.getItem('targetLon');
+
+    if (navigationActive && targetLat && targetLon) {
+        // Odtwórz zapisaną nawigację
+        navigateToToilet(parseFloat(targetLat), parseFloat(targetLon));
+    } else {
+        // Standardowe zachowanie - znajdź najbliższą toaletę
+        getLocation();
+    }
+
+    // Wyczyść stan nawigacji przy kliknięciu w przycisk filtrów lub dodawania nowego markera
+    document.querySelector('.filter-button').addEventListener('click', function() {
+        localStorage.removeItem('navigationActive');
+    });
+
+    document.querySelector('.circle-plus').addEventListener('click', function() {
+        localStorage.removeItem('navigationActive');
+    });
 
     document.querySelector('.circle-plus').addEventListener('click', function() {
         document.getElementById('myModal').style.display = 'block';
@@ -321,8 +341,10 @@ function isInOpoleProvince(lat, lon) {
 }
 
 function navigateToToilet(targetLat, targetLon) {
+    // Zapisz dane wybranego markera
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
+    localStorage.setItem('navigationActive', 'true'); // Nowa flaga
 
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -349,7 +371,8 @@ function navigateToToilet(targetLat, targetLon) {
                         user_lat: userLat,
                         user_lon: userLon,
                         target_lat: targetLat,
-                        target_lon: targetLon
+                        target_lon: targetLon,
+                        is_selected_target: true // Nowy parametr
                     })
                 })
                 .then(response => response.json())
@@ -459,7 +482,14 @@ function stopIntelligentTracking() {
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
         lastPosition = null;
+        clearNavigation(); // Dodane czyszczenie nawigacji
     }
+}
+
+function clearNavigation() {
+    localStorage.removeItem('targetLat');
+    localStorage.removeItem('targetLon');
+    localStorage.removeItem('navigationActive');
 }
 
 // Dodaj po załadowaniu mapy

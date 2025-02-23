@@ -823,19 +823,22 @@ input[type="number"]::-webkit-inner-spin-button {
 @media screen and (max-width: 768px) {
     .location-tracking-toggle {
         bottom: auto;
-        top: 60px; /* Wyrównanie z przyciskiem filtrów */
-        left: 10px; /* Przesunięcie na lewą stronę */
+        top: 80px; /* Przesunięte niżej z 60px na 80px */
+        left: 10px;
         right: auto;
         padding: 8px;
-        background: rgba(255, 255, 255, 0.9); /* Półprzezroczyste tło */
-        border: 1px solid rgba(255, 0, 0, 0.2); /* Delikatna czerwona ramka */
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(255, 0, 0, 0.2);
+        z-index: 1000;
     }
 
     .location-tracking-toggle .switch {
         width: 40px;
         height: 22px;
+        margin: 0;
     }
 
+    /* Poprawka dla kółka slidera */
     .location-tracking-toggle .slider:before {
         height: 16px;
         width: 16px;
@@ -843,8 +846,8 @@ input[type="number"]::-webkit-inner-spin-button {
         bottom: 3px;
     }
 
-    .location-tracking-toggle .switch-label {
-        font-size: 12px;
-        white-space: nowrap;
+    /* Poprawka dla przesuniętego kółka */
+    .location-tracking-toggle input:checked + .slider:before {
+        transform: translateX(18px); /* Dostosowane do nowej szerokości */
     }
 }
