@@ -10,11 +10,6 @@ function sendPosition(position) {
     localStorage.setItem('lat', position.coords.latitude);
     localStorage.setItem('lon', position.coords.longitude);
 
-    if (!isInOpoleProvince(userLat, userLon)) {
-        alert('Znajdujesz się poza województwem opolskim. Nawigacja jest dostępna tylko w województwie opolskim.');
-        return;
-    }
-
     if (!isInOpoleProvince(targetLat, targetLon)) {
         alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
         return;
