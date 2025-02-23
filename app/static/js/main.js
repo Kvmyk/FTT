@@ -7,8 +7,11 @@ function getLocation() {
 }
 
 function sendPosition(position) {
-    localStorage.setItem('lat', position.coords.latitude);
-    localStorage.setItem('lon', position.coords.longitude);
+    const userLat = position.coords.latitude;
+    const userLon = position.coords.longitude;
+
+    localStorage.setItem('lat', userLat);
+    localStorage.setItem('lon', userLon);
 
     fetch('/location', {
         method: 'POST',
@@ -16,8 +19,8 @@ function sendPosition(position) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude
+            lat: userLat,
+            lon: userLon
         })
     })
     .then(response => response.json())
@@ -31,11 +34,28 @@ function sendPosition(position) {
         document.getElementById('map').innerHTML = html;
         document.getElementById('loadingOverlay').style.display = 'none';
         // Now that the user location is set, call nearest_toilet_distance
-        return fetch('/nearest_toilet_distance');
+        return fetch('/nearest_toilet_distance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user_lat: userLat,
+                user_lon: userLon
+            })
+        });
     })
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
+            const nearestPinLat = data.nearest_pin_lat;
+            const nearestPinLon = data.nearest_pin_lon;
+
+            if (!isInOpoleProvince(nearestPinLat, nearestPinLon)) {
+                alert('Najbliższy marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
+                return;
+            }
+
             const nearestPinInfo = document.getElementById('nearestPinInfo');
             const nearestPinText = document.getElementById('nearestPinText');
             nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
