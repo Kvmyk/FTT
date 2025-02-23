@@ -12,6 +12,7 @@
     <script src="/static/js/main.js"></script> 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            
             fetch('/nearest_toilet_distance')
                 .then(response => response.json())
                 .then(data => {

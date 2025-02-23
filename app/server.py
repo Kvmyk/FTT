@@ -255,7 +255,9 @@ class Server:
                     'status': 'success',
                     'distance': distance_text,
                     'duration': f"{duration:.0f}",
-                    'name': nearest_marker['name']
+                    'name': nearest_marker['name'],
+                    'nearest_pin_lat': nearest_marker['lat'],
+                    'nearest_pin_lon': nearest_marker['lon']
                 })
             else:
                 return jsonify({'status': 'error', 'message': 'Route not found'}), 404
