@@ -69,12 +69,7 @@
         <label><input type="checkbox" id="paidInput" name="payable">Płatna</label>
         <label><input type="checkbox" id="customersOnlyInput" name="onlyForClients">Tylko dla klientów</label>
         <label><input type="checkbox" id="disabilityInput" name="forDisabled">Dla niepełnosprawnych</label>
-        <!-- Przykładowe przyciski zmiany oceny -->
-        <div class="rating-container">
-            <button class="rating-button" onclick="decreaseRating()">-</button>
-            <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10" required>
-            <button class="rating-button" onclick="increaseRating()">+</button>
-        </div>
+        <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10" required>
         <input type="file" id="photoInput" accept=".jpg,.png" multiple>
         <div id="imagePreviewContainer"></div>
         <label class="switch">
