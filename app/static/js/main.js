@@ -35,7 +35,7 @@ function sendPosition(position) {
         document.getElementById('loadingOverlay').style.display = 'none';
         // Now that the user location is set, call nearest_toilet_distance
         return fetch('/nearest_toilet_distance', {
-            method: 'POST',
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
             },
