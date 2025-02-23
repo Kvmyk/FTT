@@ -506,7 +506,6 @@ function isInOpoleProvince(lat, lon) {
 function navigateToToilet(targetLat, targetLon) {
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
-    localStorage.setItem('navigationActive', 'true'); 
 
 
     if (navigator.geolocation) {
