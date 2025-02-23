@@ -863,13 +863,18 @@ class Server:
                         if not route:
                             nearest_marker = find_nearest_marker(user_marker, filtered_markers)
                             if nearest_marker:
-                                route = get_route(
-                                    user_marker['lat'], user_marker['lon'],
-                                    nearest_marker['lat'], nearest_marker['lon']
-                                )
-                                if route:
-                                    user_data['current_route'] = route
-                                    session[user_id] = user_data
+                                # Dodaj sprawdzenie woj. opolskiego przed wyznaczeniem trasy:
+                                if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
+                                    logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
+                                    route = None
+                                else:
+                                    route = get_route(
+                                        user_marker['lat'], user_marker['lon'],
+                                        nearest_marker['lat'], nearest_marker['lon']
+                                    )
+                        if route:
+                            user_data['current_route'] = route
+                            session[user_id] = user_data
 
                         if route:
                             coordinates = [
