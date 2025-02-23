@@ -853,7 +853,6 @@ class Server:
                         marker for marker in markers_to_add 
                         if marker.get('name', '') != "User Location"
                     ]
-                    # Jeśli lista przefiltrowanych markerów jest pusta, usuń trasę
                     if not filtered_markers:
                         user_data['current_route'] = None
                         session[user_id] = user_data
@@ -863,19 +862,22 @@ class Server:
                         if not route:
                             nearest_marker = find_nearest_marker(user_marker, filtered_markers)
                             if nearest_marker:
-                                # Dodaj sprawdzenie woj. opolskiego przed wyznaczeniem trasy:
+                                # Sprawdzamy województwo przed jakimkolwiek generowaniem trasy
                                 if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
                                     logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
+                                    user_data['current_route'] = None
+                                    session[user_id] = user_data
                                     route = None
                                 else:
                                     route = get_route(
                                         user_marker['lat'], user_marker['lon'],
                                         nearest_marker['lat'], nearest_marker['lon']
                                     )
-                        if route:
-                            user_data['current_route'] = route
-                            session[user_id] = user_data
+                                    if route:
+                                        user_data['current_route'] = route
+                                        session[user_id] = user_data
 
+                        # Wyświetlamy trasę tylko jeśli route istnieje i marker jest w województwie
                         if route:
                             coordinates = [
                                 (coord[1], coord[0])
