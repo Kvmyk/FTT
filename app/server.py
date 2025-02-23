@@ -246,14 +246,6 @@ class Server:
                 response.headers['Cache-Control'] = 'no-store'
                 return response, 404
 
-            if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
-                response = jsonify({
-                    'status': 'region_error',
-                    'message': 'Marker poza województwem opolskim. Trasa nie zostanie wygenerowana.'
-                })
-                response.headers['Cache-Control'] = 'no-store'
-                return response, 400
-
             route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
             if route:
                 distance = route['routes'][0]['distance']  # w metrach
