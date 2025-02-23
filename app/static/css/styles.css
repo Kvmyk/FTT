@@ -792,6 +792,7 @@ input[type="number"]::-webkit-inner-spin-button {
     display: flex;
     align-items: center;
     gap: 10px;
+    border: 3px solid red;
 }
 
 /* Style dla urządzeń mobilnych */
@@ -828,7 +829,7 @@ input[type="number"]::-webkit-inner-spin-button {
         right: auto;
         padding: 8px;
         background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(255, 0, 0, 0.2);
+        border: 3px solid red;
         z-index: 1000;
     }
 
