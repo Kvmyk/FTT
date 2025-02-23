@@ -679,3 +679,65 @@ input:checked + .slider {
 input:checked + .slider:before {
   transform: translateX(26px);
 }
+y
+/* Efekt hover dla przycisków */
+button:hover, .popup-button:hover, #commentModal button:hover, #myModal button:hover {
+    background-color: #C92704;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Półprzezroczyste tło za modalami */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+}
+
+#myModal, #commentModal, #filterModal {
+    z-index: 1001;
+}
+
+/* Pokaż tło za modalami, gdy są widoczne */
+#myModal.show ~ .modal-backdrop,
+#commentModal.show ~ .modal-backdrop,
+#filterModal.show ~ .modal-backdrop {
+    display: block;
+}
+
+/* Lepsza responsywność */
+@media screen and (max-width: 480px) {
+    #myModal, #commentModal, #filterModal {
+        width: 85%;
+        max-width: 320px;
+        padding: 15px;
+    }
+    
+    .circle-plus, .filter-button {
+        width: 30px;
+        height: 30px;
+        font-size: 20px;
+    }
+
+    #loadingOverlay .logo {
+        width: 200px;
+    }
+}
+
+/* Animacje dla elementów pojawiających się i znikających */
+#nearestPinInfo, #loadingOverlay, .modal-backdrop {
+    transition: opacity 0.3s ease-in-out;
+}
+
+#nearestPinInfo.show, #loadingOverlay.show, .modal-backdrop.show {
+    opacity: 1;
+}
+
+#nearestPinInfo.hide, #loadingOverlay.hide, .modal-backdrop.hide {
+    opacity: 0;
+}
