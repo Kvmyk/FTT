@@ -1,4 +1,3 @@
-
 // Dodaj globalne zmienne na górze pliku
 let watchId = null;
 let lastPosition = null;
@@ -82,6 +81,14 @@ function startIntelligentTracking() {
             maximumAge: UPDATE_INTERVAL
         }
     );
+}
+
+function stopIntelligentTracking() {
+    if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        lastPosition = null;
+    }
 }
 
 function getLocation() {
@@ -200,6 +207,27 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeCommentModal').addEventListener('click', function() {
         document.getElementById('commentModal').style.display = 'none';
     });
+
+    // Dodaj obsługę przełącznika śledzenia
+    const trackingToggle = document.getElementById('locationTrackingToggle');
+    trackingToggle.addEventListener('change', function() {
+        if (this.checked) {
+            startIntelligentTracking();
+        } else {
+            stopIntelligentTracking();
+        }
+    });
+
+    // Automatycznie włącz śledzenie, jeśli było włączone wcześniej
+    if (localStorage.getItem('trackingEnabled') === 'true') {
+        trackingToggle.checked = true;
+        startIntelligentTracking();
+    }
+});
+
+// Zapisz stan przełącznika
+document.getElementById('locationTrackingToggle').addEventListener('change', function() {
+    localStorage.setItem('trackingEnabled', this.checked);
 });
 
 function validateRating() {
@@ -439,21 +467,6 @@ function navigateToToilet(targetLat, targetLon) {
     }
 }
 
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // Promień Ziemi w metrach
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lon2-lon1) * Math.PI/180;
-
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    return R * c; // w metrach
-}
-
 // Dodaj po załadowaniu mapy
 document.addEventListener('DOMContentLoaded', function() {
     // Obsługa przycisków w popupach
@@ -532,6 +545,7 @@ function showAllToilets() {
     document.getElementById('filterPayable').checked = false;
     document.getElementById('filterForClients').checked = false;
     document.getElementById('filterForDisabled').checked = false;
+    document.getElementById('filterRating').value = '0'; // Dodaj reset wartości oceny
 
     // Wyślij żądanie do serwera, aby przywrócić wszystkie markery
     fetch('/apply_filters', {
@@ -542,14 +556,20 @@ function showAllToilets() {
         body: JSON.stringify({
             filterPayable: false,
             filterForClients: false,
-            filterForDisabled: false
+            filterForDisabled: false,
+            filterRating: 0 // Dodaj wartość dla oceny
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
             document.getElementById('filterModal').style.display = 'none';
-            window.location.reload();
+            // Zamiast przeładowania strony, zaktualizuj mapę dynamicznie
+            fetch('/render_map')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                });
         } else {
             console.error('Error:', data.message);
         }
