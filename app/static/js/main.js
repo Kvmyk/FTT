@@ -60,14 +60,40 @@ function startIntelligentTracking() {
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('map').innerHTML = html;
-                    return fetch('/nearest_toilet_distance');
+                    
+                    // Sprawdź czy jest wybrany marker
+                    const targetLat = localStorage.getItem('targetLat');
+                    const targetLon = localStorage.getItem('targetLon');
+                    
+                    if (targetLat && targetLon) {
+                        // Jeśli jest wybrany marker, użyj navigate_toilet_distance
+                        return fetch('/navigate_toilet_distance', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                user_lat: currentPosition.lat,
+                                user_lon: currentPosition.lon,
+                                target_lat: parseFloat(targetLat),
+                                target_lon: parseFloat(targetLon)
+                            })
+                        });
+                    } else {
+                        // Jeśli nie ma wybranego markera, użyj nearest_toilet_distance
+                        return fetch('/nearest_toilet_distance');
+                    }
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
                         const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        if (localStorage.getItem('targetLat')) {
+                            nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        } else {
+                            nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        }
                         nearestPinInfo.classList.add('show');
                     }
                 })
