@@ -180,6 +180,7 @@ class Server:
                 logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
                 user_data['current_route'] = None
                 session[user_id] = user_data
+                route = None
                 return jsonify({
                     'status': 'success',
                     'lat': user_marker['lat'],
