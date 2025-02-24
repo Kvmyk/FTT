@@ -506,8 +506,9 @@ function applyFilters() {
     const filterRating = document.getElementById('filterRating').value;
     const rating = parseInt(filterRating, 10);
 
-    if (rating < 1 || rating > 10) {
-        alert('Ocena musi być w zakresie od 1 do 10.');
+    // Zmiana warunku - pozwól na wartość 0 jako brak filtra
+    if (rating < 0 || rating > 10) {
+        alert('Ocena musi być w zakresie od 0 do 10.');
         return;
     }
 
@@ -527,18 +528,25 @@ function applyFilters() {
     .then(data => {
         if (data.status === 'success') {
             document.getElementById('filterModal').style.display = 'none';
-            window.location.reload();
+            // Zamiast reload użyj dynamicznego odświeżenia mapy
+            fetch('/render_map')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                });
         } else {
             console.error('Error:', data.message);
         }
     });
 }
 
+// Popraw obsługę pokazywania wszystkich toalet
 function showAllToilets() {
     // Wyczyść wszystkie filtry
     document.getElementById('filterPayable').checked = false;
     document.getElementById('filterForClients').checked = false;
     document.getElementById('filterForDisabled').checked = false;
+    document.getElementById('filterRating').value = '0';
 
     // Wyślij żądanie do serwera, aby przywrócić wszystkie markery
     fetch('/apply_filters', {
@@ -549,19 +557,47 @@ function showAllToilets() {
         body: JSON.stringify({
             filterPayable: false,
             filterForClients: false,
-            filterForDisabled: false
+            filterForDisabled: false,
+            filterRating: 0
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
             document.getElementById('filterModal').style.display = 'none';
-            window.location.reload();
+            // Zamiast reload użyj dynamicznego odświeżenia mapy
+            fetch('/render_map')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                });
         } else {
             console.error('Error:', data.message);
         }
     });
 }
+
+// Dodaj nową obsługę zdarzeń dla filtrów
+document.addEventListener('DOMContentLoaded', function() {
+    const filterModal = document.getElementById('filterModal');
+    const filterButton = document.querySelector('.filter-button');
+    const closeFilterModal = document.getElementById('closeFilterModal');
+
+    filterButton.addEventListener('click', function() {
+        filterModal.style.display = filterModal.style.display === 'block' ? 'none' : 'block';
+    });
+
+    closeFilterModal.addEventListener('click', function() {
+        filterModal.style.display = 'none';
+    });
+
+    // Zamykanie modalu po kliknięciu poza nim
+    window.addEventListener('click', function(event) {
+        if (event.target === filterModal) {
+            filterModal.style.display = 'none';
+        }
+    });
+});
 
 function resizeImage(file, maxWidth, maxHeight, callback) {
     const reader = new FileReader();
