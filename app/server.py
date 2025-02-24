@@ -201,6 +201,15 @@ class Server:
             # Obliczamy trasę TYLKO dla użytkowników z woj. opolskiego
             nearest_marker = find_nearest_marker(user_marker, markers_to_search)
             if nearest_marker:
+                # Add this check
+                if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
+                    logging.warning("Nearest marker is outside Opole, not generating route.")
+                    return jsonify({
+                        'status': 'success',
+                        'lat': user_marker['lat'],
+                        'lon': user_marker['lon']
+                    })
+
                 route = get_route(
                     user_marker['lat'], user_marker['lon'],
                     nearest_marker['lat'], nearest_marker['lon']
@@ -432,55 +441,26 @@ class Server:
 
         @self.app.route('/navigate', methods=['POST'])
         def navigate():
-            data = request.json
-            user_id = session.get('user_id')
-            
-            if not user_id:
-                user_id = str(uuid.uuid4())
-                session['user_id'] = user_id
-            
-            user_data = session.get(user_id, {})
-            user_marker = user_data.get('marker')
-            if not user_marker:
-                return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
-            
-            # Check if target is in Opole province
-            if not isInOpoleProvince(data['target_lat'], data['target_lon']):
-                return jsonify({'status': 'error', 'message': 'Target location is outside Opole province'}), 400
-            
-            # Calculate route
-            route = get_route(
-                user_marker['lat'], 
-                user_marker['lon'],
-                data['target_lat'], 
-                data['target_lon']
-            )
-            
+            data = request.get_json()
+            user_lat = data.get('user_lat')
+            user_lon = data.get('user_lon')
+            target_lat = data.get('target_lat')
+            target_lon = data.get('target_lon')
+
+            if not all([user_lat, user_lon, target_lat, target_lon]):
+                return jsonify({'status': 'error', 'message': 'Missing coordinates'}), 400
+
+            # Add these checks
+            if not isInOpoleProvince(user_lat, user_lon) or not isInOpoleProvince(target_lat, target_lon):
+                logging.warning("User or target is outside Opole, not generating route.")
+                return jsonify({'status': 'error', 'message': 'User or target outside Opole'}), 400
+
+            route = get_route(user_lat, user_lon, target_lat, target_lon)
             if route:
-                # Save the selected route and target in session
-                user_data['current_route'] = route
-                user_data['selected_target'] = {
-                    'lat': data['target_lat'],
-                    'lon': data['target_lon'],
-                    'time': time.time()  # Add timestamp for potential cleanup later
-                }
-                session[user_id] = user_data
-                
-                # Update map with new route
-                self.update_map()
-                
-                # Return route details
-                distance = route['routes'][0]['distance']  # in meters
-                duration = route['routes'][0]['duration'] / 60  # in minutes
-                distance_text = format_distance_text(distance)
-                
-                return jsonify({
-                    'status': 'success',
-                    'distance': distance_text,
-                    'duration': f"{duration:.0f}"
-                })
-            
-            return jsonify({'status': 'error', 'message': 'Could not calculate route'}), 404
+                self.add_route_to_map(route)
+                return jsonify({'status': 'success'})
+            else:
+                return jsonify({'status': 'error', 'message': 'Could not generate route'}), 500
 
         @self.app.route('/apply_filters', methods=['POST'])
         def apply_filters():
