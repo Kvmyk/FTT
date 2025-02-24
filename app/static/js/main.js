@@ -218,17 +218,8 @@ document.addEventListener('DOMContentLoaded', function() {
             stopIntelligentTracking();
         }
     });
-    // Automatycznie włącz śledzenie, jeśli było włączone wcześniej
-    if (localStorage.getItem('trackingEnabled') === 'true') {
-        trackingToggle.checked = true;
-        startIntelligentTracking();
-    }
 });
 
-// Zapisz stan przełącznika
-document.getElementById('locationTrackingToggle').addEventListener('change', function() {
-    localStorage.setItem('trackingEnabled', this.checked);
-});
 
 
 function validateRating() {
