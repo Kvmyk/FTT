@@ -50,6 +50,7 @@ function startIntelligentTracking() {
                 localStorage.removeItem('targetLat');
                 localStorage.removeItem('targetLon');
                 alert('Cel nawigacji został usunięty przez zastosowane filtry. Wybierz nowy cel.');
+                return;
             }
         })
         .catch(error => console.error('Error:', error));
