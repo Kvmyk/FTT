@@ -25,7 +25,8 @@ function startIntelligentTracking() {
         return;
     }
 
-    stopIntelligentTracking(); // Zatrzymujemy poprzednie śledzenie
+    // Zatrzymaj poprzednie śledzenie jeśli istnieje
+    stopIntelligentTracking();
 
     watchId = navigator.geolocation.watchPosition(
         (position) => {
@@ -34,84 +35,59 @@ function startIntelligentTracking() {
                 lon: position.coords.longitude
             };
 
+            // Sprawdź czy jest to pierwsza pozycja lub czy użytkownik przemieścił się znacząco
             if (!lastPosition || calculateDistance(
                 lastPosition.lat, lastPosition.lon,
                 currentPosition.lat, currentPosition.lon
             ) > MIN_DISTANCE) {
                 lastPosition = currentPosition;
                 
+                // Wyślij nową pozycję przez AJAX
                 fetch('/location', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(currentPosition)
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
+                        // Aktualizuj mapę i informacje o najbliższej toalecie
                         return fetch('/render_map');
                     }
                 })
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('map').innerHTML = html;
-                    
-                    // Sprawdź, czy użytkownik wybrał już inny cel – jeśli tak, nie nadpisuj go
-                    const savedTargetLat = localStorage.getItem('targetLat');
-                    const savedTargetLon = localStorage.getItem('targetLon');
-                    
-                    if (!savedTargetLat || !savedTargetLon) {
-                        return fetch('/nearest_toilet_distance');
-                    } else {
-                        return fetch('/navigate_toilet_distance', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                user_lat: currentPosition.lat,
-                                user_lon: currentPosition.lon,
-                                target_lat: parseFloat(savedTargetLat),
-                                target_lon: parseFloat(savedTargetLon)
-                            })
-                        });
-                    }
+                    return fetch('/nearest_toilet_distance');
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
+                        const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        nearestPinInfo.classList.add('show');
                     }
                 })
                 .catch(error => console.error('Error:', error));
             }
         },
         (error) => console.error('Error:', error),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: UPDATE_INTERVAL }
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: UPDATE_INTERVAL
+        }
     );
 }
-
 
 function stopIntelligentTracking() {
     if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
         lastPosition = null;
-    }
-}
-
-function navigateToToilet(targetLat, targetLon) {
-    localStorage.setItem('targetLat', targetLat);
-    localStorage.setItem('targetLon', targetLon);
-
-    updateRouteToTarget(targetLat, targetLon);
-}
-
-
-function restoreNavigationTarget() {
-    const targetLat = localStorage.getItem('targetLat');
-    const targetLon = localStorage.getItem('targetLon');
-
-    if (targetLat && targetLon) {
-        navigateToToilet(parseFloat(targetLat), parseFloat(targetLon));
     }
 }
 
@@ -231,6 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeCommentModal').addEventListener('click', function() {
         document.getElementById('commentModal').style.display = 'none';
     });
+
     // Dodaj obsługę przełącznika śledzenia
     const trackingToggle = document.getElementById('locationTrackingToggle');
     trackingToggle.addEventListener('change', function() {
@@ -241,8 +218,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Przywróć nawigację do wybranego markera po załadowaniu strony
-    restoreNavigationTarget();
+    // Automatycznie włącz śledzenie, jeśli było włączone wcześniej
+    if (localStorage.getItem('trackingEnabled') === 'true') {
+        trackingToggle.checked = true;
+        startIntelligentTracking();
+    }
+});
+
+// Zapisz stan przełącznika
+document.getElementById('locationTrackingToggle').addEventListener('change', function() {
+    localStorage.setItem('trackingEnabled', this.checked);
 });
 
 function validateRating() {
@@ -303,17 +288,8 @@ function submitModal() {
         formData.append('rating', rating);
         formData.append('useUserLocation', useUserLocation);
 
-        for (var i = 0; i < photoInput.length; i++) {
-            var file = photoInput[i];
-            if (file.size > 5 * 1024 * 1024) { // 5 MB limit
-                alert('Rozmiar pliku nie może przekraczać 5 MB.');
-                return;
-            }
-            if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
-                alert('Dozwolone są tylko pliki w formacie .jpg i .png.');
-                return;
-            }
-            formData.append('photos', file);
+        for (let i = 0; i < photoInput.length; i++) {
+            formData.append('photos', photoInput[i]);
         }
 
         fetch('/submit', {
@@ -421,19 +397,74 @@ function isInOpoleProvince(lat, lon) {
            lon >= opoleBounds.west && lon <= opoleBounds.east;
 }
 
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // Promień Ziemi w metrach
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lon2-lon1) * Math.PI/180;
+function navigateToToilet(targetLat, targetLon) {
+    localStorage.setItem('targetLat', targetLat);
+    localStorage.setItem('targetLon', targetLon);
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLat = position.coords.latitude;
+                const userLon = position.coords.longitude;
 
-    return R * c; // w metrach
+                if (!isInOpoleProvince(userLat, userLon)) {
+                    alert('Znajdujesz się poza województwem opolskim. Nawigacja jest dostępna tylko w województwie opolskim.');
+                    return;
+                }
+
+                if (!isInOpoleProvince(targetLat, targetLon)) {
+                    alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
+                    return;
+                }
+
+                fetch('/navigate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_lat: userLat,
+                        user_lon: userLon,
+                        target_lat: targetLat,
+                        target_lon: targetLon
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        return fetch('/render_map');
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                    // Dodatkowy fetch do /navigate_toilet_distance
+                    return fetch('/navigate_toilet_distance', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            user_lat: userLat,
+                            user_lon: userLon,
+                            target_lat: parseFloat(targetLat),
+                            target_lon: parseFloat(targetLon)
+                        })
+                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const nearestPinInfo = document.getElementById('nearestPinInfo');
+                        const nearestPinText = document.getElementById('nearestPinText');
+                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        nearestPinInfo.classList.add('show');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        );
+    }
 }
 
 // Dodaj po załadowaniu mapy
@@ -473,11 +504,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function applyFilters() {
     const filterRating = document.getElementById('filterRating').value;
-    const rating = parseInt(filterRating, 10) || 0; // Dodaj domyślną wartość 0
+    const rating = parseInt(filterRating, 10);
 
-    // Zmień warunek, aby akceptował 0 jako brak filtra
-    if (rating < 0 || rating > 10) {
-        alert('Ocena musi być w zakresie od 0 do 10.');
+    if (rating < 1 || rating > 10) {
+        alert('Ocena musi być w zakresie od 1 do 10.');
         return;
     }
 
@@ -497,12 +527,7 @@ function applyFilters() {
     .then(data => {
         if (data.status === 'success') {
             document.getElementById('filterModal').style.display = 'none';
-            // Zamiast pełnego przeładowania strony, zaktualizuj mapę dynamicznie
-            fetch('/render_map')
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('map').innerHTML = html;
-                });
+            window.location.reload();
         } else {
             console.error('Error:', data.message);
         }
@@ -596,33 +621,3 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
 
     this.files = new FileList(...resizedFiles);
 });
-function updateRouteToTarget(targetLat, targetLon) {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const userLat = position.coords.latitude;
-                const userLon = position.coords.longitude;
-
-                fetch('/navigate_toilet_distance', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_lat: userLat,
-                        user_lon: userLon,
-                        target_lat: targetLat,
-                        target_lon: targetLon
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                        document.getElementById('nearestPinInfo').classList.add('show');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        );
-    }
-}
