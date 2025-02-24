@@ -31,9 +31,9 @@ function startIntelligentTracking() {
     const targetLat = localStorage.getItem('targetLat');
     const targetLon = localStorage.getItem('targetLon');
     
-    if (targetLat && targetLon) {
-        // Sprawdź czy cel nawigacji istnieje na mapie po zastosowaniu filtrów
-        return fetch('/check_marker_exists', {  // Dodaj return tutaj
+    // Promise który sprawdza czy cel istnieje (jeśli jest ustawiony)
+    const checkTarget = targetLat && targetLon ? 
+        fetch('/check_marker_exists', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -46,175 +46,99 @@ function startIntelligentTracking() {
         .then(response => response.json())
         .then(data => {
             if (!data.exists) {
-                // Jeśli marker nie istnieje, wyczyść cel nawigacji
                 localStorage.removeItem('targetLat');
                 localStorage.removeItem('targetLon');
                 alert('Cel nawigacji został usunięty przez zastosowane filtry. Wybierz nowy cel.');
-                return false; // Zatrzymaj dalsze wykonywanie
+                return false;
             }
-            return true; // Kontynuuj wykonywanie
-        })
-        .then(shouldContinue => {
-            if (!shouldContinue) {
-                return; // Przerwij wykonywanie jeśli marker nie istnieje
-            }
-            
-            // Kontynuuj śledzenie tylko jeśli marker istnieje
-            watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const currentPosition = {
-                        lat: position.coords.latitude,
-                        lon: position.coords.longitude
-                    };
+            return true;
+        }) :
+        Promise.resolve(true);
 
-                    // Sprawdź czy jest to pierwsza pozycja lub czy użytkownik przemieścił się znacząco
-                    if (!lastPosition || calculateDistance(
-                        lastPosition.lat, lastPosition.lon,
-                        currentPosition.lat, currentPosition.lon
-                    ) > MIN_DISTANCE) {
-                        lastPosition = currentPosition;
-                        
-                        // Zawsze sprawdzaj zapisany cel nawigacji
-                        const targetLat = localStorage.getItem('targetLat');
-                        const targetLon = localStorage.getItem('targetLon');
-                        
-                        // Zawsze używaj navigate zamiast location jeśli jest cel
-                        const endpoint = targetLat && targetLon ? '/navigate' : '/location';
-                        const body = targetLat && targetLon ? {
-                            user_lat: currentPosition.lat,
-                            user_lon: currentPosition.lon,
-                            target_lat: parseFloat(targetLat),
-                            target_lon: parseFloat(targetLon)
-                        } : currentPosition;
+    // Rozpocznij śledzenie tylko po sprawdzeniu celu
+    checkTarget.then(targetExists => {
+        watchId = navigator.geolocation.watchPosition(
+            (position) => {
+                const currentPosition = {
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude
+                };
 
-                        fetch(endpoint, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(body)
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                return fetch('/render_map');
-                            }
-                        })
-                        .then(response => response.text())
-                        .then(html => {
-                            document.getElementById('map').innerHTML = html;
-                            return fetch('/navigate_toilet_distance', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    user_lat: currentPosition.lat,
-                                    user_lon: currentPosition.lon,
-                                    target_lat: targetLat ? parseFloat(targetLat) : null,
-                                    target_lon: targetLon ? parseFloat(targetLon) : null
-                                })
-                            });
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                const nearestPinInfo = document.getElementById('nearestPinInfo');
-                                const nearestPinText = document.getElementById('nearestPinText');
-                                nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                                nearestPinInfo.classList.add('show');
-                            }
-                        })
-                        .catch(error => console.error('Error:', error));
-                    }
-                },
-                (error) => console.error('Error:', error),
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: UPDATE_INTERVAL
+                // Kontynuuj tylko jeśli cel istnieje lub nie ma celu
+                if (!targetExists && (localStorage.getItem('targetLat') || localStorage.getItem('targetLon'))) {
+                    return;
                 }
-            );
-        })
-        .catch(error => console.error('Error:', error));
-    }
 
-    // Jeśli nie ma celu nawigacji, po prostu rozpocznij śledzenie
-    watchId = navigator.geolocation.watchPosition(
-        (position) => {
-            const currentPosition = {
-                lat: position.coords.latitude,
-                lon: position.coords.longitude
-            };
+                // Reszta logiki śledzenia...
+                if (!lastPosition || calculateDistance(
+                    lastPosition.lat, lastPosition.lon,
+                    currentPosition.lat, currentPosition.lon
+                ) > MIN_DISTANCE) {
+                    lastPosition = currentPosition;
+                        
+                    // Zawsze sprawdzaj zapisany cel nawigacji
+                    const targetLat = localStorage.getItem('targetLat');
+                    const targetLon = localStorage.getItem('targetLon');
+                    
+                    // Zawsze używaj navigate zamiast location jeśli jest cel
+                    const endpoint = targetLat && targetLon ? '/navigate' : '/location';
+                    const body = targetLat && targetLon ? {
+                        user_lat: currentPosition.lat,
+                        user_lon: currentPosition.lon,
+                        target_lat: parseFloat(targetLat),
+                        target_lon: parseFloat(targetLon)
+                    } : currentPosition;
 
-            // Sprawdź czy jest to pierwsza pozycja lub czy użytkownik przemieścił się znacząco
-            if (!lastPosition || calculateDistance(
-                lastPosition.lat, lastPosition.lon,
-                currentPosition.lat, currentPosition.lon
-            ) > MIN_DISTANCE) {
-                lastPosition = currentPosition;
-                
-                // Zawsze sprawdzaj zapisany cel nawigacji
-                const targetLat = localStorage.getItem('targetLat');
-                const targetLon = localStorage.getItem('targetLon');
-                
-                // Zawsze używaj navigate zamiast location jeśli jest cel
-                const endpoint = targetLat && targetLon ? '/navigate' : '/location';
-                const body = targetLat && targetLon ? {
-                    user_lat: currentPosition.lat,
-                    user_lon: currentPosition.lon,
-                    target_lat: parseFloat(targetLat),
-                    target_lon: parseFloat(targetLon)
-                } : currentPosition;
-
-                fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(body)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        return fetch('/render_map');
-                    }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('map').innerHTML = html;
-                    return fetch('/navigate_toilet_distance', {
+                    fetch(endpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({
-                            user_lat: currentPosition.lat,
-                            user_lon: currentPosition.lon,
-                            target_lat: targetLat ? parseFloat(targetLat) : null,
-                            target_lon: targetLon ? parseFloat(targetLon) : null
-                        })
-                    });
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const nearestPinInfo = document.getElementById('nearestPinInfo');
-                        const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                        nearestPinInfo.classList.add('show');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
+                        body: JSON.stringify(body)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            return fetch('/render_map');
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('map').innerHTML = html;
+                        return fetch('/navigate_toilet_distance', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                user_lat: currentPosition.lat,
+                                user_lon: currentPosition.lon,
+                                target_lat: targetLat ? parseFloat(targetLat) : null,
+                                target_lon: targetLon ? parseFloat(targetLon) : null
+                            })
+                        });
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const nearestPinInfo = document.getElementById('nearestPinInfo');
+                            const nearestPinText = document.getElementById('nearestPinText');
+                            nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                            nearestPinInfo.classList.add('show');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+            },
+            (error) => console.error('Error:', error),
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: UPDATE_INTERVAL
             }
-        },
-        (error) => console.error('Error:', error),
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: UPDATE_INTERVAL
-        }
-    );
+        );
+    })
+    .catch(error => console.error('Error:', error));
 }
 
 function stopIntelligentTracking() {
