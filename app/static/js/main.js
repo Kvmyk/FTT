@@ -591,20 +591,8 @@ function applyFilters() {
         if (data.status === 'success') {
             document.getElementById('filterModal').style.display = 'none';
             
-            // Zamiast przeładowania strony, restartujemy śledzenie
-            // To spowoduje sprawdzenie czy cel nadal istnieje
-            const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
-            if (trackingEnabled) {
-                stopIntelligentTracking();
-                startIntelligentTracking();
-            }
-            
-            // Odświeżamy mapę
-            fetch('/render_map')
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('map').innerHTML = html;
-                });
+            // Zamiast restartowania śledzenia, odświeżamy stronę
+            window.location.reload();
         } else {
             console.error('Error:', data.message);
         }
