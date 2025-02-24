@@ -28,6 +28,12 @@ function startIntelligentTracking() {
     // Zatrzymaj poprzednie śledzenie jeśli istnieje
     stopIntelligentTracking();
 
+    // Wyczyść zapisany cel przy starcie śledzenia po odświeżeniu strony
+    if (document.referrer === '') {  // Sprawdza czy to twarde odświeżenie
+        localStorage.removeItem('targetLat');
+        localStorage.removeItem('targetLon');
+    }
+
     watchId = navigator.geolocation.watchPosition(
         (position) => {
             const currentPosition = {
