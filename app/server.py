@@ -438,13 +438,16 @@ class Server:
                 user_id = str(uuid.uuid4())
                 session['user_id'] = user_id
             
-            # Get the user's location from session rather than overriding it
             user_data = session.get(user_id, {})
             user_marker = user_data.get('marker')
             if not user_marker:
                 return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
             
-            # Use the target coordinates from the request to calculate the route
+            # Check if target is in Opole province
+            if not isInOpoleProvince(data['target_lat'], data['target_lon']):
+                return jsonify({'status': 'error', 'message': 'Target location is outside Opole province'}), 400
+            
+            # Calculate route
             route = get_route(
                 user_marker['lat'], 
                 user_marker['lon'],
@@ -453,12 +456,30 @@ class Server:
             )
             
             if route:
+                # Save the selected route and target in session
                 user_data['current_route'] = route
+                user_data['selected_target'] = {
+                    'lat': data['target_lat'],
+                    'lon': data['target_lon'],
+                    'time': time.time()  # Add timestamp for potential cleanup later
+                }
                 session[user_id] = user_data
+                
+                # Update map with new route
                 self.update_map()
-                return jsonify({'status': 'success'})
+                
+                # Return route details
+                distance = route['routes'][0]['distance']  # in meters
+                duration = route['routes'][0]['duration'] / 60  # in minutes
+                distance_text = format_distance_text(distance)
+                
+                return jsonify({
+                    'status': 'success',
+                    'distance': distance_text,
+                    'duration': f"{duration:.0f}"
+                })
             
-            return jsonify({'status': 'error', 'message': 'Could not calculate route'})
+            return jsonify({'status': 'error', 'message': 'Could not calculate route'}), 404
 
         @self.app.route('/apply_filters', methods=['POST'])
         def apply_filters():
