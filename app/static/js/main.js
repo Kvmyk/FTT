@@ -1,4 +1,3 @@
-
 // Dodaj globalne zmienne na górze pliku
 let watchId = null;
 let lastPosition = null;
@@ -92,6 +91,84 @@ function stopIntelligentTracking() {
     }
 }
 
+function navigateToToilet(targetLat, targetLon) {
+    localStorage.setItem('targetLat', targetLat);
+    localStorage.setItem('targetLon', targetLon);
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLat = position.coords.latitude;
+                const userLon = position.coords.longitude;
+
+                if (!isInOpoleProvince(userLat, userLon)) {
+                    alert('Znajdujesz się poza województwem opolskim. Nawigacja jest dostępna tylko w województwie opolskim.');
+                    return;
+                }
+
+                if (!isInOpoleProvince(targetLat, targetLon)) {
+                    alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
+                    return;
+                }
+
+                fetch('/navigate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_lat: userLat,
+                        user_lon: userLon,
+                        target_lat: targetLat,
+                        target_lon: targetLon
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        return fetch('/render_map');
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                    // Dodatkowy fetch do /navigate_toilet_distance
+                    return fetch('/navigate_toilet_distance', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            user_lat: userLat,
+                            user_lon: userLon,
+                            target_lat: parseFloat(targetLat),
+                            target_lon: parseFloat(targetLon)
+                        })
+                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const nearestPinInfo = document.getElementById('nearestPinInfo');
+                        const nearestPinText = document.getElementById('nearestPinText');
+                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        nearestPinInfo.classList.add('show');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        );
+    }
+}
+
+function restoreNavigationTarget() {
+    const targetLat = localStorage.getItem('targetLat');
+    const targetLon = localStorage.getItem('targetLon');
+
+    if (targetLat && targetLon) {
+        navigateToToilet(parseFloat(targetLat), parseFloat(targetLon));
+    }
+}
 
 function getLocation() {
     if (navigator.geolocation) {
@@ -218,9 +295,10 @@ document.addEventListener('DOMContentLoaded', function() {
             stopIntelligentTracking();
         }
     });
+
+    // Przywróć nawigację do wybranego markera po załadowaniu strony
+    restoreNavigationTarget();
 });
-
-
 
 function validateRating() {
     const ratingInput = document.getElementById('ratingInput');
@@ -396,76 +474,6 @@ function isInOpoleProvince(lat, lon) {
 
     return lat >= opoleBounds.south && lat <= opoleBounds.north &&
            lon >= opoleBounds.west && lon <= opoleBounds.east;
-}
-
-function navigateToToilet(targetLat, targetLon) {
-    localStorage.setItem('targetLat', targetLat);
-    localStorage.setItem('targetLon', targetLon);
-
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const userLat = position.coords.latitude;
-                const userLon = position.coords.longitude;
-
-                if (!isInOpoleProvince(userLat, userLon)) {
-                    alert('Znajdujesz się poza województwem opolskim. Nawigacja jest dostępna tylko w województwie opolskim.');
-                    return;
-                }
-
-                if (!isInOpoleProvince(targetLat, targetLon)) {
-                    alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
-                    return;
-                }
-
-                fetch('/navigate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        user_lat: userLat,
-                        user_lon: userLon,
-                        target_lat: targetLat,
-                        target_lon: targetLon
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        return fetch('/render_map');
-                    }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('map').innerHTML = html;
-                    // Dodatkowy fetch do /navigate_toilet_distance
-                    return fetch('/navigate_toilet_distance', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            user_lat: userLat,
-                            user_lon: userLon,
-                            target_lat: parseFloat(targetLat),
-                            target_lon: parseFloat(targetLon)
-                        })
-                    });
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const nearestPinInfo = document.getElementById('nearestPinInfo');
-                        const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                        nearestPinInfo.classList.add('show');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        );
-    }
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
