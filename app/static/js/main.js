@@ -3,6 +3,7 @@ let watchId = null;
 let lastPosition = null;
 const MIN_DISTANCE = 10; // minimalna odległość w metrach do wywołania aktualizacji
 const UPDATE_INTERVAL = 30000; // 30 sekund
+let lastSelectedTarget = null; // Add global variable to store last selected target
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3; // promień Ziemi w metrach
@@ -53,21 +54,32 @@ function startIntelligentTracking() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // Aktualizuj mapę i informacje o najbliższej toalecie
                         return fetch('/render_map');
                     }
                 })
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('map').innerHTML = html;
-                    return fetch('/nearest_toilet_distance');
+                    // Update the route info instead of nearest toilet distance
+                    return fetch('/navigate_toilet_distance', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            user_lat: currentPosition.lat,
+                            user_lon: currentPosition.lon,
+                            target_lat: parseFloat(lastSelectedTarget?.lat || 0),
+                            target_lon: parseFloat(lastSelectedTarget?.lon || 0)
+                        })
+                    });
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
                         const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                         nearestPinInfo.classList.add('show');
                     }
                 })
@@ -404,6 +416,12 @@ function navigateToToilet(targetLat, targetLon) {
                     alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
                     return;
                 }
+
+                // Store the selected target
+                lastSelectedTarget = {
+                    lat: targetLat,
+                    lon: targetLon
+                };
 
                 fetch('/navigate', {
                     method: 'POST',
