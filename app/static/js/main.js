@@ -25,8 +25,7 @@ function startIntelligentTracking() {
         return;
     }
 
-    // Zatrzymaj poprzednie śledzenie jeśli istnieje
-    stopIntelligentTracking();
+    stopIntelligentTracking(); // Zatrzymujemy poprzednie śledzenie
 
     watchId = navigator.geolocation.watchPosition(
         (position) => {
@@ -35,53 +34,61 @@ function startIntelligentTracking() {
                 lon: position.coords.longitude
             };
 
-            // Sprawdź czy jest to pierwsza pozycja lub czy użytkownik przemieścił się znacząco
             if (!lastPosition || calculateDistance(
                 lastPosition.lat, lastPosition.lon,
                 currentPosition.lat, currentPosition.lon
             ) > MIN_DISTANCE) {
                 lastPosition = currentPosition;
                 
-                // Wyślij nową pozycję przez AJAX
                 fetch('/location', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(currentPosition)
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // Aktualizuj mapę i informacje o najbliższej toalecie
                         return fetch('/render_map');
                     }
                 })
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('map').innerHTML = html;
-                    return fetch('/nearest_toilet_distance');
+                    
+                    // Sprawdź, czy użytkownik wybrał już inny cel – jeśli tak, nie nadpisuj go
+                    const savedTargetLat = localStorage.getItem('targetLat');
+                    const savedTargetLon = localStorage.getItem('targetLon');
+                    
+                    if (!savedTargetLat || !savedTargetLon) {
+                        return fetch('/nearest_toilet_distance');
+                    } else {
+                        return fetch('/navigate_toilet_distance', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_lat: currentPosition.lat,
+                                user_lon: currentPosition.lon,
+                                target_lat: parseFloat(savedTargetLat),
+                                target_lon: parseFloat(savedTargetLon)
+                            })
+                        });
+                    }
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                        nearestPinInfo.classList.add('show');
+                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                     }
                 })
                 .catch(error => console.error('Error:', error));
             }
         },
         (error) => console.error('Error:', error),
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: UPDATE_INTERVAL
-        }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: UPDATE_INTERVAL }
     );
 }
+
 
 function stopIntelligentTracking() {
     if (watchId !== null) {
@@ -101,21 +108,9 @@ function navigateToToilet(targetLat, targetLon) {
                 const userLat = position.coords.latitude;
                 const userLon = position.coords.longitude;
 
-                if (!isInOpoleProvince(userLat, userLon)) {
-                    alert('Znajdujesz się poza województwem opolskim. Nawigacja jest dostępna tylko w województwie opolskim.');
-                    return;
-                }
-
-                if (!isInOpoleProvince(targetLat, targetLon)) {
-                    alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
-                    return;
-                }
-
                 fetch('/navigate', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         user_lat: userLat,
                         user_lon: userLon,
@@ -132,12 +127,9 @@ function navigateToToilet(targetLat, targetLon) {
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('map').innerHTML = html;
-                    // Dodatkowy fetch do /navigate_toilet_distance
                     return fetch('/navigate_toilet_distance', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             user_lat: userLat,
                             user_lon: userLon,
@@ -149,10 +141,8 @@ function navigateToToilet(targetLat, targetLon) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
                         nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                        nearestPinInfo.classList.add('show');
                     }
                 })
                 .catch(error => console.error('Error:', error));
