@@ -431,22 +431,34 @@ class Server:
 
         @self.app.route('/navigate', methods=['POST'])
         def navigate():
-            user_id = session.get('user_id')
-            if not user_id:
-                return jsonify({'status': 'error', 'message': 'No user session'}), 400
-
             data = request.json
-            user_data = session.get(user_id, {})
+            user_id = session.get('user_id')
             
-            # Store target marker in session
-            user_data['target_marker'] = {
-                'lat': data['target_lat'],
-                'lon': data['target_lon']
-            }
-            session[user_id] = user_data
-
-            # Rest of your navigation logic...
-            return jsonify({'status': 'success'})
+            if not user_id:
+                user_id = str(uuid.uuid4())
+                session['user_id'] = user_id
+            
+            # Get the user's location from session rather than overriding it
+            user_data = session.get(user_id, {})
+            user_marker = user_data.get('marker')
+            if not user_marker:
+                return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
+            
+            # Use the target coordinates from the request to calculate the route
+            route = get_route(
+                user_marker['lat'], 
+                user_marker['lon'],
+                data['target_lat'], 
+                data['target_lon']
+            )
+            
+            if route:
+                user_data['current_route'] = route
+                session[user_id] = user_data
+                self.update_map()
+                return jsonify({'status': 'success'})
+            
+            return jsonify({'status': 'error', 'message': 'Could not calculate route'})
 
         @self.app.route('/apply_filters', methods=['POST'])
         def apply_filters():
@@ -796,6 +808,7 @@ class Server:
         self.update_map()
 
     def update_map(self):
+        """Aktualizuje mapę, najpierw ją usuwając"""
         try:
             # Wyczyść starą mapę
             if hasattr(self, 'm') and self.m is not None:
@@ -844,24 +857,7 @@ class Server:
             if user_id:
                 user_data = session.get(user_id, {})
                 user_marker = user_data.get('marker')
-                target_marker = user_data.get('target_marker')
-                
                 if user_marker:
-                    # If there's a specific target marker, use it
-                    if target_marker:
-                        route = get_route(
-                            user_marker['lat'], user_marker['lon'],
-                            target_marker['lat'], target_marker['lon']
-                        )
-                    else:
-                        # Otherwise find nearest marker
-                        nearest_marker = find_nearest_marker(user_marker, filtered_markers)
-                        if nearest_marker:
-                            route = get_route(
-                                user_marker['lat'], user_marker['lon'],
-                                nearest_marker['lat'], nearest_marker['lon']
-                            )
-
                     self.add_marker_to_map(user_marker)
 
                     # Filtrujemy by nie brać pod uwagę markera użytkownika
