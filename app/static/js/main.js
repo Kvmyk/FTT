@@ -151,6 +151,7 @@ function navigateToToilet(targetLat, targetLon) {
     }
 }
 
+
 function restoreNavigationTarget() {
     const targetLat = localStorage.getItem('targetLat');
     const targetLon = localStorage.getItem('targetLon');

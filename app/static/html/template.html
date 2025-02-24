@@ -12,8 +12,34 @@
     <script src="/static/js/main.js"></script> 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            restoreNavigationTarget();
+            const savedTargetLat = localStorage.getItem('targetLat');
+            const savedTargetLon = localStorage.getItem('targetLon');
+
+            if (!savedTargetLat || !savedTargetLon) {
+                // Jeśli użytkownik nie wybrał jeszcze celu, znajdź najbliższą toaletę
+                fetch('/nearest_toilet_distance')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const nearestPinLat = data.nearest_pin_lat;
+                            const nearestPinLon = data.nearest_pin_lon;
+
+                            localStorage.setItem('targetLat', nearestPinLat);
+                            localStorage.setItem('targetLon', nearestPinLon);
+
+                            const nearestPinText = document.getElementById('nearestPinText');
+                            nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                            document.getElementById('nearestPinInfo').classList.add('show');
+                        } 
+                    })
+                    .catch(error => console.error('Error:', error));
+            } else {
+                // Jeśli użytkownik już wybrał cel, przywróć trasę
+                restoreNavigationTarget();
+            }
         });
+
+
 
         
         document.getElementById('photoInput').addEventListener('change', function(e) {
