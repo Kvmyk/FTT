@@ -519,11 +519,14 @@ class Server:
         @self.app.route('/navigate_toilet_distance', methods=['POST'])
         def navigate_toilet_distance():
             data = request.json
-            user_lat = data['user_lat']
-            user_lon = data['user_lon']
-            target_lat = data['target_lat']
-            target_lon = data['target_lon']
+            user_lat = data.get('user_lat')
+            user_lon = data.get('user_lon')
+            target_lat = data.get('target_lat')
+            target_lon = data.get('target_lon')
             
+            if target_lat is None or target_lon is None:
+                return jsonify({'status': 'error', 'message': 'Invalid target coordinates'}), 400
+
             if not isInOpoleProvince(target_lat, target_lon):
                 route = None
             else:
