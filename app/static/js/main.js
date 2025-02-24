@@ -1,96 +1,3 @@
-// Dodaj globalne zmienne na górze pliku
-let watchId = null;
-let lastPosition = null;
-const MIN_DISTANCE = 10; // minimalna odległość w metrach do wywołania aktualizacji
-const UPDATE_INTERVAL = 30000; // 30 sekund
-
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // promień Ziemi w metrach
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lon2-lon1) * Math.PI/180;
-
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    return R * c; // w metrach
-}
-
-function startIntelligentTracking() {
-    if (!navigator.geolocation) {
-        console.error('Geolokalizacja nie jest wspierana przez tę przeglądarkę.');
-        return;
-    }
-
-    // Zatrzymaj poprzednie śledzenie jeśli istnieje
-    stopIntelligentTracking();
-
-    watchId = navigator.geolocation.watchPosition(
-        (position) => {
-            const currentPosition = {
-                lat: position.coords.latitude,
-                lon: position.coords.longitude
-            };
-
-            // Sprawdź czy jest to pierwsza pozycja lub czy użytkownik przemieścił się znacząco
-            if (!lastPosition || calculateDistance(
-                lastPosition.lat, lastPosition.lon,
-                currentPosition.lat, currentPosition.lon
-            ) > MIN_DISTANCE) {
-                lastPosition = currentPosition;
-                
-                // Wyślij nową pozycję przez AJAX
-                fetch('/location', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(currentPosition)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Aktualizuj mapę i informacje o najbliższej toalecie
-                        return fetch('/render_map');
-                    }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('map').innerHTML = html;
-                    return fetch('/nearest_toilet_distance');
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const nearestPinInfo = document.getElementById('nearestPinInfo');
-                        const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                        nearestPinInfo.classList.add('show');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        },
-        (error) => console.error('Error:', error),
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: UPDATE_INTERVAL
-        }
-    );
-}
-
-function stopIntelligentTracking() {
-    if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-        lastPosition = null;
-    }
-}
-
 function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(sendPosition, showError, { enableHighAccuracy: true });
@@ -207,27 +114,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeCommentModal').addEventListener('click', function() {
         document.getElementById('commentModal').style.display = 'none';
     });
-
-    // Dodaj obsługę przełącznika śledzenia
-    const trackingToggle = document.getElementById('locationTrackingToggle');
-    trackingToggle.addEventListener('change', function() {
-        if (this.checked) {
-            startIntelligentTracking();
-        } else {
-            stopIntelligentTracking();
-        }
-    });
-
-    // Automatycznie włącz śledzenie, jeśli było włączone wcześniej
-    if (localStorage.getItem('trackingEnabled') === 'true') {
-        trackingToggle.checked = true;
-        startIntelligentTracking();
-    }
-});
-
-// Zapisz stan przełącznika
-document.getElementById('locationTrackingToggle').addEventListener('change', function() {
-    localStorage.setItem('trackingEnabled', this.checked);
 });
 
 function validateRating() {
@@ -465,6 +351,21 @@ function navigateToToilet(targetLat, targetLon) {
             }
         );
     }
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // Promień Ziemi w metrach
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c; // w metrach
 }
 
 // Dodaj po załadowaniu mapy
