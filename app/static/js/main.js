@@ -477,9 +477,19 @@ function isInOpoleProvince(lat, lon) {
 }
 
 function navigateToToilet(targetLat, targetLon) {
+    // Zapisz nowy cel w localStorage
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
 
+    // Jeśli śledzenie jest włączone, zrestartuj je z nowym celem
+    const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
+    if (trackingEnabled) {
+        stopIntelligentTracking();
+        startIntelligentTracking();
+        return; // Nie wykonuj jednorazowej nawigacji
+    }
+
+    // Reszta kodu dla jednorazowej nawigacji...
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
