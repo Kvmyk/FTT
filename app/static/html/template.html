@@ -12,28 +12,58 @@
     <script src="/static/js/main.js"></script> 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('/nearest_toilet_distance')
+            // Only fetch nearest toilet if no target is selected
+            if (!lastSelectedTarget) {
+                fetch('/nearest_toilet_distance')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const nearestPinLat = data.nearest_pin_lat;
+                            const nearestPinLon = data.nearest_pin_lon;
+
+                            if (!isInOpoleProvince(nearestPinLat, nearestPinLon)) {
+                                alert('Najbliższy marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
+                                return;
+                            }
+
+                            // Update lastSelectedTarget with nearest toilet
+                            lastSelectedTarget = {
+                                lat: nearestPinLat,
+                                lon: nearestPinLon
+                            };
+
+                            const nearestPinInfo = document.getElementById('nearestPinInfo');
+                            const nearestPinText = document.getElementById('nearestPinText');
+                            nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                            nearestPinInfo.classList.add('show');
+                        } 
+                    })
+                    .catch(error => console.error('Error:', error));
+            } else {
+                // If target is already selected, update info for that target
+                fetch('/navigate_toilet_distance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_lat: parseFloat(localStorage.getItem('lat')),
+                        user_lon: parseFloat(localStorage.getItem('lon')),
+                        target_lat: parseFloat(lastSelectedTarget.lat),
+                        target_lon: parseFloat(lastSelectedTarget.lon)
+                    })
+                })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-
-                        const nearestPinLat = data.nearest_pin_lat;
-                        const nearestPinLon = data.nearest_pin_lon;
-
-                        if (!isInOpoleProvince(nearestPinLat, nearestPinLon)) {
-                            alert('Najbliższy marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
-                            return;
-                        }
-
                         const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                         nearestPinInfo.classList.add('show');
-                    } 
+                    }
                 })
                 .catch(error => console.error('Error:', error));
-
-                
+            }
         });
         
         document.getElementById('photoInput').addEventListener('change', function(e) {
