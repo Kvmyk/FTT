@@ -924,6 +924,7 @@ class Server:
                         # Używamy trasy zapisanej w sesji, jeśli istnieje
                         route = user_data.get('current_route')
                         if not route:
+                            route = None
                             nearest_marker = find_nearest_marker(user_marker, filtered_markers)
                             if nearest_marker:
                                 # Sprawdzamy województwo przed jakimkolwiek generowaniem trasy
@@ -931,7 +932,6 @@ class Server:
                                     logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
                                     user_data['current_route'] = None
                                     session[user_id] = user_data
-                                    route = None
                                 else:
                                     route = get_route(
                                         user_marker['lat'], user_marker['lon'],
