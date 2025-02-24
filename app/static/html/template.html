@@ -21,23 +21,17 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
-                            const nearestPinLat = data.nearest_pin_lat;
-                            const nearestPinLon = data.nearest_pin_lon;
-
-                            localStorage.setItem('targetLat', nearestPinLat);
-                            localStorage.setItem('targetLon', nearestPinLon);
-
-                            const nearestPinText = document.getElementById('nearestPinText');
-                            nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                            document.getElementById('nearestPinInfo').classList.add('show');
-                        } 
+                            localStorage.setItem('targetLat', data.nearest_pin_lat);
+                            localStorage.setItem('targetLon', data.nearest_pin_lon);
+                            updateRouteToTarget(data.nearest_pin_lat, data.nearest_pin_lon);
+                        }
                     })
                     .catch(error => console.error('Error:', error));
             } else {
-                // Jeśli użytkownik już wybrał cel, przywróć trasę
-                restoreNavigationTarget();
+                // Jeśli użytkownik wybrał już cel, użyj zapisanego celu i NIE NADPISUJ trasy
+                updateRouteToTarget(parseFloat(savedTargetLat), parseFloat(savedTargetLon));
             }
-        });
+});
 
 
 

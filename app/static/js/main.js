@@ -102,53 +102,7 @@ function navigateToToilet(targetLat, targetLon) {
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
 
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const userLat = position.coords.latitude;
-                const userLon = position.coords.longitude;
-
-                fetch('/navigate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_lat: userLat,
-                        user_lon: userLon,
-                        target_lat: targetLat,
-                        target_lon: targetLon
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        return fetch('/render_map');
-                    }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('map').innerHTML = html;
-                    return fetch('/navigate_toilet_distance', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            user_lat: userLat,
-                            user_lon: userLon,
-                            target_lat: parseFloat(targetLat),
-                            target_lon: parseFloat(targetLon)
-                        })
-                    });
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        );
-    }
+    updateRouteToTarget(targetLat, targetLon);
 }
 
 
@@ -642,3 +596,33 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
 
     this.files = new FileList(...resizedFiles);
 });
+function updateRouteToTarget(targetLat, targetLon) {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLat = position.coords.latitude;
+                const userLon = position.coords.longitude;
+
+                fetch('/navigate_toilet_distance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_lat: userLat,
+                        user_lon: userLon,
+                        target_lat: targetLat,
+                        target_lon: targetLon
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const nearestPinText = document.getElementById('nearestPinText');
+                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        document.getElementById('nearestPinInfo').classList.add('show');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        );
+    }
+}
