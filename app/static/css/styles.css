@@ -853,10 +853,6 @@ input[type="number"]::-webkit-inner-spin-button {
     }
 }
 
-/* Dodaj ten styl do pliku CSS, aby upewnić się, że elementy śledzenia lokalizacji nie blokują interakcji z innymi elementami */
-.location-tracking-toggle {
-    pointer-events: none; /* Umożliwia kliknięcie przez element */
-}
 
 .location-tracking-toggle * {
     pointer-events: auto; /* Umożliwia interakcję z wewnętrznymi elementami */
