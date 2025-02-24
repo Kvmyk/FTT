@@ -142,17 +142,23 @@ class Server:
 
         @self.app.route('/location', methods=['POST'])
         def location():
+            """
+            Otrzymuje JSON z danymi {lat, lon} i zapisuje je w sesji użytkownika 
+            jako 'marker' (lokatę usera). Następnie oblicza trasę do najbliższej toalety.
+            """
             data = request.json
+            # Pobierz/utwórz unikalne user_id
             user_id = session.get('user_id')
             if not user_id:
                 user_id = str(uuid.uuid4())
                 session['user_id'] = user_id
 
+            # Słownik z danymi usera w sesji
             user_data = session.get(user_id, {})
             if not user_data:
                 user_data = {"marker": None, "current_route": None}
 
-            # Save new user marker
+            # Zapisz nowy marker użytkownika
             user_marker = {
                 "lat": data['lat'],
                 "lon": data['lon'],
@@ -160,11 +166,16 @@ class Server:
                 "description": "This is your location"
             }
             user_data["marker"] = user_marker
-            
-            # Check if there's a selected target
-            selected_target = user_data.get('selected_target')
-            
-            # If user is outside Opole province, don't generate route
+            session[user_id] = user_data
+
+            # Pobierz filtry z sesji
+            filters = user_data.get('filters', {})
+            filter_payable = filters.get('filterPayable', False)
+            filter_for_clients = filters.get('filterForClients', False)
+            filter_for_disabled = filters.get('filterForDisabled', False)
+            filter_rating = float(filters.get('filterRating', 0))
+
+            # Sprawdź czy użytkownik jest w woj. opolskim
             if not isInOpoleProvince(data['lat'], data['lon']):
                 logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
                 user_data['current_route'] = None
@@ -175,32 +186,27 @@ class Server:
                     'lon': user_marker['lon']
                 })
 
-            # If there's a selected target, calculate route to it
-            if selected_target:
+            # Filtrowanie markerów i generowanie trasy tylko dla użytkowników z woj. opolskiego
+            markers_to_search = self.original_markers
+            if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
+                markers_to_search = [
+                    marker for marker in self.original_markers
+                    if (not filter_payable or marker.get('payable', False)) and
+                       (not filter_for_clients or marker.get('onlyForClients', False)) and
+                       (not filter_for_disabled or marker.get('forDisabled', False)) and
+                       (float(marker.get('rating', 0)) >= filter_rating)
+                ]
+
+            # Obliczamy trasę TYLKO dla użytkowników z woj. opolskiego
+            nearest_marker = find_nearest_marker(user_marker, markers_to_search)
+            if nearest_marker:
                 route = get_route(
-                    user_marker['lat'],
-                    user_marker['lon'],
-                    selected_target['lat'],
-                    selected_target['lon']
+                    user_marker['lat'], user_marker['lon'],
+                    nearest_marker['lat'], nearest_marker['lon']
                 )
                 if route:
-                    user_data['current_route'] = route
-            else:
-                # Otherwise find nearest toilet
-                filters = user_data.get('filters', {})
-                markers_to_search = self.get_filtered_markers(user_data)
-                nearest_marker = find_nearest_marker(user_marker, markers_to_search)
-                if nearest_marker:
-                    route = get_route(
-                        user_marker['lat'],
-                        user_marker['lon'],
-                        nearest_marker['lat'],
-                        nearest_marker['lon']
-                    )
-                    if route:
-                        user_data['current_route'] = route
+                    self.add_route_to_map(route)
 
-            session[user_id] = user_data
             return jsonify({
                 'status': 'success',
                 'lat': user_marker['lat'],
@@ -955,24 +961,6 @@ class Server:
             logging.error(f"Błąd podczas aktualizacji mapy: {e}")
             self.m = self.create_map()
             return self.m._repr_html_()
-
-    def get_filtered_markers(self, user_data):
-        """Get markers filtered according to user preferences"""
-        filters = user_data.get('filters', {})
-        filter_payable = filters.get('filterPayable', False)
-        filter_for_clients = filters.get('filterForClients', False)
-        filter_for_disabled = filters.get('filterForDisabled', False)
-        filter_rating = float(filters.get('filterRating', 0))
-
-        if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
-            return [
-                marker for marker in self.original_markers
-                if (not filter_payable or marker.get('payable', False)) and
-                   (not filter_for_clients or marker.get('onlyForClients', False)) and
-                   (not filter_for_disabled or marker.get('forDisabled', False)) and
-                   (float(marker.get('rating', 0)) >= filter_rating)
-            ]
-        return self.original_markers
 
     def runThePage(self):
         self.app.run(host = "2a01:4f9:2b:289c::130", port=80)

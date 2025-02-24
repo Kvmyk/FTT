@@ -1,9 +1,9 @@
+
 // Dodaj globalne zmienne na górze pliku
 let watchId = null;
 let lastPosition = null;
 const MIN_DISTANCE = 10; // minimalna odległość w metrach do wywołania aktualizacji
 const UPDATE_INTERVAL = 30000; // 30 sekund
-let lastSelectedTarget = null; // Add global variable to store last selected target
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3; // promień Ziemi w metrach
@@ -54,32 +54,21 @@ function startIntelligentTracking() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
+                        // Aktualizuj mapę i informacje o najbliższej toalecie
                         return fetch('/render_map');
                     }
                 })
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('map').innerHTML = html;
-                    // Update the route info instead of nearest toilet distance
-                    return fetch('/navigate_toilet_distance', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            user_lat: currentPosition.lat,
-                            user_lon: currentPosition.lon,
-                            target_lat: parseFloat(lastSelectedTarget?.lat || 0),
-                            target_lon: parseFloat(lastSelectedTarget?.lon || 0)
-                        })
-                    });
+                    return fetch('/nearest_toilet_distance');
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
                         const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                         nearestPinInfo.classList.add('show');
                     }
                 })
@@ -401,6 +390,9 @@ function isInOpoleProvince(lat, lon) {
 }
 
 function navigateToToilet(targetLat, targetLon) {
+    localStorage.setItem('targetLat', targetLat);
+    localStorage.setItem('targetLon', targetLon);
+
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -417,18 +409,14 @@ function navigateToToilet(targetLat, targetLon) {
                     return;
                 }
 
-                // Store the selected target
-                lastSelectedTarget = {
-                    lat: targetLat,
-                    lon: targetLon
-                };
-
                 fetch('/navigate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
+                        user_lat: userLat,
+                        user_lon: userLon,
                         target_lat: targetLat,
                         target_lon: targetLon
                     })
@@ -436,19 +424,13 @@ function navigateToToilet(targetLat, targetLon) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // After successful navigation, update the tracking state
-                        const trackingToggle = document.getElementById('locationTrackingToggle');
-                        if (trackingToggle.checked) {
-                            // Restart tracking with new target
-                            stopIntelligentTracking();
-                            startIntelligentTracking();
-                        }
                         return fetch('/render_map');
                     }
                 })
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('map').innerHTML = html;
+                    // Dodatkowy fetch do /navigate_toilet_distance
                     return fetch('/navigate_toilet_distance', {
                         method: 'POST',
                         headers: {
@@ -629,33 +611,26 @@ function resizeImage(file, maxWidth, maxHeight, callback) {
 
 document.getElementById('photoInput').addEventListener('change', function(e) {
     const container = document.getElementById('imagePreviewContainer');
-    container.innerHTML = '';
+    container.innerHTML = ''; // Wyczyść poprzednie podglądy
 
     const files = Array.from(this.files);
-    const validFiles = files.filter(file => {
-        const validTypes = ['image/jpeg', 'image/png'];
-        if (!validTypes.includes(file.type)) {
-            alert('Dozwolone są tylko pliki PNG i JPG.');
-            return false;
+    const resizedFiles = [];
+
+    files.forEach(file => {
+        if (file.type.startsWith('image/')) {
+            resizeImage(file, 800, 800, function(resizedBlob) {
+                resizedFiles.push(resizedBlob);
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.className = 'imagePreview';
+                    container.appendChild(img);
+                }
+                reader.readAsDataURL(resizedBlob);
+            });
         }
-        return true;
     });
 
-    if (validFiles.length === 0) {
-        this.value = ''; // Clear the input if no valid files
-        return;
-    }
-
-    validFiles.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = document.createElement('img');
-            img.src = event.target.result;
-            img.className = 'imagePreview';
-            container.appendChild(img);
-        }
-        reader.readAsDataURL(file);
-    });
-
-    this.files = new FileList(...validFiles);
+    this.files = new FileList(...resizedFiles);
 });
