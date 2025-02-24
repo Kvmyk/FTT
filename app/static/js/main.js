@@ -1,4 +1,3 @@
-
 // Dodaj globalne zmienne na górze pliku
 let watchId = null;
 let lastPosition = null;
@@ -390,9 +389,6 @@ function isInOpoleProvince(lat, lon) {
 }
 
 function navigateToToilet(targetLat, targetLon) {
-    localStorage.setItem('targetLat', targetLat);
-    localStorage.setItem('targetLon', targetLon);
-
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -415,8 +411,6 @@ function navigateToToilet(targetLat, targetLon) {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        user_lat: userLat,
-                        user_lon: userLon,
                         target_lat: targetLat,
                         target_lon: targetLon
                     })
@@ -424,13 +418,19 @@ function navigateToToilet(targetLat, targetLon) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
+                        // After successful navigation, update the tracking state
+                        const trackingToggle = document.getElementById('locationTrackingToggle');
+                        if (trackingToggle.checked) {
+                            // Restart tracking with new target
+                            stopIntelligentTracking();
+                            startIntelligentTracking();
+                        }
                         return fetch('/render_map');
                     }
                 })
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('map').innerHTML = html;
-                    // Dodatkowy fetch do /navigate_toilet_distance
                     return fetch('/navigate_toilet_distance', {
                         method: 'POST',
                         headers: {
