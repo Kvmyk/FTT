@@ -287,12 +287,23 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('commentModal').style.display = 'none';
     });
 
+    // Dodaj obsługę przełącznika śledzenia
+    const trackingToggle = document.getElementById('locationTrackingToggle');
+    trackingToggle.addEventListener('change', function() {
+        if (this.checked) {
+            startIntelligentTracking();
+        } else {
+            stopIntelligentTracking();
+        }
+    });
+
+    // Automatycznie włącz śledzenie, jeśli było włączone wcześniej
+    if (localStorage.getItem('trackingEnabled') === 'true') {
+        trackingToggle.checked = true;
+        startIntelligentTracking();
+    }
 });
 
-// Zapisz stan przełącznika
-document.getElementById('locationTrackingToggle').addEventListener('change', function() {
-    localStorage.setItem('trackingEnabled', this.checked);
-});
 
 function validateRating() {
     const ratingInput = document.getElementById('ratingInput');
