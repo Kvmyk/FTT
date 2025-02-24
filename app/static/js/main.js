@@ -629,26 +629,33 @@ function resizeImage(file, maxWidth, maxHeight, callback) {
 
 document.getElementById('photoInput').addEventListener('change', function(e) {
     const container = document.getElementById('imagePreviewContainer');
-    container.innerHTML = ''; // Wyczyść poprzednie podglądy
+    container.innerHTML = '';
 
     const files = Array.from(this.files);
-    const resizedFiles = [];
-
-    files.forEach(file => {
-        if (file.type.startsWith('image/')) {
-            resizeImage(file, 800, 800, function(resizedBlob) {
-                resizedFiles.push(resizedBlob);
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = document.createElement('img');
-                    img.src = event.target.result;
-                    img.className = 'imagePreview';
-                    container.appendChild(img);
-                }
-                reader.readAsDataURL(resizedBlob);
-            });
+    const validFiles = files.filter(file => {
+        const validTypes = ['image/jpeg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            alert('Dozwolone są tylko pliki PNG i JPG.');
+            return false;
         }
+        return true;
     });
 
-    this.files = new FileList(...resizedFiles);
+    if (validFiles.length === 0) {
+        this.value = ''; // Clear the input if no valid files
+        return;
+    }
+
+    validFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            img.className = 'imagePreview';
+            container.appendChild(img);
+        }
+        reader.readAsDataURL(file);
+    });
+
+    this.files = new FileList(...validFiles);
 });
