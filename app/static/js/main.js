@@ -522,3 +522,95 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
 
     this.files = new FileList(...resizedFiles);
 });
+
+let locationTrackingInterval;
+let lastPosition = null;
+let lastUpdateTime = null;
+const DISTANCE_THRESHOLD = 10; // 10 meters
+const TIME_THRESHOLD = 30000; // 30 seconds
+
+function startLocationTracking() {
+    if (locationTrackingInterval) {
+        clearInterval(locationTrackingInterval);
+    }
+    
+    locationTrackingInterval = setInterval(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const currentTime = Date.now();
+                const currentPosition = {
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude,
+                    time: currentTime
+                };
+
+                if (lastPosition) {
+                    const distance = calculateDistance(
+                        lastPosition.lat, 
+                        lastPosition.lon,
+                        currentPosition.lat, 
+                        currentPosition.lon
+                    );
+                    
+                    const timeDiff = currentTime - lastPosition.time;
+
+                    if (distance >= DISTANCE_THRESHOLD && timeDiff >= TIME_THRESHOLD) {
+                        updateUserLocation(currentPosition);
+                        lastPosition = currentPosition;
+                        lastUpdateTime = currentTime;
+                    }
+                } else {
+                    lastPosition = currentPosition;
+                    lastUpdateTime = currentTime;
+                    updateUserLocation(currentPosition);
+                }
+            });
+        }
+    }, 5000); // Check every 5 seconds
+}
+
+function stopLocationTracking() {
+    if (locationTrackingInterval) {
+        clearInterval(locationTrackingInterval);
+        locationTrackingInterval = null;
+    }
+    lastPosition = null;
+    lastUpdateTime = null;
+}
+
+function updateUserLocation(position) {
+    fetch('/location', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            lat: position.lat,
+            lon: position.lon
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            fetch('/render_map')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                });
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Add event listener for the location tracking toggle
+document.addEventListener('DOMContentLoaded', function() {
+    const trackingToggle = document.getElementById('locationTrackingToggle');
+    
+    trackingToggle.addEventListener('change', function() {
+        if (this.checked) {
+            startLocationTracking();
+        } else {
+            stopLocationTracking();
+        }
+    });
+});
