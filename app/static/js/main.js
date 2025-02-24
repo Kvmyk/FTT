@@ -42,13 +42,36 @@ function startIntelligentTracking() {
             ) > MIN_DISTANCE) {
                 lastPosition = currentPosition;
                 
-                // Sprawdź czy jest zapisany cel nawigacji
+                // Zawsze sprawdzaj zapisany cel nawigacji
                 const targetLat = localStorage.getItem('targetLat');
                 const targetLon = localStorage.getItem('targetLon');
                 
-                if (targetLat && targetLon) {
-                    // Jeśli jest cel, wykonaj nawigację
-                    fetch('/navigate', {
+                // Zawsze używaj navigate zamiast location jeśli jest cel
+                const endpoint = targetLat && targetLon ? '/navigate' : '/location';
+                const body = targetLat && targetLon ? {
+                    user_lat: currentPosition.lat,
+                    user_lon: currentPosition.lon,
+                    target_lat: parseFloat(targetLat),
+                    target_lon: parseFloat(targetLon)
+                } : currentPosition;
+
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        return fetch('/render_map');
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                    return fetch('/navigate_toilet_distance', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -56,101 +79,21 @@ function startIntelligentTracking() {
                         body: JSON.stringify({
                             user_lat: currentPosition.lat,
                             user_lon: currentPosition.lon,
-                            target_lat: parseFloat(targetLat),
-                            target_lon: parseFloat(targetLon)
+                            target_lat: targetLat ? parseFloat(targetLat) : null,
+                            target_lon: targetLon ? parseFloat(targetLon) : null
                         })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            // Aktualizuj mapę
-                            return fetch('/render_map');
-                        }
-                    })
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById('map').innerHTML = html;
-                        // Aktualizuj informacje o dystansie
-                        return fetch('/navigate_toilet_distance', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                user_lat: currentPosition.lat,
-                                user_lon: currentPosition.lon,
-                                target_lat: parseFloat(targetLat),
-                                target_lon: parseFloat(targetLon)
-                            })
-                        });
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            const nearestPinInfo = document.getElementById('nearestPinInfo');
-                            const nearestPinText = document.getElementById('nearestPinText');
-                            nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                            nearestPinInfo.classList.add('show');
-                        }
                     });
-                } else {
-                    // Jeśli nie ma celu, wykonaj standardową aktualizację lokalizacji
-                    fetch('/location', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(currentPosition)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            // Aktualizuj mapę i informacje o najbliższej toalecie
-                            return fetch('/render_map');
-                        }
-                    })
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById('map').innerHTML = html;
-                        
-                        // Sprawdź czy jest wybrany marker
-                        const targetLat = localStorage.getItem('targetLat');
-                        const targetLon = localStorage.getItem('targetLon');
-                        
-                        if (targetLat && targetLon) {
-                            // Jeśli jest wybrany marker, użyj navigate_toilet_distance
-                            return fetch('/navigate_toilet_distance', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    user_lat: currentPosition.lat,
-                                    user_lon: currentPosition.lon,
-                                    target_lat: parseFloat(targetLat),
-                                    target_lon: parseFloat(targetLon)
-                                })
-                            });
-                        } else {
-                            // Jeśli nie ma wybranego markera, użyj nearest_toilet_distance
-                            return fetch('/nearest_toilet_distance');
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            const nearestPinInfo = document.getElementById('nearestPinInfo');
-                            const nearestPinText = document.getElementById('nearestPinText');
-                            if (localStorage.getItem('targetLat')) {
-                                nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                            } else {
-                                nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                            }
-                            nearestPinInfo.classList.add('show');
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-                }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const nearestPinInfo = document.getElementById('nearestPinInfo');
+                        const nearestPinText = document.getElementById('nearestPinText');
+                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        nearestPinInfo.classList.add('show');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
             }
         },
         (error) => console.error('Error:', error),
@@ -303,7 +246,6 @@ document.addEventListener('DOMContentLoaded', function() {
         startIntelligentTracking();
     }
 });
-
 
 function validateRating() {
     const ratingInput = document.getElementById('ratingInput');
@@ -683,26 +625,47 @@ function resizeImage(file, maxWidth, maxHeight, callback) {
 
 document.getElementById('photoInput').addEventListener('change', function(e) {
     const container = document.getElementById('imagePreviewContainer');
-    container.innerHTML = ''; // Wyczyść poprzednie podglądy
-
+    container.innerHTML = ''; // Clear previous previews
+    
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
+    
     const files = Array.from(this.files);
     const resizedFiles = [];
+    let hasInvalidFiles = false;
 
     files.forEach(file => {
-        if (file.type.startsWith('image/')) {
-            resizeImage(file, 800, 800, function(resizedBlob) {
-                resizedFiles.push(resizedBlob);
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = document.createElement('img');
-                    img.src = event.target.result;
-                    img.className = 'imagePreview';
-                    container.appendChild(img);
-                }
-                reader.readAsDataURL(resizedBlob);
-            });
+        // Check file type
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            alert(`Plik "${file.name}" ma nieprawidłowy format. Dozwolone formaty to: PNG, JPG`);
+            hasInvalidFiles = true;
+            return;
         }
+
+        // Check file size
+        if (file.size > MAX_FILE_SIZE) {
+            alert(`Plik "${file.name}" jest za duży. Maksymalny rozmiar to 5MB`);
+            hasInvalidFiles = true;
+            return;
+        }
+
+        // If file passes validation, proceed with resizing
+        resizeImage(file, 800, 800, function(resizedBlob) {
+            resizedFiles.push(resizedBlob);
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                img.className = 'imagePreview';
+                container.appendChild(img);
+            }
+            reader.readAsDataURL(resizedBlob);
+        });
     });
 
-    this.files = new FileList(...resizedFiles);
+    // Clear input if any file failed validation
+    if (hasInvalidFiles) {
+        this.value = '';
+        container.innerHTML = '';
+    }
 });
