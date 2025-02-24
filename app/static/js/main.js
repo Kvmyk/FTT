@@ -25,13 +25,34 @@ function startIntelligentTracking() {
         return;
     }
 
-    // Zatrzymaj poprzednie śledzenie jeśli istnieje
     stopIntelligentTracking();
 
-    // Wyczyść zapisany cel przy starcie śledzenia po odświeżeniu strony
-    if (document.referrer === '') {  // Sprawdza czy to twarde odświeżenie
-        localStorage.removeItem('targetLat');
-        localStorage.removeItem('targetLon');
+    // Sprawdź czy cel nawigacji nadal istnieje po zastosowaniu filtrów
+    const targetLat = localStorage.getItem('targetLat');
+    const targetLon = localStorage.getItem('targetLon');
+    
+    if (targetLat && targetLon) {
+        // Sprawdź czy cel nawigacji istnieje na mapie po zastosowaniu filtrów
+        fetch('/check_marker_exists', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                lat: parseFloat(targetLat),
+                lon: parseFloat(targetLon)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.exists) {
+                // Jeśli marker nie istnieje, wyczyść cel nawigacji
+                localStorage.removeItem('targetLat');
+                localStorage.removeItem('targetLon');
+                alert('Cel nawigacji został usunięty przez zastosowane filtry. Wybierz nowy cel.');
+            }
+        })
+        .catch(error => console.error('Error:', error));
     }
 
     watchId = navigator.geolocation.watchPosition(
@@ -560,7 +581,21 @@ function applyFilters() {
     .then(data => {
         if (data.status === 'success') {
             document.getElementById('filterModal').style.display = 'none';
-            window.location.reload();
+            
+            // Zamiast przeładowania strony, restartujemy śledzenie
+            // To spowoduje sprawdzenie czy cel nadal istnieje
+            const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
+            if (trackingEnabled) {
+                stopIntelligentTracking();
+                startIntelligentTracking();
+            }
+            
+            // Odświeżamy mapę
+            fetch('/render_map')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('map').innerHTML = html;
+                });
         } else {
             console.error('Error:', data.message);
         }

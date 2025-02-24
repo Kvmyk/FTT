@@ -544,6 +544,37 @@ class Server:
             else:
                 return jsonify({'status': 'error', 'message': 'Route not found'}), 404
 
+        @self.app.route('/check_marker_exists', methods=['POST'])
+        def check_marker_exists():
+            """Sprawdza czy marker istnieje na mapie po zastosowaniu filtrów"""
+            data = request.json
+            lat = data.get('lat')
+            lon = data.get('lon')
+            
+            # Pobierz filtry z sesji użytkownika
+            user_id = session.get('user_id')
+            user_data = session.get(user_id, {})
+            filters = user_data.get('filters', {})
+            
+            # Zastosuj filtry do markerów
+            filtered_markers = self.markers
+            if filters:
+                filtered_markers = [
+                    marker for marker in self.markers
+                    if (not filters.get('filterPayable', False) or marker.get('payable', False)) and
+                       (not filters.get('filterForClients', False) or marker.get('onlyForClients', False)) and
+                       (not filters.get('filterForDisabled', False) or marker.get('forDisabled', False)) and
+                       (float(marker.get('rating', 0)) >= float(filters.get('filterRating', 0)))
+                ]
+            
+            # Sprawdź czy marker o podanych współrzędnych istnieje
+            marker_exists = any(
+                abs(marker['lat'] - lat) < 0.0001 and abs(marker['lon'] - lon) < 0.0001 
+                for marker in filtered_markers
+            )
+            
+            return jsonify({'exists': marker_exists})
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.
