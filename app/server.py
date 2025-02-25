@@ -431,53 +431,55 @@ class Server:
 
         @self.app.route('/navigate', methods=['POST'])
         def navigate():
-            data = request.get_json()
-            user_lat = data.get('user_lat')
-            user_lon = data.get('user_lon')
-            target_lat = data.get('target_lat')
-            target_lon = data.get('target_lon')
-            
-            # Sprawdzenie czy użytkownik i cel są w województwie opolskim
-            if not isInOpoleProvince(user_lat, user_lon) or not isInOpoleProvince(target_lat, target_lon):
-                return jsonify({
-                    'status': 'error', 
-                    'message': 'Nawigacja dostępna tylko w województwie opolskim'
-                }), 400
-            
-            # Generuj trasę
-            route = get_route(user_lat, user_lon, target_lat, target_lon)
-            
-            # Zapisz cel w localStorage
+            data = request.json
             user_id = session.get('user_id')
-            if user_id:
-                user_data = session.get(user_id, {})
-                user_data['current_route'] = route
-                user_data['target_location'] = {
-                    'lat': target_lat,
-                    'lon': target_lon
-                }
-                session[user_id] = user_data
+            
+            if not user_id:
+                user_id = str(uuid.uuid4())
+                session['user_id'] = user_id
+            
+            user_data = session.get(user_id, {})
+            user_marker = user_data.get('marker')
+            if not user_marker:
+                return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
+            
+            # Check if target is in Opole province
+            if not isInOpoleProvince(data['target_lat'], data['target_lon']):
+                return jsonify({'status': 'error', 'message': 'Target location is outside Opole province'}), 400
+            
+            # Calculate route
+            route = get_route(
+                user_marker['lat'], 
+                user_marker['lon'],
+                data['target_lat'], 
+                data['target_lon']
+            )
             
             if route:
-                # Zapisz trasę dla użytkownika
-                self.add_route_to_map(route)
+                # Save the selected route and target in session
+                user_data['current_route'] = route
+                user_data['selected_target'] = {
+                    'lat': data['target_lat'],
+                    'lon': data['target_lon'],
+                    'time': time.time()  # Add timestamp for potential cleanup later
+                }
+                session[user_id] = user_data
                 
-                distance = route['routes'][0]['distance']  # w metrach
-                duration = route['routes'][0]['duration'] / 60  # w minutach
+                # Update map with new route
+                self.update_map()
+                
+                # Return route details
+                distance = route['routes'][0]['distance']  # in meters
+                duration = route['routes'][0]['duration'] / 60  # in minutes
                 distance_text = format_distance_text(distance)
                 
                 return jsonify({
                     'status': 'success',
                     'distance': distance_text,
-                    'duration': f"{duration:.0f}",
-                    'user_lat': user_lat,
-                    'user_lon': user_lon, 
-                    'target_lat': target_lat,
-                    'target_lon': target_lon,
-                    'route_points': len(route['routes'][0]['geometry']['coordinates'])
+                    'duration': f"{duration:.0f}"
                 })
-            else:
-                return jsonify({'status': 'error', 'message': 'Nie można znaleźć trasy'}), 404
+            
+            return jsonify({'status': 'error', 'message': 'Could not calculate route'}), 404
 
         @self.app.route('/apply_filters', methods=['POST'])
         def apply_filters():
@@ -516,74 +518,34 @@ class Server:
 
         @self.app.route('/navigate_toilet_distance', methods=['POST'])
         def navigate_toilet_distance():
-            """
-            Endpoint zwracający informacje o odległości do toalety, do której nawigujemy.
-            """
-            data = request.get_json()
+            data = request.json
             user_lat = data.get('user_lat')
             user_lon = data.get('user_lon')
             target_lat = data.get('target_lat')
             target_lon = data.get('target_lon')
             
-            # Sprawdź czy użytkownik i cel są w woj. opolskim
-            if not isInOpoleProvince(user_lat, user_lon) or not isInOpoleProvince(target_lat, target_lon):
-                return jsonify({
-                    'status': 'error',
-                    'message': 'Nawigacja dostępna tylko w województwie opolskim'
-                }), 400
-            
-            # Znajdujemy marker z dokładnymi takimi samymi współrzędnymi
-            target_marker = None
-            for marker in self.markers:
-                if abs(float(marker['lat']) - float(target_lat)) < 0.0001 and abs(float(marker['lon']) - float(target_lon)) < 0.0001:
-                    target_marker = marker
-                    break
-            
-            if not target_marker:
-                return jsonify({'status': 'error', 'message': 'Nie znaleziono toalety o podanych współrzędnych'}), 404
-            
-            # Generowanie trasy
-            route = get_route(user_lat, user_lon, target_lat, target_lon)
-            
+            if target_lat is None or target_lon is None:
+                return jsonify({'status': 'error', 'message': 'Invalid target coordinates'}), 400
+
+            if not isInOpoleProvince(target_lat, target_lon):
+                route = None
+            else:
+                route = get_route(user_lat, user_lon, target_lat, target_lon)
             if route:
                 distance = route['routes'][0]['distance']  # w metrach
                 duration = route['routes'][0]['duration'] / 60  # w minutach
                 distance_text = format_distance_text(distance)
-                
-                # Pobierz dodatkowe informacje o toalecie
-                name = target_marker.get('name', 'Toaleta')
-                rating = target_marker.get('rating', 'brak')
-                payable = "Tak" if target_marker.get('payable', False) else "Nie"
-                for_disabled = "Tak" if target_marker.get('forDisabled', False) else "Nie"
-                for_clients = "Tak" if target_marker.get('onlyForClients', False) else "Nie"
-                
-                # Aktualizacja trasy dla użytkownika
-                user_id = session.get('user_id')
-                if user_id:
-                    user_data = session.get(user_id, {})
-                    user_data['current_route'] = route
-                    user_data['target_location'] = {
-                        'lat': target_lat,
-                        'lon': target_lon
-                    }
-                    session[user_id] = user_data
-                
+
+                target_marker = next((marker for marker in self.markers if marker['lat'] == target_lat and marker['lon'] == target_lon), None)
+                target_name = target_marker['name'] if target_marker else 'Unknown'
                 return jsonify({
                     'status': 'success',
                     'distance': distance_text,
                     'duration': f"{duration:.0f}",
-                    'name': name,
-                    'rating': rating,
-                    'payable': payable,
-                    'for_disabled': for_disabled,
-                    'for_clients': for_clients,
-                    'user_lat': user_lat,
-                    'user_lon': user_lon,
-                    'target_lat': target_lat,
-                    'target_lon': target_lon
+                    'name': target_name
                 })
             else:
-                return jsonify({'status': 'error', 'message': 'Nie można znaleźć trasy'}), 404
+                return jsonify({'status': 'error', 'message': 'Route not found'}), 404
 
         @self.app.route('/check_marker_exists', methods=['POST'])
         def check_marker_exists():
@@ -1036,4 +998,3 @@ class Server:
 
     def runThePage(self):
         self.app.run(host = "2a01:4f9:2b:289c::130", port=80)
-
