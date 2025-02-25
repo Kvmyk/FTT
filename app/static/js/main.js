@@ -27,9 +27,11 @@ function startIntelligentTracking() {
 
     stopIntelligentTracking();
 
+    // Sprawdź czy cel nawigacji nadal istnieje po zastosowaniu filtrów
     const targetLat = localStorage.getItem('targetLat');
     const targetLon = localStorage.getItem('targetLon');
-
+    
+    // Promise który sprawdza czy cel istnieje (jeśli jest ustawiony)
     const checkTarget = targetLat && targetLon ? 
         fetch('/check_marker_exists', {
             method: 'POST',
@@ -53,6 +55,7 @@ function startIntelligentTracking() {
         }) :
         Promise.resolve(true);
 
+    // Rozpocznij śledzenie tylko po sprawdzeniu celu
     checkTarget.then(targetExists => {
         watchId = navigator.geolocation.watchPosition(
             (position) => {
@@ -61,6 +64,7 @@ function startIntelligentTracking() {
                     lon: position.coords.longitude
                 };
 
+                // Kontynuuj tylko jeśli cel istnieje lub nie ma celu
                 if (!targetExists && (localStorage.getItem('targetLat') || localStorage.getItem('targetLon'))) {
                     return;
                 }
@@ -77,17 +81,25 @@ function startIntelligentTracking() {
                     return;
                 }
 
+                // Reszta logiki śledzenia...
                 if (!lastPosition || calculateDistance(
                     lastPosition.lat, lastPosition.lon,
                     currentPosition.lat, currentPosition.lon
                 ) > MIN_DISTANCE) {
                     lastPosition = currentPosition;
-
-                    const endpoint = '/location';
-                    const body = {
-                        lat: currentPosition.lat,
-                        lon: currentPosition.lon
-                    };
+                        
+                    // Zawsze sprawdzaj zapisany cel nawigacji
+                    const targetLat = localStorage.getItem('targetLat');
+                    const targetLon = localStorage.getItem('targetLon');
+                    
+                    // Zawsze używaj navigate zamiast location jeśli jest cel
+                    const endpoint = targetLat && targetLon ? '/navigate' : '/location';
+                    const body = targetLat && targetLon ? {
+                        user_lat: currentPosition.lat,
+                        user_lon: currentPosition.lon,
+                        target_lat: parseFloat(targetLat),
+                        target_lon: parseFloat(targetLon)
+                    } : currentPosition;
 
                     fetch(endpoint, {
                         method: 'POST',
@@ -99,19 +111,24 @@ function startIntelligentTracking() {
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
-                            return fetch('/navigate_toilet_distance', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    user_lat: currentPosition.lat,
-                                    user_lon: currentPosition.lon,
-                                    target_lat: targetLat ? parseFloat(targetLat) : null,
-                                    target_lon: targetLon ? parseFloat(targetLon) : null
-                                })
-                            });
+                            return fetch('/render_map');
                         }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('map').innerHTML = html;
+                        return fetch('/navigate_toilet_distance', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                user_lat: currentPosition.lat,
+                                user_lon: currentPosition.lon,
+                                target_lat: targetLat ? parseFloat(targetLat) : null,
+                                target_lon: targetLon ? parseFloat(targetLon) : null
+                            })
+                        });
                     })
                     .then(response => response.json())
                     .then(data => {
@@ -121,11 +138,6 @@ function startIntelligentTracking() {
                             nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                             nearestPinInfo.classList.add('show');
                         }
-                        return fetch('/render_map');
-                    })
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById('map').innerHTML = html;
                     })
                     .catch(error => console.error('Error:', error));
                 }
