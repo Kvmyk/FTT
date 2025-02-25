@@ -138,7 +138,6 @@ function startIntelligentTracking() {
                             nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                             nearestPinInfo.classList.add('show');
                         }
-                        updateMapWithStoredLocation();
 
                     })
                     .catch(error => console.error('Error:', error));
@@ -546,7 +545,6 @@ function navigateToToilet(targetLat, targetLon) {
                         nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                         nearestPinInfo.classList.add('show');
                     }
-                    updateMapWithStoredLocation();
                 })
                 .catch(error => console.error('Error:', error));
             }
