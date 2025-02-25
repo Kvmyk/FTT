@@ -83,13 +83,11 @@ function startIntelligentTracking() {
                 ) > MIN_DISTANCE) {
                     lastPosition = currentPosition;
 
-                    const endpoint = targetLat && targetLon ? '/navigate' : '/location';
-                    const body = targetLat && targetLon ? {
-                        user_lat: currentPosition.lat,
-                        user_lon: currentPosition.lon,
-                        target_lat: parseFloat(targetLat),
-                        target_lon: parseFloat(targetLon)
-                    } : currentPosition;
+                    const endpoint = '/location';
+                    const body = {
+                        lat: currentPosition.lat,
+                        lon: currentPosition.lon
+                    };
 
                     fetch(endpoint, {
                         method: 'POST',
