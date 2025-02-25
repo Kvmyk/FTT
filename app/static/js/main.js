@@ -132,7 +132,7 @@ function startIntelligentTracking() {
                     })
                     .then(response => response.json())
                     .then(data => {
-                        if (data.status === 'success') {
+                        if (data.status == 'success') {
                             const nearestPinInfo = document.getElementById('nearestPinInfo');
                             const nearestPinText = document.getElementById('nearestPinText');
                             nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
