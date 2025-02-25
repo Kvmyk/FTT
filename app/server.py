@@ -447,6 +447,11 @@ class Server:
             if not isInOpoleProvince(data['target_lat'], data['target_lon']):
                 return jsonify({'status': 'error', 'message': 'Target location is outside Opole province'}), 400
             
+            target_marker = next((marker for marker in self.markers 
+                         if marker['lat'] == data['target_lat'] 
+                         and marker['lon'] == data['target_lon']), None)
+            target_name = target_marker['name'] if target_marker else 'Unknown'
+
             # Calculate route
             route = get_route(
                 user_marker['lat'], 
@@ -476,7 +481,8 @@ class Server:
                 return jsonify({
                     'status': 'success',
                     'distance': distance_text,
-                    'duration': f"{duration:.0f}"
+                    'duration': f"{duration:.0f}",
+                    'name': target_name
                 })
             
             return jsonify({'status': 'error', 'message': 'Could not calculate route'}), 404
