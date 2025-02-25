@@ -143,7 +143,7 @@ function startIntelligentTracking() {
                         if (data && data.status === 'success') {
                             const nearestPinInfo = document.getElementById('nearestPinInfo');
                             const nearestPinText = document.getElementById('nearestPinText');
-                            nearestPinText.innerText = `Nawiguję do wybranej toalety: ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                            nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                             nearestPinInfo.classList.add('show');
                         }
                     })
