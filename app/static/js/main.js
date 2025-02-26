@@ -48,7 +48,7 @@ function startIntelligentTracking() {
             if (!data.exists) {
                 localStorage.removeItem('targetLat');
                 localStorage.removeItem('targetLon');
-                alert('Cel nawigacji został usunięty przez zastosowane filtry. Wybieranie nowego celu...');
+                alert('Cel nawigacji został usunięty przez zastosowane filtry. Wybierz nowy cel.');
                 
                 // After removing target, call nearest_toilet_distance to find a new nearest toilet
                 return fetch('/nearest_toilet_distance')
@@ -63,37 +63,33 @@ function startIntelligentTracking() {
                             if (data.lat && data.lon) {
                                 localStorage.setItem('targetLat', data.lat);
                                 localStorage.setItem('targetLon', data.lon);
-                                alert(`Ustawiono nowy cel nawigacji do ${data.name}.`);
-                                return true; // Return true to indicate we have a new valid target
+                                return true;
                             }
                         }
-                        return false; // No new target was found
+                        return false; // Still return false to indicate original target was removed
                     })
                     .catch(error => {
                         console.error('Error fetching nearest toilet:', error);
                         return false;
                     });
             }
-            return true; // Original target exists
+            return true;
         }) :
         Promise.resolve(true);
 
     // Rozpocznij śledzenie tylko po sprawdzeniu celu
     checkTarget.then(targetExists => {
-        // targetExists will be true if either:
-        // 1. Original target still exists
-        // 2. A new target was successfully set
-        
         watchId = navigator.geolocation.watchPosition(
             (position) => {
                 const currentPosition = {
                     lat: position.coords.latitude,
                     lon: position.coords.longitude
                 };
-                
-                // Get the current target (might be new if it was just changed)
-                const currentTargetLat = localStorage.getItem('targetLat');
-                const currentTargetLon = localStorage.getItem('targetLon');
+
+                // Kontynuuj tylko jeśli cel istnieje lub nie ma celu
+                if (!targetExists && (localStorage.getItem('targetLat') || localStorage.getItem('targetLon'))) {
+                    return;
+                }
                 
                 if (!isInOpoleProvince(currentPosition.lat, currentPosition.lon)) {
                     alert('Znajdujesz się poza województwem opolskim. Nawigacja jest dostępna tylko w województwie opolskim.');
@@ -101,18 +97,22 @@ function startIntelligentTracking() {
                     return;
                 }
 
-                if (currentTargetLat && currentTargetLon && !isInOpoleProvince(parseFloat(currentTargetLat), parseFloat(currentTargetLon))) {
+                if (targetLat && targetLon && !isInOpoleProvince(parseFloat(targetLat), parseFloat(targetLon))) {
                     alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
                     stopIntelligentTracking();
                     return;
                 }
 
-                // Rest of tracking logic...
+                // Reszta logiki śledzenia...
                 if (!lastPosition || calculateDistance(
                     lastPosition.lat, lastPosition.lon,
                     currentPosition.lat, currentPosition.lon
                 ) > MIN_DISTANCE) {
                     lastPosition = currentPosition;
+                        
+                    // Zawsze sprawdzaj zapisany cel nawigacji
+                    const targetLat = localStorage.getItem('targetLat');
+                    const targetLon = localStorage.getItem('targetLon');
                     
                     // Use the new endpoint to update user location
                     fetch('/update_user_location', {
@@ -136,7 +136,7 @@ function startIntelligentTracking() {
                         document.getElementById('map').innerHTML = html;
                         
                         // After map is updated, get distance info if we have a target
-                        if (currentTargetLat && currentTargetLon) {
+                        if (targetLat && targetLon) {
                             return fetch('/navigate', {
                                 method: 'POST',
                                 headers: {
@@ -145,8 +145,8 @@ function startIntelligentTracking() {
                                 body: JSON.stringify({
                                     user_lat: currentPosition.lat,
                                     user_lon: currentPosition.lon,
-                                    target_lat: parseFloat(currentTargetLat),
-                                    target_lon: parseFloat(currentTargetLon)
+                                    target_lat: parseFloat(targetLat),
+                                    target_lon: parseFloat(targetLon)
                                 })
                             });
                         }
