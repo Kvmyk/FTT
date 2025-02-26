@@ -1,0 +1,870 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+
+/* Podstawowe style dla body i html */
+html, body {
+    font-family: 'Roboto', sans-serif;
+    height: 100%;
+    overflow: hidden; /* Ukryj pasek przewijania */
+    font-weight: 300; /* Light */
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Style dla kontenera mapy */
+#map {
+    position: fixed !important; /* Wymuszenie fixed */
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important; /* Użyj viewport width */
+    height: 100vh !important; /* Użyj viewport height */
+    margin: 0 !important;
+    padding: 0 !important;
+    z-index: 1; /* Upewnij się że mapa jest pod innymi elementami */
+}
+
+.circle-plus {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border: 3px solid red;
+    border-radius: 50%;
+    color: red;
+    font-size: 28px;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    cursor: pointer; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.circle-plus:hover {
+    transform: scale(1.1);
+    background-color: #EEEEEE;    
+}
+
+/* Style dla przycisku filtrów */
+.filter-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border: 3px solid red;
+    border-radius: 50%;
+    color: red;
+    font-size: 16px; /* Zwiększ rozmiar ikony */
+    position: fixed;
+    top: 60px; /* Ustawienie poniżej przycisku circle-plus */
+    right: 10px;
+    z-index: 1000;
+    cursor: pointer; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.filter-button:hover {
+    transform: scale(1.1);
+    background-color: #EEEEEE;    
+}
+
+#myModal input[type="text"], #myModal textarea, #myModal input[type="file"] {
+    width: 85%;
+    padding: 10px;
+    margin: 10px 0;
+    display: block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300; /* Light */
+}
+
+#myModal input[type="file"] {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 300; 
+}
+
+#myModal input[type="number"] {
+    width: 50%; 
+    padding: 10px;
+    margin: 10px 0;
+    display: block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300; /* Light */
+}
+
+#myModal input[type="checkbox"] {
+    display: inline-block;
+    margin-right: 5px; /* Optional: Adds space between checkbox and label */
+}
+
+#myModal button {
+    width: 80%;
+    background-color: red;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300; /* Light */
+    transition: background-color 0.2s;
+}
+
+#myModal button:hover {
+    background-color: #C92704;
+}
+
+#myModal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    max-height: 80vh; /* maksymalna wysokość */
+    overflow-y: auto; /* dodanie scrollowania */
+    width: 90%; /* szerokość modalu */
+    max-width: 500px; /* maksymalna szerokość */
+}
+
+#myModal textarea {
+    width: 85%;
+    padding: 10px;
+    margin: 10px 0;
+    resize: vertical; /* tylko pionowe rozszerzanie */
+    max-height: 200px; /* maksymalna wysokość textarea */
+    min-height: 100px; /* minimalna wysokość textarea */
+    overflow-y: auto; /* scrollowanie w textarea */
+}
+
+#commentModal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Dodatkowe style pól i przycisków w #commentModal */
+#commentModal input[type="number"],
+#commentModal textarea {
+    width: 85%;
+    padding: 10px;
+    margin: 10px 0;
+    display: block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;
+}
+
+#commentModal button {
+    width: 80%;
+    background-color: red;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;
+    transition: background-color 0.2s;
+}
+
+#commentModal button:hover {
+    background-color: #C92704;
+}
+
+#nearestPinInfo {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+    display: none;
+    transition: opacity 0.3s ease-in-out;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300; /* Light */
+    width: 70%;
+    max-width: 550px;
+}
+
+#nearestPinInfo.show {
+    display: block;
+    opacity: 1;
+}
+
+#nearestPinInfo.hide {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+#loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.9);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column; 
+  justify-content: center;
+  align-items: center;
+  font-size: 2em;
+}
+
+#loadingOverlay .spinner {
+  width: 60px;
+  height: 60px;
+  border: 8px solid #ddd;
+  border-top: 8px solid red;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+#loadingOverlay .logo {
+  width: 300px;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+label {
+    display: inline-block;
+    margin-bottom: 0; /* Ensures label is aligned with checkbox */
+}
+
+#myModal input[type="text"],
+#myModal textarea,
+#myModal input[type="number"] {
+    font-size: 16px; /* Minimum 16px prevents iOS zoom */
+    transform-origin: top left;
+    transform: scale(1);
+    -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent zoom on focus for iOS */
+@supports (-webkit-touch-callout: none) {
+    #myModal input,
+    #myModal textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Style dla kontenera na podgląd zdjęć */
+#imagePreviewContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Style dla pojedynczego podglądu zdjęcia */
+.imagePreview {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+/* Style dla zdjęć w markerach */
+.marker-image {
+    max-width: 150px;
+    max-height: 150px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+/* Mniejsze zdjęcia na urządzeniach mobilnych */
+@media screen and (max-width: 768px) {
+    .marker-image {
+        max-width: 150px;
+        max-height: 150px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .marker-image {
+        max-width: 100px;
+        max-height: 100px;
+    }
+}
+
+/* Style dla przycisków w popupach */
+.popup-button {
+    width: 80%;
+    background-color: red;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.popup-button:hover {
+    background-color: #C92704;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.popup-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.popup-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Efekt ripple dla przycisków */
+.ripple {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: scale(0);
+    animation: ripple-animation 0.6s linear;
+    pointer-events: none;
+}
+
+@keyframes ripple-animation {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Mobile devices */
+@media screen and (max-width: 480px) {
+    #myModal {
+        width: 85%;
+        max-width: 320px;
+        padding: 15px;
+    }
+    
+    .circle-plus {
+        width: 30px;
+        height: 30px;
+        font-size: 20px;
+    }
+
+    #loadingOverlay .logo {
+        width: 200px;
+    }
+    .filter-button {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+    }
+    
+}
+
+/* Tablets */
+@media screen and (min-width: 481px) and (max-width: 768px) {
+    #myModal {
+        width: 60%;
+        max-width: 450px;
+    }
+    
+    #myModal {
+        width: 70%;
+    }
+
+}
+
+/* Larger screens */
+@media screen and (min-width: 769px) {
+    #myModal {
+        width: 40%;
+        max-width: 500px;
+    }
+    
+    #myModal {
+        width: 50%;
+        max-width: 600px;
+    }
+    #filterModal {
+        width: 70%;
+        max-width: 450px;
+    }
+    
+
+}
+
+@media screen and (max-height: 600px) {
+    #myModal {
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+    
+    #myModal {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    #loadingOverlay .logo {
+        width: 250px;
+    }
+}
+
+/* Responsywność dla map */
+@media screen and (max-width: 768px) {
+    #map, 
+    .leaflet-container,
+    iframe,
+    .folium-map {
+        height: 100vh !important;
+        width: 100vw !important;
+        position: fixed !important;
+    }
+}
+
+.leaflet-container {
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+/* Wymuś style dla iframe */
+iframe {
+    width: 100vw !important;
+    height: 100vh !important;
+    border: none !important;
+}
+
+.route-path {
+    pointer-events: all !important;
+    cursor: pointer !important;
+    transition: stroke-opacity 0.3s ease;
+}
+
+.route-path:hover {
+    stroke-opacity: 1 !important;
+}
+
+#filterModal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;
+}
+
+#filterModal h3 {
+    margin-top: 0;
+    font-size: 24px;
+    color: #333;
+}
+
+#filterModal label {
+    display: block;
+    margin: 10px 0;
+    font-size: 16px;
+    color: #555;
+}
+
+#filterModal input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+#filterModal button {
+    width: 100%;
+    background-color: red;
+    color: white;
+    padding: 14px 20px;
+    margin: 20px 0 0 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;
+    transition: background-color 0.2s;
+}
+
+#filterModal button:hover {
+    background-color: #C92704;
+}
+
+#closeFilterModal {
+    cursor: pointer;
+    float: right;
+    font-size: 20px;
+    color: #aaa;
+    transition: color 0.2s;
+}
+
+#closeFilterModal:hover {
+    color: #000;
+}
+
+/* Style dla nowego checkboxa filtrowania po ratingu */
+#filterRating {
+    width: 30%; /* Zmniejszona szerokość */
+    padding: 10px;
+    margin: 10px 0;
+    display: block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;
+}
+
+/* Styl dla kontenera slidera */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 15px;
+  vertical-align: middle; /* Ustawienie pionowego wyrównania */
+  margin-top: -2px; /* Przesunięcie slidera wyżej */
+}
+
+/* Ukrycie domyślnego checkboxa */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Styl dla suwaka */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 15px;
+}
+
+/* Styl dla kółka w suwaku */
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 11px;
+  width: 11px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+/* Przesunięcie kółka po zaznaczeniu */
+input:checked + .slider:before {
+  transform: translateX(15px);
+}
+
+/* Styl dla tekstu obok slidera */
+.switch-label {
+  display: inline-block;
+  margin-left: 10px;
+  vertical-align: middle; /* Ustawienie pionowego wyrównania */
+}
+
+/* Styl dla kontenera slidera */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+/* Ukrycie domyślnego checkboxa */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Styl dla suwaka */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+/* Styl dla kółka w suwaku */
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+/* Zmiana koloru suwaka po zaznaczeniu */
+input:checked + .slider {
+  background-color: red;
+}
+
+/* Przesunięcie kółka po zaznaczeniu */
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Efekt hover dla przycisków */
+button:hover, .popup-button:hover, #commentModal button:hover, #myModal button:hover {
+    background-color: #C92704;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Półprzezroczyste tło za modalami */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+}
+
+#myModal, #commentModal, #filterModal {
+    z-index: 1001;
+}
+
+/* Pokaż tło za modalami, gdy są widoczne */
+#myModal.show ~ .modal-backdrop,
+#commentModal.show ~ .modal-backdrop,
+#filterModal.show ~ .modal-backdrop {
+    display: block;
+}
+
+/* Lepsza responsywność */
+@media screen and (max-width: 480px) {
+    #myModal, #commentModal, #filterModal {
+        width: 85%;
+        max-width: 320px;
+        padding: 15px;
+    }
+    
+    .circle-plus, .filter-button {
+        width: 30px;
+        height: 30px;
+        font-size: 20px;
+    }
+
+    #loadingOverlay .logo {
+        width: 200px;
+    }
+}
+
+/* Animacje dla elementów pojawiających się i znikających */
+#nearestPinInfo, #loadingOverlay, .modal-backdrop {
+    transition: opacity 0.3s ease-in-out;
+}
+
+#nearestPinInfo.show, #loadingOverlay.show, .modal-backdrop.show {
+    opacity: 1;
+}
+
+#nearestPinInfo.hide, #loadingOverlay.hide, .modal-backdrop.hide {
+    opacity: 0;
+}
+
+/* Styl dla outer spinner */
+input[type="number"]::-webkit-outer-spin-button {
+    background: red !important; /* Przykładowy kolor tła */
+    border: 1px solid #ccc !important; /* Przykładowa ramka */
+    border-radius: 4px !important; /* Przykładowe zaokrąglenie */
+}
+
+/* Styl dla inner spinner */
+input[type="number"]::-webkit-inner-spin-button {
+    background: red !important; /* Przykładowy kolor tła */
+    border: 1px solid #ccc !important; /* Przykładowa ramka */
+    border-radius: 4px !important; /* Przykładowe zaokrąglenie */
+}
+
+
+
+/* Animacje dla elementów pojawiających się i znikających */
+#nearestPinInfo, #loadingOverlay, .modal-backdrop {
+    transition: opacity 0.3s ease-in-out;
+}
+
+#nearestPinInfo.show, #loadingOverlay.show, .modal-backdrop.show {
+    opacity: 1;
+}
+
+#nearestPinInfo.hide, #loadingOverlay.hide, .modal-backdrop.hide {
+    opacity: 0;
+}
+.location-tracking-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Domyślne style dla desktop */
+.location-tracking-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 3px solid red;
+}
+
+/* Style dla urządzeń mobilnych */
+@media screen and (max-width: 768px) {
+    .location-tracking-toggle {
+        bottom: auto; /* Resetujemy bottom */
+        top: 110px; /* Umieszczamy pod przyciskiem filtrów */
+        right: 10px;
+        padding: 8px;
+    }
+
+    /* Zmniejszamy elementy wewnątrz togglera na mobile */
+    .location-tracking-toggle .switch {
+        width: 50px;
+        height: 28px;
+    }
+
+    .location-tracking-toggle .slider:before {
+        height: 20px;
+        width: 20px;
+    }
+
+    .location-tracking-toggle .switch-label {
+        font-size: 14px;
+    }
+}
+
+/* Aktualizacja styli dla mobile */
+@media screen and (max-width: 768px) {
+    .location-tracking-toggle {
+        bottom: auto;
+        top: 80px; /* Przesunięte niżej z 60px na 80px */
+        left: 10px;
+        right: auto;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 3px solid red;
+        z-index: 1000;
+    }
+
+    .location-tracking-toggle .switch {
+        width: 40px;
+        height: 22px;
+        margin: 0;
+    }
+
+    /* Poprawka dla kółka slidera */
+    .location-tracking-toggle .slider:before {
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+    }
+
+    /* Poprawka dla przesuniętego kółka */
+    .location-tracking-toggle input:checked + .slider:before {
+        transform: translateX(18px); /* Dostosowane do nowej szerokości */
+    }
+}
+.location-tracking-toggle{
+    pointer-events: auto;
+}
+.circle-plus, 
+.filter-button, 
+#nearestPinInfo, 
+.location-tracking-toggle,
+.popup-button, 
+button, 
+input[type="checkbox"], 
+.modal,
+.leaflet-marker-icon {
+  z-index: 1000;
+  pointer-events: auto !important;
+}
+
