@@ -524,7 +524,29 @@ function navigateToToilet(targetLat, targetLon) {
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
-                        // Rest of the code...
+                        // Dodatkowy fetch do /navigate_toilet_distance
+                        return fetch('/navigate_toilet_distance', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                user_lat: userLat,
+                                user_lon: userLon,
+                                target_lat: parseFloat(targetLat),
+                                target_lon: parseFloat(targetLon)
+                            })
+                        });
+                    }
+                    return null;
+                })
+                .then(response => response ? response.json() : null)
+                .then(data => {
+                    if (data && data.status === 'success') {
+                        const nearestPinInfo = document.getElementById('nearestPinInfo');
+                        const nearestPinText = document.getElementById('nearestPinText');
+                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        nearestPinInfo.classList.add('show');
                     }
                 })
                 .catch(error => console.error('Error:', error));
