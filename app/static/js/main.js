@@ -59,6 +59,11 @@ function startIntelligentTracking() {
                             const nearestPinText = document.getElementById('nearestPinText');
                             nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                             nearestPinInfo.classList.add('show');
+
+                            if (data.lat && data.lon) {
+                                localStorage.setItem('targetLat', data.lat);
+                                localStorage.setItem('targetLon', data.lon);
+                            }
                         }
                         return false; // Still return false to indicate original target was removed
                     })
