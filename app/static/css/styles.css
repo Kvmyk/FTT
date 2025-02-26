@@ -864,7 +864,6 @@ button,
 input[type="checkbox"], 
 .modal,
 .leaflet-marker-icon {
-  position: relative;
   z-index: 1000;
   pointer-events: auto !important;
 }
