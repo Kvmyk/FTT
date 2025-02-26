@@ -619,6 +619,24 @@ class Server:
                 )
                 if route:
                     self.add_route_to_map(route)
+                    
+                    # Get duration and distance from route
+                    distance = route['routes'][0]['distance']  # in meters
+                    duration = route['routes'][0]['duration'] / 60  # in minutes
+                    distance_text = format_distance_text(distance)
+                    
+                    # Get target marker name
+                    target_marker = next((marker for marker in self.markers 
+                                 if abs(marker['lat'] - selected_target['lat']) < 0.0001
+                                 and abs(marker['lon'] - selected_target['lon']) < 0.0001), None)
+                    target_name = target_marker['name'] if target_marker else 'Unknown'
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'distance': distance_text,
+                        'duration': f"{duration:.0f}",
+                        'name': target_name
+                    })
             else:
                 self.update_map()
             
