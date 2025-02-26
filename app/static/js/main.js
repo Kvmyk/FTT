@@ -290,6 +290,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Sprawdź czy zapisany cel nawigacji istnieje po filtrach
+    const targetLat = localStorage.getItem('targetLat');
+    const targetLon = localStorage.getItem('targetLon');
+    
+    if (targetLat && targetLon) {
+        fetch('/check_marker_exists', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                lat: parseFloat(targetLat),
+                lon: parseFloat(targetLon)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.exists) {
+                localStorage.removeItem('targetLat');
+                localStorage.removeItem('targetLon');
+                alert('Cel nawigacji nie istnieje po zastosowaniu filtrów. Wybierz nowy cel.');
+            }
+        });
+    }
+    
     // Automatycznie włącz śledzenie, jeśli było włączone wcześniej
     if (localStorage.getItem('trackingEnabled') === 'true') {
         trackingToggle.checked = true;
