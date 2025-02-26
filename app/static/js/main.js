@@ -347,6 +347,12 @@ function submitModal() {
     const userInput = document.getElementById('userInput').value;
     const rating = document.getElementById('ratingInput').value;
 
+    // Check if required fields are filled
+    if (!userInput || !description || !rating) {
+        alert('Wszystkie pola (nazwa, opis i ocena) muszą być wypełnione.');
+        return;
+    }
+
     // Validate rating
     if (!validateRating()) {
         return;
