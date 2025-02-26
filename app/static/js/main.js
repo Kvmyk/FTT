@@ -94,70 +94,49 @@ function startIntelligentTracking() {
                     const targetLat = localStorage.getItem('targetLat');
                     const targetLon = localStorage.getItem('targetLon');
                     
-                    // Najpierw sprawdź czy marker nadal istnieje, zanim zrobisz cokolwiek innego
-                    if (targetLat && targetLon) {
-                        fetch('/check_marker_exists', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                lat: parseFloat(targetLat),
-                                lon: parseFloat(targetLon)
+                    // Use the new endpoint to update user location
+                    fetch('/update_user_location', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            user_lat: currentPosition.lat,
+                            user_lon: currentPosition.lon
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            return fetch('/render_map');
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('map').innerHTML = html;
+                        
+                        // After map is updated, get distance info if we have a target
+                        if (targetLat && targetLon) {
+                            // Najpierw sprawdź czy marker istnieje
+                            return fetch('/check_marker_exists', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    lat: parseFloat(targetLat),
+                                    lon: parseFloat(targetLon)
+                                })
                             })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (!data.exists) {
-                                localStorage.removeItem('targetLat');
-                                localStorage.removeItem('targetLon');
-                                alert('Cel nawigacji nie istnieje już po zastosowaniu filtrów. Wybierz nowy cel.');
-                                return fetch('/render_map');
-                            } else {
-                                // Kontynuuj tylko jeśli marker istnieje
-                                return fetch('/update_user_location', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        user_lat: currentPosition.lat,
-                                        user_lon: currentPosition.lon
-                                    })
-                                });
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                return fetch('/render_map');
-                            }
-                        })
-                        // ... reszta kodu pozostaje bez zmian
-                    } else {
-                        // Standardowa aktualizacja bez celu
-                        fetch('/update_user_location', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                user_lat: currentPosition.lat,
-                                user_lon: currentPosition.lon
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                return fetch('/render_map');
-                            }
-                        })
-                        .then(response => response.text())
-                        .then(html => {
-                            document.getElementById('map').innerHTML = html;
-                            
-                            // After map is updated, get distance info if we have a target
-                            if (targetLat && targetLon) {
+                            .then(response => response.json())
+                            .then(data => {
+                                if (!data.exists) {
+                                    localStorage.removeItem('targetLat');
+                                    localStorage.removeItem('targetLon');
+                                    alert('Cel nawigacji nie istnieje. Wybierz nowy cel.');
+                                    return null;
+                                }
+                                // Jeśli marker istnieje, kontynuuj nawigację
                                 return fetch('/navigate', {
                                     method: 'POST',
                                     headers: {
@@ -170,20 +149,20 @@ function startIntelligentTracking() {
                                         target_lon: parseFloat(targetLon)
                                     })
                                 });
-                            }
-                            return null;
-                        })
-                        .then(response => response ? response.json() : null)
-                        .then(data => {
-                            if (data && data.status === 'success') {
-                                const nearestPinInfo = document.getElementById('nearestPinInfo');
-                                const nearestPinText = document.getElementById('nearestPinText');
-                                nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                                nearestPinInfo.classList.add('show');
-                            }
-                        })
-                        .catch(error => console.error('Error:', error));
-                    }
+                            });
+                        }
+                        return null;
+                    })
+                    .then(response => response ? response.json() : null)
+                    .then(data => {
+                        if (data && data.status === 'success') {
+                            const nearestPinInfo = document.getElementById('nearestPinInfo');
+                            const nearestPinText = document.getElementById('nearestPinText');
+                            nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                            nearestPinInfo.classList.add('show');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
                 }
             },
             (error) => console.error('Error:', error),
