@@ -307,43 +307,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const trackingToggle = document.getElementById('locationTrackingToggle');
     trackingToggle.addEventListener('change', function() {
         if (this.checked) {
-            const targetLat = localStorage.getItem('targetLat');
-            const targetLon = localStorage.getItem('targetLon');
-            
-            if (targetLat && targetLon) {
-                // Sprawdź, czy marker istnieje przed uruchomieniem śledzenia
-                fetch('/check_marker_exists', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        lat: parseFloat(targetLat),
-                        lon: parseFloat(targetLon)
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.exists) {
-                        localStorage.removeItem('targetLat');
-                        localStorage.removeItem('targetLon');
-                        alert('Cel nawigacji nie istnieje. Wybierz nowy cel.');
-                    }
-                    // Zawsze uruchom śledzenie, nawet jeśli cel nie istnieje (będzie śledzić bez celu)
-                    startIntelligentTracking();
-                })
-                .catch(error => {
-                    console.error('Error checking marker:', error);
-                    startIntelligentTracking();
-                });
-            } else {
-                startIntelligentTracking();
-            }
+            startIntelligentTracking();
         } else {
             stopIntelligentTracking();
         }
-        // Zapisz stan przełącznika
-        localStorage.setItem('trackingEnabled', this.checked);
     });
 
     // Sprawdź czy zapisany cel nawigacji istnieje po filtrach
