@@ -573,7 +573,7 @@ class Server:
                     if (not filters.get('filterPayable', False) or marker.get('payable', False)) and
                        (not filters.get('filterForClients', False) or marker.get('onlyForClients', False)) and
                        (not filters.get('filterForDisabled', False) or marker.get('forDisabled', False)) and
-                       (float(marker.get('rating', 0)) >= float(filters.get('filterRating', 0)))
+                       (self.safe_float(marker.get('rating', 0)) >= self.safe_float(filters.get('filterRating', 0)))
                 ]
             
             # Sprawdź czy marker o podanych współrzędnych istnieje
@@ -908,6 +908,12 @@ class Server:
             logging.error(f"Nieoczekiwany błąd podczas dodawania markera: {e}")
             # Można dodać dodatkową obsługę innych wyjątków
         
+    def safe_float(self, value, default=0):
+        """Safely convert a value to float, returning default if conversion fails."""
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return default
 
     def add_route_to_map(self, route):
         """
