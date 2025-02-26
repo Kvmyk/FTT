@@ -855,3 +855,16 @@ input[type="number"]::-webkit-inner-spin-button {
 .location-tracking-toggle{
     pointer-events: auto;
 }
+.circle-plus, 
+.filter-button, 
+#nearestPinInfo, 
+.location-tracking-toggle,
+.popup-button, 
+button, 
+input[type="checkbox"], 
+.modal,
+.leaflet-marker-icon {
+  position: relative;
+  z-index: 1000;
+  pointer-events: auto !important;
+}
