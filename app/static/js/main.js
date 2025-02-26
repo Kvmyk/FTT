@@ -117,38 +117,17 @@ function startIntelligentTracking() {
                         
                         // After map is updated, get distance info if we have a target
                         if (targetLat && targetLon) {
-                            // Najpierw sprawdź czy marker istnieje
-                            return fetch('/check_marker_exists', {
+                            return fetch('/navigate', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
                                 },
                                 body: JSON.stringify({
-                                    lat: parseFloat(targetLat),
-                                    lon: parseFloat(targetLon)
+                                    user_lat: currentPosition.lat,
+                                    user_lon: currentPosition.lon,
+                                    target_lat: parseFloat(targetLat),
+                                    target_lon: parseFloat(targetLon)
                                 })
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (!data.exists) {
-                                    localStorage.removeItem('targetLat');
-                                    localStorage.removeItem('targetLon');
-                                    alert('Cel nawigacji nie istnieje. Wybierz nowy cel.');
-                                    return null;
-                                }
-                                // Jeśli marker istnieje, kontynuuj nawigację
-                                return fetch('/navigate', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        user_lat: currentPosition.lat,
-                                        user_lon: currentPosition.lon,
-                                        target_lat: parseFloat(targetLat),
-                                        target_lon: parseFloat(targetLon)
-                                    })
-                                });
                             });
                         }
                         return null;
