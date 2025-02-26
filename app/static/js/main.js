@@ -49,7 +49,7 @@ function startIntelligentTracking() {
                 localStorage.removeItem('targetLat');
                 localStorage.removeItem('targetLon');
                 alert('Cel nawigacji został usunięty przez zastosowane filtry. Wybierz nowy cel.');
-                
+                return false;
                 // After removing target, call nearest_toilet_distance to find a new nearest toilet
                 return fetch('/nearest_toilet_distance')
                     .then(response => response.json())
