@@ -618,11 +618,9 @@ class Server:
                     selected_target['lat'], selected_target['lon']
                 )
                 if route:
-                    user_data['current_route'] = route
-                    session[user_id] = user_data
-            
-            # Update the map
-            self.update_map()
+                    self.add_route_to_map(route)
+            else:
+                self.update_map()
             
             return jsonify({'status': 'success'})
 
