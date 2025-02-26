@@ -584,6 +584,48 @@ class Server:
             
             return jsonify({'exists': marker_exists})
 
+        @self.app.route('/update_user_location', methods=['POST'])
+        def update_user_location():
+            """Updates user location without changing navigation target"""
+            data = request.json
+            user_lat = data.get('user_lat')
+            user_lon = data.get('user_lon')
+            
+            # Get or create user session
+            user_id = session.get('user_id')
+            if not user_id:
+                user_id = str(uuid.uuid4())
+                session['user_id'] = user_id
+            
+            user_data = session.get(user_id, {})
+            
+            # Update the user's marker without affecting other data
+            user_marker = {
+                "lat": user_lat,
+                "lon": user_lon,
+                "name": "User Location",
+                "description": "This is your location"
+            }
+            user_data["marker"] = user_marker
+            session[user_id] = user_data
+            
+            # Check if we have a selected target
+            selected_target = user_data.get('selected_target')
+            if selected_target:
+                # Recalculate route with new user location
+                route = get_route(
+                    user_lat, user_lon,
+                    selected_target['lat'], selected_target['lon']
+                )
+                if route:
+                    user_data['current_route'] = route
+                    session[user_id] = user_data
+            
+            # Update the map
+            self.update_map()
+            
+            return jsonify({'status': 'success'})
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.

@@ -92,21 +92,16 @@ function startIntelligentTracking() {
                     const targetLat = localStorage.getItem('targetLat');
                     const targetLon = localStorage.getItem('targetLon');
                     
-                    // Zawsze używaj navigate zamiast location jeśli jest cel
-                    const endpoint = targetLat && targetLon ? '/navigate' : '/location';
-                    const body = targetLat && targetLon ? {
-                        user_lat: currentPosition.lat,
-                        user_lon: currentPosition.lon,
-                        target_lat: parseFloat(targetLat),
-                        target_lon: parseFloat(targetLon)
-                    } : currentPosition;
-
-                    fetch(endpoint, {
+                    // Use the new endpoint to update user location
+                    fetch('/update_user_location', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify(body)
+                        body: JSON.stringify({
+                            user_lat: currentPosition.lat,
+                            user_lon: currentPosition.lon
+                        })
                     })
                     .then(response => response.json())
                     .then(data => {
@@ -117,13 +112,10 @@ function startIntelligentTracking() {
                     .then(response => response.text())
                     .then(html => {
                         document.getElementById('map').innerHTML = html;
-                        // Sprawdź czy mamy zapisany cel
-                        const targetLat = localStorage.getItem('targetLat');
-                        const targetLon = localStorage.getItem('targetLon');
                         
+                        // After map is updated, get distance info if we have a target
                         if (targetLat && targetLon) {
-                            // Jeśli mamy cel, użyj /navigate zamiast /navigate_toilet_distance
-                            return fetch('/navigate', {
+                            return fetch('/navigate_toilet_distance', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -136,7 +128,7 @@ function startIntelligentTracking() {
                                 })
                             });
                         }
-                        return null; // Jeśli nie ma celu, nie rób dodatkowego fetcha
+                        return null;
                     })
                     .then(response => response ? response.json() : null)
                     .then(data => {
