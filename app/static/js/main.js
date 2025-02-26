@@ -344,6 +344,14 @@ function checkProfanity(text) {
 
 function submitModal() {
     const description = document.getElementById('descriptionInput').value;
+    const userInput = document.getElementById('userInput').value;
+    const rating = document.getElementById('ratingInput').value;
+
+    // Validate rating
+    if (!validateRating()) {
+        return;
+    }
+
 
     checkProfanity(description).then(data => {
         if (data.status === 'hate') {
