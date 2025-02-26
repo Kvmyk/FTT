@@ -115,7 +115,7 @@ function startIntelligentTracking() {
                         
                         // After map is updated, get distance info if we have a target
                         if (targetLat && targetLon) {
-                            return fetch('/update_user_location', {
+                            return fetch('/navigate', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
