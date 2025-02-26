@@ -115,7 +115,7 @@ function startIntelligentTracking() {
                         
                         // After map is updated, get distance info if we have a target
                         if (targetLat && targetLon) {
-                            return fetch('/navigate_toilet_distance', {
+                            return fetch('/navigate', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
