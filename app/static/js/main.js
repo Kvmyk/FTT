@@ -63,6 +63,7 @@ function startIntelligentTracking() {
                             if (data.lat && data.lon) {
                                 localStorage.setItem('targetLat', data.lat);
                                 localStorage.setItem('targetLon', data.lon);
+                                return true;
                             }
                         }
                         return false; // Still return false to indicate original target was removed
