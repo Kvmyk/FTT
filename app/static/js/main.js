@@ -49,9 +49,28 @@ function startIntelligentTracking() {
                 localStorage.removeItem('targetLat');
                 localStorage.removeItem('targetLon');
                 alert('Cel nawigacji został usunięty przez zastosowane filtry. Wybierz nowy cel.');
-                // Po usunięciu celu, odśwież stronę aby zaktualizować mapę
-                window.location.reload();
-                return false;
+                // After removing target, call nearest_toilet_distance to find a new nearest toilet
+                return fetch('/nearest_toilet_distance')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const nearestPinInfo = document.getElementById('nearestPinInfo');
+                            const nearestPinText = document.getElementById('nearestPinText');
+                            nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                            nearestPinInfo.classList.add('show');
+
+                            if (data.lat && data.lon) {
+                                localStorage.setItem('targetLat', data.lat);
+                                localStorage.setItem('targetLon', data.lon);
+                                return true;
+                            }
+                        }
+                        return false; // Still return false to indicate original target was removed
+                    })
+                    .catch(error => {
+                        console.error('Error fetching nearest toilet:', error);
+                        return false;
+                    });
             }
             return true;
         }) :
@@ -290,31 +309,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Sprawdź czy zapisany cel nawigacji istnieje po filtrach
-    const targetLat = localStorage.getItem('targetLat');
-    const targetLon = localStorage.getItem('targetLon');
-    
-    if (targetLat && targetLon) {
-        fetch('/check_marker_exists', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                lat: parseFloat(targetLat),
-                lon: parseFloat(targetLon)
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (!data.exists) {
-                localStorage.removeItem('targetLat');
-                localStorage.removeItem('targetLon');
-                alert('Cel nawigacji nie istnieje po zastosowaniu filtrów. Wybierz nowy cel.');
-            }
-        });
-    }
-    
     // Automatycznie włącz śledzenie, jeśli było włączone wcześniej
     if (localStorage.getItem('trackingEnabled') === 'true') {
         trackingToggle.checked = true;
