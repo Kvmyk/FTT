@@ -995,6 +995,24 @@ class Server:
                         marker for marker in markers_to_add 
                         if marker.get('name', '') != "User Location"
                     ]
+                    # Sprawdź czy zapisany cel nawigacji nadal istnieje po filtrowaniu
+                    selected_target = user_data.get('selected_target')
+                    if selected_target:
+                        target_lat = selected_target.get('lat')
+                        target_lon = selected_target.get('lon')
+                        
+                        # Sprawdź czy cel nawigacji nadal istnieje w przefiltrowanych markerach
+                        target_exists = any(
+                            abs(marker['lat'] - target_lat) < 0.0001 and abs(marker['lon'] - target_lon) < 0.0001
+                            for marker in filtered_markers
+                        )
+
+                        if not target_exists:
+                            # Cel nawigacji nie istnieje po filtrowaniu, usuwamy trasę i cel
+                            user_data['current_route'] = None
+                            user_data['selected_target'] = None
+                            session[user_id] = user_data
+            
                     if not filtered_markers:
                         user_data['current_route'] = None
                         session[user_id] = user_data
