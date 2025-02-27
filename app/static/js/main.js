@@ -31,34 +31,32 @@ function startIntelligentTracking() {
     const targetLat = localStorage.getItem('targetLat');
     const targetLon = localStorage.getItem('targetLon');
     
-    // Promise który sprawdza czy cel istnieje (jeśli jest ustawiony)
-    const checkTarget = targetLat && targetLon ? 
-        fetch('/check_marker_exists', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                lat: parseFloat(targetLat),
-                lon: parseFloat(targetLon)
-            })
+    // Zawsze wykonaj zapytanie do check_marker_exists
+    fetch('/check_marker_exists', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            lat: targetLat ? parseFloat(targetLat) : null,
+            lon: targetLon ? parseFloat(targetLon) : null,
+            checkMode: targetLat && targetLon ? 'target' : 'init'
         })
-        .then(response => response.json())
-        .then(data => {
-            if (!data.exists) {
-                localStorage.removeItem('targetLat');
-                localStorage.removeItem('targetLon');
-                alert('Cel nawigacji został usunięty przez zastosowane filtry. Wybierz nowy cel.');
-                // Po usunięciu celu, odśwież stronę aby zaktualizować mapę
-                window.location.reload();
-                return false;
-            }
-            return true;
-        }) :
-        Promise.resolve(true);
-
-    // Rozpocznij śledzenie tylko po sprawdzeniu celu
-    checkTarget.then(targetExists => {
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Jeśli był cel i nie istnieje, usuń go
+        if (targetLat && targetLon && !data.exists) {
+            localStorage.removeItem('targetLat');
+            localStorage.removeItem('targetLon');
+            alert('Cel nawigacji został usunięty przez zastosowane filtry. Wybierz nowy cel.');
+            // Po usunięciu celu, odśwież stronę aby zaktualizować mapę
+            window.location.reload();
+            return false;
+        }
+        return true;
+    })
+    .then(targetExists => {
         watchId = navigator.geolocation.watchPosition(
             (position) => {
                 const currentPosition = {
