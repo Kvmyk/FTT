@@ -1075,7 +1075,17 @@ class Server:
                         else:
                             # Używamy trasy zapisanej w sesji, jeśli istnieje
                             route = user_data.get('current_route')
+                            
+                            # Sprawdź czy cel nawigacji jest w województwie opolskim
+                            selected_target = user_data.get('selected_target')
+                            if selected_target and not isInOpoleProvince(selected_target['lat'], selected_target['lon']):
+                                logging.warning("Cel nawigacji poza województwem opolskim - usuwam trasę.")
+                                user_data['current_route'] = None
+                                route = None
+                                session[user_id] = user_data
+                            
                             if not route:
+                                # Reszta kodu bez zmian...
                                 route = None
                                 nearest_marker = find_nearest_marker(user_marker, filtered_markers)
                                 if nearest_marker:
