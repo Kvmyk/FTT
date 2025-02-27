@@ -559,7 +559,12 @@ class Server:
             data = request.json
             lat = data.get('lat')
             lon = data.get('lon')
+            check_mode = data.get('checkMode', 'target')
             
+            # Jeśli nie ma współrzędnych lub jesteśmy w trybie inicjalizacji
+            if check_mode == 'init' or lat is None or lon is None:
+                return jsonify({'exists': True})
+                
             # Pobierz filtry z sesji użytkownika
             user_id = session.get('user_id')
             user_data = session.get(user_id, {})
