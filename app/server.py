@@ -504,6 +504,45 @@ class Server:
                     'filterForDisabled': filter_for_disabled,
                     'filterRating': filter_rating
                 }
+                
+                # Sprawdź czy użytkownik jest poza województwem opolskim
+                user_marker = user_data.get('marker')
+                if user_marker and not isInOpoleProvince(user_marker['lat'], user_marker['lon']):
+                    # Jeśli użytkownik jest poza województwem, usuń trasę
+                    user_data['current_route'] = None
+                    logging.warning("Użytkownik poza województwem opolskim - usunięto trasę po zastosowaniu filtrów.")
+                
+                # Sprawdź czy cel nawigacji jest poza województwem opolskim
+                selected_target = user_data.get('selected_target')
+                if selected_target and not isInOpoleProvince(selected_target['lat'], selected_target['lon']):
+                    # Jeśli cel jest poza województwem, usuń trasę i cel
+                    user_data['current_route'] = None
+                    user_data['selected_target'] = None
+                    logging.warning("Cel nawigacji poza województwem opolskim - usunięto trasę po zastosowaniu filtrów.")
+                
+                # Zastosuj filtry do markerów, aby sprawdzić czy cel nadal istnieje
+                if selected_target:
+                    filtered_markers = [
+                        marker for marker in self.original_markers
+                        if (not filter_payable or marker.get('payable', False)) and
+                           (not filter_for_clients or marker.get('onlyForClients', False)) and
+                           (not filter_for_disabled or marker.get('forDisabled', False)) and
+                           (self.safe_float(marker.get('rating', 0)) >= filter_rating)
+                    ]
+                    
+                    # Sprawdź czy cel nawigacji nadal istnieje po filtrowaniu
+                    target_exists = any(
+                        abs(marker['lat'] - selected_target['lat']) < 0.0001 and 
+                        abs(marker['lon'] - selected_target['lon']) < 0.0001
+                        for marker in filtered_markers
+                    )
+                    
+                    if not target_exists:
+                        # Cel nawigacji nie istnieje po filtrowaniu, usuwamy trasę i cel
+                        user_data['current_route'] = None
+                        user_data['selected_target'] = None
+                        logging.warning("Cel nawigacji nie istnieje po zastosowaniu filtrów - usunięto trasę.")
+                
                 session[user_id] = user_data
 
             self.update_map()
