@@ -233,6 +233,15 @@ class Server:
                 response.headers['Cache-Control'] = 'no-store'
                 return response, 202
 
+            # Sprawdź czy użytkownik jest w województwie opolskim
+            if not isInOpoleProvince(user_marker['lat'], user_marker['lon']):
+                response = jsonify({
+                    'status': 'error', 
+                    'message': 'User is outside Opole province'
+                })
+                response.headers['Cache-Control'] = 'no-store'
+                return response, 400
+
             # Pobierz filtry z sesji
             filters = user_data.get('filters', {})
             filter_payable = filters.get('filterPayable', False)
@@ -257,13 +266,20 @@ class Server:
                 response.headers['Cache-Control'] = 'no-store'
                 return response, 404
             
+            # Sprawdź czy marker jest w województwie opolskim
             if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
-                                    logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
-                                    user_data['current_route'] = None
-                                    session[user_id] = user_data
-                                    route = None
-            else:
-                route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
+                logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
+                user_data['current_route'] = None
+                session[user_id] = user_data
+                response = jsonify({
+                    'status': 'error', 
+                    'message': 'Nearest marker is outside Opole province'
+                })
+                response.headers['Cache-Control'] = 'no-store'
+                return response, 400
+            
+            # Generuj trasę
+            route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
             if route:
                 distance = route['routes'][0]['distance']  # w metrach
                 duration = route['routes'][0]['duration'] / 60  # w minutach
