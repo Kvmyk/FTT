@@ -284,17 +284,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const trackingToggle = document.getElementById('locationTrackingToggle');
     trackingToggle.addEventListener('change', function() {
         if (this.checked) {
+            localStorage.setItem('trackingEnabled', 'true');
             startIntelligentTracking();
         } else {
+            localStorage.setItem('trackingEnabled', 'false');
             stopIntelligentTracking();
         }
     });
 
-    // Automatycznie włącz śledzenie, jeśli było włączone wcześniej
-    if (localStorage.getItem('trackingEnabled') === 'true') {
-        trackingToggle.checked = true;
-        startIntelligentTracking();
-    }
 });
 
 function validateRating() {
