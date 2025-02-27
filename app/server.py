@@ -100,7 +100,7 @@ class Server:
             tiles="Cartodb positron",
             zoom_start=15,
             overlay=False,
-            min_zoom=1,
+            min_zoom=10,
             max_zoom=18,
             height='100%',
             width='100%',
