@@ -266,11 +266,13 @@
         // Global variables for toilet management
         let toilets = [];
         let currentToiletId = null;
+        let currentToiletName = null;
         
         // DOM Elements
         const toiletList = document.getElementById('toiletList');
         const editModal = document.getElementById('editModal');
         const deleteModal = document.getElementById('deleteModal');
+        const commentsModal = document.getElementById('commentsModal');
         const editForm = document.getElementById('editForm');
         const closeEditBtn = editModal.querySelector('.close');
         const closeDeleteBtn = deleteModal.querySelector('.close');
@@ -292,9 +294,11 @@
             deleteModal.style.display = 'none';
             currentToiletName = null;
         });
+        commentsModal.querySelector('.close').addEventListener('click', () => commentsModal.style.display = 'none');
         
         // Handle form submission
         editForm.addEventListener('submit', updateToilet);
+        document.getElementById('addCommentForm').addEventListener('submit', addComment);
         
         // Set up confirm delete button handler
         confirmDeleteBtn.addEventListener('click', deleteToilet);
@@ -460,6 +464,151 @@
             .catch(error => {
                 console.error('Error deleting toilet:', error);
                 alert('Error deleting toilet.');
+            });
+        }
+
+        // Show comments for a toilet
+        function showComments() {
+            const toiletId = this.getAttribute('data-id');
+            const toilet = toilets.find(t => t.id == toiletId);
+            
+            if (!toilet) {
+                alert('Toilet not found');
+                return;
+            }
+            
+            currentToiletId = toiletId;
+            currentToiletName = toilet.name;
+            
+            document.getElementById('commentsToiletName').textContent = toilet.name;
+            
+            // Display existing comments
+            const commentsList = document.getElementById('commentsList');
+            commentsList.innerHTML = '';
+            
+            if (!toilet.comments || toilet.comments.length === 0) {
+                commentsList.innerHTML = '<p>No comments yet.</p>';
+            } else {
+                // Create element for each comment
+                toilet.comments.forEach((comment, index) => {
+                    const commentCard = document.createElement('div');
+                    commentCard.className = 'comment-card';
+                    
+                    commentCard.innerHTML = `
+                        <div class="comment-header">
+                            <span>Rating: ${comment.rating}/10</span>
+                        </div>
+                        <div class="comment-body">
+                            ${comment.comment}
+                        </div>
+                        <div class="comment-actions">
+                            <button class="delete-comment-btn" data-index="${index}">Delete</button>
+                        </div>
+                    `;
+                    
+                    commentsList.appendChild(commentCard);
+                });
+                
+                // Add event listeners to delete buttons
+                document.querySelectorAll('.delete-comment-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const commentIndex = this.getAttribute('data-index');
+                        deleteComment(commentIndex);
+                    });
+                });
+            }
+            
+            commentsModal.style.display = 'block';
+        }
+
+        // Add new comment
+        function addComment(e) {
+            e.preventDefault();
+            
+            const commentText = document.getElementById('newCommentText').value;
+            const commentRating = document.getElementById('newCommentRating').value;
+            
+            if (!commentText || !commentRating) {
+                alert('Both comment text and rating are required');
+                return;
+            }
+            
+            const rating = parseInt(commentRating);
+            if (rating < 1 || rating > 10) {
+                alert('Rating must be between 1 and 10');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('toilet_id', currentToiletId);
+            formData.append('comment', commentText);
+            formData.append('rating', rating);
+            
+            fetch('/api/add_comment', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to add comment');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('newCommentText').value = '';
+                    document.getElementById('newCommentRating').value = '';
+                    loadToilets(); // Reload all data
+                    
+                    // Close the modal and show success message
+                    commentsModal.style.display = 'none';
+                    alert('Comment added successfully!');
+                }
+            })
+            .catch(error => {
+                console.error('Error adding comment:', error);
+                alert('Error adding comment.');
+            });
+        }
+
+        // Delete comment
+        function deleteComment(commentIndex) {
+            if (!confirm('Are you sure you want to delete this comment?')) {
+                return;
+            }
+            
+            const toilet = toilets.find(t => t.id == currentToiletId);
+            if (!toilet || !toilet.comments || !toilet.comments[commentIndex]) {
+                alert('Comment not found');
+                return;
+            }
+            
+            fetch('/api/delete_comment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    toilet_id: currentToiletId,
+                    comment_index: commentIndex
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to delete comment');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    loadToilets(); // Reload all data
+                    commentsModal.style.display = 'none';
+                    alert('Comment deleted successfully!');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting comment:', error);
+                alert('Error deleting comment.');
             });
         }
     </script>
