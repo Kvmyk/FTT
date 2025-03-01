@@ -237,12 +237,21 @@
         
         // Close modals when clicking on X or Cancel
         closeEditBtn.addEventListener('click', () => editModal.style.display = 'none');
-        closeDeleteBtn.addEventListener('click', () => deleteModal.style.display = 'none');
+        closeDeleteBtn.addEventListener('click', () => {
+            deleteModal.style.display = 'none';
+            currentToiletName = null;
+        });
         cancelEditBtn.addEventListener('click', () => editModal.style.display = 'none');
-        cancelDeleteBtn.addEventListener('click', () => deleteModal.style.display = 'none');
+        cancelDeleteBtn.addEventListener('click', () => {
+            deleteModal.style.display = 'none';
+            currentToiletName = null;
+        });
         
         // Handle form submission
         editForm.addEventListener('submit', updateToilet);
+        
+        // Set up confirm delete button handler
+        confirmDeleteBtn.addEventListener('click', deleteToilet);
         
         // Load all toilets from the API
         function loadToilets() {
@@ -370,19 +379,19 @@
             });
         }
         
-        // Delete toilet - poprawiona wersja z argumentem ID
-        function deleteToilet(id) {
-            if (!id) {
-                console.error('Cannot delete toilet: ID is null or undefined');
-                alert('Cannot delete: toilet ID is missing');
+        // Delete toilet using the name instead of ID
+        function deleteToilet() {
+            // Use the currentToiletName that was set when opening the modal
+            if (!currentToiletName) {
+                console.error('Cannot delete toilet: Name is null or undefined');
+                alert('Cannot delete: toilet name is missing');
                 return;
             }
             
-            console.log('Deleting toilet with ID:', id); // Dodaj debugowanie
+            console.log('Deleting toilet with name:', currentToiletName);
             
-            fetch(`/api/toilets/${id}`, {
+            fetch(`/api/toilets/by-name/${encodeURIComponent(currentToiletName)}`, {
                 method: 'DELETE'
-                // Usunięto nagłówki z X-Admin-Key
             })
             .then(response => {
                 if (!response.ok) {
