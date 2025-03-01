@@ -11,9 +11,9 @@ import threading
 import time
 from flask_session import Session
 from flask_compress import Compress
-
 from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text, is_hate_speech, isInOpoleProvince
+from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -25,7 +25,7 @@ class Server:
     def __init__(self):
         self.app = Flask(__name__, static_url_path='/static')
         Compress(self.app)
-        self.app.secret_key = "twoj_sekretny_klucz"  # klucz do sesji - niezbędny
+        self.app.secret_key = os.environ.get('KEY')  # klucz do sesji - niezbędny
         
         # Configure server-side session storage (e.g., filesystem)
         self.app.config['SESSION_TYPE'] = 'filesystem'
@@ -1162,4 +1162,4 @@ class Server:
             return self.m._repr_html_()
 
     def runThePage(self):
-        self.app.run(host = "2a01:4f9:2b:289c::130", port=80)
+        self.app.run(host = os.environ.get('SERVER_HOST'), port=os.environ.get('SERVER_PORT'))
