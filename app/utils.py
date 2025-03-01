@@ -1,13 +1,18 @@
 import json
+import os
 from geopy.geocoders import Nominatim
 from functools import lru_cache
 import math
 import requests
 import logging
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 logging.basicConfig(level=logging.INFO)
 
-geolocator = Nominatim(user_agent="test")
+geolocator = Nominatim(user_agent=os.environ.get('USER_AGENT'))
 
 @lru_cache(maxsize=100)
 def get_coordinates(location):
