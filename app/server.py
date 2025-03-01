@@ -942,6 +942,8 @@ class Server:
         @self.app.route('/admin/login', methods=['GET', 'POST'])
         def admin_login():
             """Handle admin login"""
+            error = None
+            
             if request.method == 'POST':
                 username = request.form.get('username')
                 password = request.form.get('password')
@@ -953,11 +955,20 @@ class Server:
                     # Redirect to admin dashboard
                     return flask.redirect('/admin')
                 else:
-                    # Render login form with error
-                    return flask.render_template('html/login.html', error='Invalid username or password')
+                    error = 'Invalid username or password'
             
-            # For GET requests, just show the login form
-            return flask.render_template('html/login.html')
+            # Użyj send_from_directory zamiast render_template
+            response = send_from_directory('static/html', 'login.html')
+            
+            # Jeśli jest błąd, wstaw komunikat o błędzie
+            if error:
+                response_str = response.get_data(as_text=True)
+                response_str = response_str.replace('{% if error %}', '')
+                response_str = response_str.replace('{% endif %}', '')
+                response_str = response_str.replace('{{ error }}', error)
+                response = flask.Response(response_str, mimetype='text/html')
+            
+            return response
 
         @self.app.route('/admin/logout')
         def admin_logout():
