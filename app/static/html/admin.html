@@ -318,13 +318,24 @@
             }
         }
         
-        // Open the delete confirmation modal
+        // Open the delete confirmation modal - poprawiona wersja
         function openDeleteModal() {
-            currentToiletId = this.getAttribute('data-id');
+            const toiletId = this.getAttribute('data-id');
+            console.log('Opening delete modal for toilet ID:', toiletId); // Dodaj debugowanie
+            
+            if (!toiletId) {
+                alert('Nie można usunąć: brak identyfikatora toalety');
+                return;
+            }
+            
+            currentToiletId = toiletId;
             deleteModal.style.display = 'block';
             
-            // Set up the confirm delete button
-            confirmDeleteBtn.onclick = deleteToilet;
+            // Set up the confirm delete button z zachowaniem ID
+            const id = toiletId; // Zapamiętaj ID w domknięciu
+            confirmDeleteBtn.onclick = function() {
+                deleteToilet(id);
+            };
         }
         
         // Update toilet data
@@ -344,8 +355,8 @@
             fetch(`/api/toilets/${currentToiletId}`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-Admin-Key': adminKey
+                    'Content-Type': 'application/json'
+                    // Usunięto X-Admin-Key
                 },
                 body: JSON.stringify(toiletData)
             })
@@ -368,10 +379,19 @@
             });
         }
         
-        // Delete toilet
-        function deleteToilet() {
-            fetch(`/api/toilets/${currentToiletId}`, {
+        // Delete toilet - poprawiona wersja z argumentem ID
+        function deleteToilet(id) {
+            if (!id) {
+                console.error('Cannot delete toilet: ID is null or undefined');
+                alert('Cannot delete: toilet ID is missing');
+                return;
+            }
+            
+            console.log('Deleting toilet with ID:', id); // Dodaj debugowanie
+            
+            fetch(`/api/toilets/${id}`, {
                 method: 'DELETE'
+                // Usunięto nagłówki z X-Admin-Key
             })
             .then(response => {
                 if (!response.ok) {
