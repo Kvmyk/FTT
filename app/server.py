@@ -810,14 +810,11 @@ class Server:
         @self.app.route('/admin', methods=['GET'])
         def admin_dashboard():
             """Admin dashboard to manage toilets"""
-            # Simple authentication
-            password = request.args.get('key')
-            if password != os.environ.get('ADMIN_KEY'):
-                return "Access denied", 403
+            # Check if user is logged in
+            if not session.get('admin_logged_in'):
+                return flask.redirect('/admin/login')
             
-            # Get all toilets from database
-            toilets = self.load_markers()
-            
+            # User is logged in, show admin dashboard
             return send_from_directory('static/html', 'admin.html')
 
         @self.app.route('/api/toilets', methods=['GET'])
@@ -941,6 +938,33 @@ class Server:
         def delete_comment(comment_id):
             """Delete a comment by ID"""
             # Authentication and implementation similar to update_comment
+
+        @self.app.route('/admin/login', methods=['GET', 'POST'])
+        def admin_login():
+            """Handle admin login"""
+            if request.method == 'POST':
+                username = request.form.get('username')
+                password = request.form.get('password')
+                
+                # Check against environment variables
+                if username == os.environ.get('ADMIN_USER') and password == os.environ.get('ADMIN_PASSWORD'):
+                    # Set session variable to mark user as logged in
+                    session['admin_logged_in'] = True
+                    # Redirect to admin dashboard
+                    return flask.redirect('/admin')
+                else:
+                    # Render login form with error
+                    return flask.render_template('html/login.html', error='Invalid username or password')
+            
+            # For GET requests, just show the login form
+            return flask.render_template('html/login.html')
+
+        @self.app.route('/admin/logout')
+        def admin_logout():
+            """Handle admin logout"""
+            # Remove admin_logged_in from session
+            session.pop('admin_logged_in', None)
+            return flask.redirect('/admin/login')
 
     def add_marker_to_map(self, marker):
         """
