@@ -896,7 +896,7 @@ class Server:
             except sqlite3.Error as e:
                 return jsonify({"error": str(e)}), 500
 
-        @self.app.route('/api/comments/<int:comment_id>', methods['PUT'])
+        @self.app.route('/api/comments/<int:comment_id>', methods =['PUT'])
         def update_comment(comment_id):
             """Update a comment by ID"""
             # Simple authentication
