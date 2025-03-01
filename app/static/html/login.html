@@ -68,6 +68,7 @@
             color: #D32F2F;
             margin-bottom: 15px;
             text-align: center;
+            display: none; /* Ukryj domyślnie */
         }
     </style>
 </head>
@@ -75,11 +76,9 @@
     <div class="login-container">
         <h1>Admin Login</h1>
         
-        {% if error %}
-        <div class="error-message">
-            {{ error }}
+        <div id="errorMessage" class="error-message">
+            <!-- Treść błędu zostanie wstawiona przez JavaScript -->
         </div>
-        {% endif %}
         
         <form action="/admin/login" method="post">
             <div class="form-group">
@@ -95,5 +94,23 @@
             <button type="submit">Login</button>
         </form>
     </div>
+
+    <script>
+        // Funkcja do pobierania parametrów z URL
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        // Sprawdzenie czy jest parametr błędu w URL
+        const error = getUrlParameter('error');
+        if (error) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = error;
+            errorMessage.style.display = 'block';
+        }
+    </script>
 </body>
 </html>
