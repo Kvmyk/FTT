@@ -54,6 +54,10 @@
             background-color: #D32F2F;
             color: white;
         }
+        .comments-btn {
+            background-color: #2196F3;
+            color: white;
+        }
         .modal {
             display: none;
             position: fixed;
@@ -120,6 +124,23 @@
         }
         .close:hover {
             color: black;
+        }
+        .comment-card {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .comment-actions {
+            margin-top: 10px;
+            text-align: right;
         }
     </style>
 </head>
@@ -216,6 +237,31 @@
         </div>
     </div>
     
+    <!-- Comments Modal -->
+    <div id="commentsModal" class="modal">
+        <div class="modal-content" style="max-width: 700px">
+            <span class="close">&times;</span>
+            <h2>Comments for <span id="commentsToiletName"></span></h2>
+            <div id="commentsList"></div>
+            
+            <!-- Add new comment form -->
+            <h3>Add New Comment</h3>
+            <form id="addCommentForm">
+                <div class="form-group">
+                    <label for="newCommentText">Comment:</label>
+                    <textarea id="newCommentText" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="newCommentRating">Rating (1-10):</label>
+                    <input type="number" id="newCommentRating" min="1" max="10" required>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="save-btn">Add Comment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <script>
         // Global variables for toilet management
         let toilets = [];
@@ -290,6 +336,7 @@
                     <td class="actions">
                         <button class="edit-btn" data-name="${encodeURIComponent(toilet.name)}">Edit</button>
                         <button class="delete-btn" data-name="${encodeURIComponent(toilet.name)}">Delete</button>
+                        <button class="comments-btn" data-id="${toilet.id}">Comments</button>
                     </td>
                 `;
                 
@@ -303,6 +350,10 @@
             
             document.querySelectorAll('.delete-btn').forEach(button => {
                 button.addEventListener('click', openDeleteModal);
+            });
+
+            document.querySelectorAll('.comments-btn').forEach(button => {
+                button.addEventListener('click', showComments);
             });
         }
         

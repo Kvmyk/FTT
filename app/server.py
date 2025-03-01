@@ -896,7 +896,7 @@ class Server:
             except sqlite3.Error as e:
                 return jsonify({"error": str(e)}), 500
 
-        @self.app.route('/api/comments/<int:comment_id>', methods=['PUT'])
+        @self.app.route('/api/comments/<int:comment_id>', methods['PUT'])
         def update_comment(comment_id):
             """Update a comment by ID"""
             # Simple authentication
@@ -1040,6 +1040,134 @@ class Server:
                         conn.commit()
                         
                         # Reload markers
+                        self.markers = self.load_markers()
+                        self.original_markers = self.markers.copy()
+                        
+                        return jsonify({"success": True})
+            except sqlite3.Error as e:
+                return jsonify({"error": str(e)}), 500
+
+        @self.app.route('/api/add_comment', methods=['POST'])
+        def admin_add_comment():
+            """Admin endpoint to add a comment to a toilet"""
+            if not session.get('admin_logged_in'):
+                return jsonify({"error": "Access denied"}), 403
+            
+            toilet_id = request.form.get('toilet_id')
+            comment_text = request.form.get('comment')
+            rating = request.form.get('rating')
+            
+            try:
+                with closing(sqlite3.connect('data/toilets.db')) as conn:
+                    with closing(conn.cursor()) as cursor:
+                        # Add comment
+                        cursor.execute(
+                            'INSERT INTO comments (toilet_id, comment, rating) VALUES (?, ?, ?)',
+                            (toilet_id, comment_text, rating)
+                        )
+                        
+                        # Update toilet rating
+                        cursor.execute(
+                            'SELECT AVG(rating) FROM comments WHERE toilet_id = ?',
+                            (toilet_id,)
+                        )
+                        avg_comment_rating = cursor.fetchone()[0] or 0
+                        
+                        cursor.execute(
+                            'SELECT base_rating FROM toilets WHERE id = ?',
+                            (toilet_id,)
+                        )
+                        base_rating = cursor.fetchone()[0] or 0
+                        
+                        cursor.execute(
+                            'SELECT COUNT(*) FROM comments WHERE toilet_id = ?',
+                            (toilet_id,)
+                        )
+                        comment_count = cursor.fetchone()[0]
+                        
+                        # Calculate new rating
+                        computed_rating = (float(base_rating) + float(avg_comment_rating) * comment_count) / (1 + comment_count)
+                        
+                        # Update toilet rating
+                        cursor.execute(
+                            'UPDATE toilets SET rating = ? WHERE id = ?',
+                            (computed_rating, toilet_id)
+                        )
+                        
+                        conn.commit()
+                        
+                        # Reload markers after update
+                        self.markers = self.load_markers()
+                        self.original_markers = self.markers.copy()
+                        
+                        return jsonify({"success": True})
+            except sqlite3.Error as e:
+                return jsonify({"error": str(e)}), 500
+
+        @self.app.route('/api/delete_comment', methods=['POST'])
+        def admin_delete_comment():
+            """Delete a comment by toilet_id and comment index"""
+            if not session.get('admin_logged_in'):
+                return jsonify({"error": "Access denied"}), 403
+            
+            data = request.json
+            toilet_id = data.get('toilet_id')
+            comment_index = data.get('comment_index')
+            
+            try:
+                with closing(sqlite3.connect('data/toilets.db')) as conn:
+                    conn.row_factory = sqlite3.Row
+                    with closing(conn.cursor()) as cursor:
+                        # Get all comments for this toilet
+                        cursor.execute(
+                            'SELECT id FROM comments WHERE toilet_id = ? ORDER BY created_at',
+                            (toilet_id,)
+                        )
+                        comments = cursor.fetchall()
+                        
+                        if comment_index >= len(comments):
+                            return jsonify({"error": "Comment not found"}), 404
+                        
+                        # Get the comment ID to delete
+                        comment_id = comments[int(comment_index)]['id']
+                        
+                        # Delete the comment
+                        cursor.execute('DELETE FROM comments WHERE id = ?', (comment_id,))
+                        
+                        # Update the toilet's rating
+                        cursor.execute(
+                            'SELECT AVG(rating) FROM comments WHERE toilet_id = ?',
+                            (toilet_id,)
+                        )
+                        avg_comment_rating = cursor.fetchone()[0] or 0
+                        
+                        cursor.execute(
+                            'SELECT base_rating FROM toilets WHERE id = ?',
+                            (toilet_id,)
+                        )
+                        base_rating = cursor.fetchone()[0] or 0
+                        
+                        cursor.execute(
+                            'SELECT COUNT(*) FROM comments WHERE toilet_id = ?',
+                            (toilet_id,)
+                        )
+                        comment_count = cursor.fetchone()[0]
+                        
+                        # Calculate new rating
+                        if comment_count > 0:
+                            computed_rating = (float(base_rating) + float(avg_comment_rating) * comment_count) / (1 + comment_count)
+                        else:
+                            computed_rating = float(base_rating)
+                        
+                        # Update toilet rating
+                        cursor.execute(
+                            'UPDATE toilets SET rating = ? WHERE id = ?',
+                            (computed_rating, toilet_id)
+                        )
+                        
+                        conn.commit()
+                        
+                        # Reload markers after update
                         self.markers = self.load_markers()
                         self.original_markers = self.markers.copy()
                         
