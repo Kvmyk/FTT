@@ -9,11 +9,13 @@ import uuid
 import logging
 import threading
 import time
+import sqlite3
 from flask_session import Session
 from flask_compress import Compress
 from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text, is_hate_speech, isInOpoleProvince
 from dotenv import load_dotenv
+from contextlib import closing
 
 load_dotenv()
 
@@ -45,7 +47,10 @@ class Server:
         self.default_lat = 52.2297
         self.default_lon = 21.0122
 
-        # Ładujemy globalne markery z pliku data.json (toalety)
+        # Setup database
+        self.setup_database()
+        
+        # Ładujemy globalne markery z bazy danych (toalety)
         self.markers = self.load_markers()
         self.original_markers = self.markers.copy()  # Przechowujemy oryginalną listę markerów
 
@@ -53,6 +58,7 @@ class Server:
         self.m = None
 
         self.setup_routes()
+        self.setup_database()
     
     def start_cleanup_thread(self):
         if not self.cleanup_thread:
@@ -112,26 +118,86 @@ class Server:
 
 
     def load_markers(self):
-        """Wczytuje listę toalet (markerów) z pliku data.json."""
+        """Loads toilet markers from SQLite database."""
         try:
-            with open(os.path.join('data', 'data.json'), 'r', encoding='utf-8') as file:
-                data = json.load(file)
-                if isinstance(data, list):
-                    return data
-                else:
-                    logging.error("Plik data.json nie zawiera listy.")
-                    return []
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            logging.error(f"Problem z wczytaniem pliku data.json: {e}")
+            with closing(sqlite3.connect('data/toilets.db')) as conn:
+                conn.row_factory = sqlite3.Row  # This enables column access by name
+                with closing(conn.cursor()) as cursor:
+                    markers = []
+                    
+                    # Query all toilets
+                    cursor.execute('SELECT * FROM toilets')
+                    toilets = cursor.fetchall()
+                    
+                    for toilet in toilets:
+                        # Convert SQLite Row to dict
+                        marker = dict(toilet)
+                        
+                        # Convert boolean integers to Python booleans
+                        marker['payable'] = bool(marker['payable'])
+                        marker['onlyForClients'] = bool(marker['onlyForClients'])
+                        marker['forDisabled'] = bool(marker['forDisabled'])
+                        
+                        # Get comments for this toilet
+                        cursor.execute('SELECT comment, rating FROM comments WHERE toilet_id = ?', 
+                                      (toilet['id'],))
+                        comments = [dict(c) for c in cursor.fetchall()]
+                        if comments:
+                            marker['comments'] = comments
+                        
+                        markers.append(marker)
+                    
+                    return markers
+        except sqlite3.Error as e:
+            logging.error(f"SQLite error loading markers: {e}")
             return []
 
     def save_markers(self):
-        """Zapisuje obecne 'globalne' markery do pliku data.json."""
+        """Save markers to SQLite database."""
         try:
-            with open(os.path.join('data', 'data.json'), 'w', encoding='utf-8') as file:
-                json.dump(self.original_markers, file, ensure_ascii=False, indent=4)
-        except Exception as e:
-            logging.error(f"Błąd przy zapisie do data.json: {e}")
+            with closing(sqlite3.connect('data/toilets.db')) as conn:
+                with closing(conn.cursor()) as cursor:
+                    # For simplicity, we're recreating all data
+                    # In production, you'd want to do proper inserts/updates
+                    cursor.execute('DELETE FROM comments')
+                    cursor.execute('DELETE FROM toilets')
+                    
+                    for marker in self.original_markers:
+                        # Insert toilet record
+                        cursor.execute('''
+                        INSERT INTO toilets (lat, lon, name, description, payable, 
+                                            onlyForClients, forDisabled, rating, 
+                                            base_rating, photo)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (
+                            marker['lat'],
+                            marker['lon'],
+                            marker.get('name', 'Unknown'),
+                            marker.get('description', ''),
+                            1 if marker.get('payable', False) else 0,
+                            1 if marker.get('onlyForClients', False) else 0,
+                            1 if marker.get('forDisabled', False) else 0,
+                            self.safe_float(marker.get('rating', 0)),
+                            self.safe_float(marker.get('base_rating', 0)),
+                            marker.get('photo', None)
+                        ))
+                        
+                        toilet_id = cursor.lastrowid
+                        
+                        # Insert comments if any
+                        for comment in marker.get('comments', []):
+                            cursor.execute('''
+                            INSERT INTO comments (toilet_id, comment, rating)
+                            VALUES (?, ?, ?)
+                            ''', (
+                                toilet_id,
+                                comment.get('comment', ''),
+                                self.safe_float(comment.get('rating', 0))
+                            ))
+                    
+                    conn.commit()
+        except sqlite3.Error as e:
+            logging.error(f"SQLite error saving markers: {e}")
 
     def setup_routes(self):
         @self.app.route('/')
@@ -414,27 +480,62 @@ class Server:
             comment = data.get('comment')
             rating = data.get('rating')
 
-            for marker in self.markers:
-                if marker['lat'] == lat and marker['lon'] == lon:
-                    marker.setdefault('comments', []).append({'comment': comment, 'rating': rating})
-                    # Jeżeli nie zapisano jeszcze oryginalnej oceny, zachowujemy ją jako base_rating
-                    if 'base_rating' not in marker:
-                        marker['base_rating'] = marker.get('rating', rating)
-                    try:
-                        base_rating = float(marker.get('base_rating', 0))
-                    except ValueError:
-                        base_rating = 0
-                    comment_ratings = []
-                    for c in marker.get('comments', []):
-                        try:
-                            comment_ratings.append(float(c.get('rating', 0)))
-                        except ValueError:
-                            pass
-                    computed_rating = (base_rating + sum(comment_ratings)) / (1 + len(comment_ratings))
-                    # Zapisujemy uśrednioną ocenę w polu rating
-                    marker['rating'] = f"{computed_rating:.1f}"
-                    self.save_markers()
-                    return jsonify({'status': 'success'})
+            with closing(sqlite3.connect('data/toilets.db')) as conn:
+                with closing(conn.cursor()) as cursor:
+                    # Find the toilet by coordinates
+                    cursor.execute(
+                        'SELECT id, rating, base_rating FROM toilets WHERE lat = ? AND lon = ?',
+                        (lat, lon)
+                    )
+                    toilet = cursor.fetchone()
+                    
+                    if toilet:
+                        toilet_id, current_rating, base_rating = toilet
+                        
+                        # Insert comment
+                        cursor.execute(
+                            'INSERT INTO comments (toilet_id, comment, rating) VALUES (?, ?, ?)',
+                            (toilet_id, comment, rating)
+                        )
+                        
+                        # Update toilet rating
+                        cursor.execute(
+                            'SELECT AVG(rating) FROM comments WHERE toilet_id = ?',
+                            (toilet_id,)
+                        )
+                        avg_comment_rating = cursor.fetchone()[0] or 0
+                        
+                        if not base_rating:
+                            cursor.execute(
+                                'UPDATE toilets SET base_rating = ? WHERE id = ?',
+                                (current_rating or rating, toilet_id)
+                            )
+                            base_rating = current_rating or float(rating)
+                        
+                        # Get count of comments
+                        cursor.execute(
+                            'SELECT COUNT(*) FROM comments WHERE toilet_id = ?',
+                            (toilet_id,)
+                        )
+                        comment_count = cursor.fetchone()[0]
+                        
+                        # Calculate new rating
+                        computed_rating = (float(base_rating) + float(avg_comment_rating) * comment_count) / (1 + comment_count)
+                        
+                        # Update toilet rating
+                        cursor.execute(
+                            'UPDATE toilets SET rating = ? WHERE id = ?',
+                            (computed_rating, toilet_id)
+                        )
+                        
+                        conn.commit()
+                        
+                        # Update our in-memory markers
+                        self.markers = self.load_markers()
+                        self.original_markers = self.markers.copy()
+                        
+                        return jsonify({'status': 'success'})
+                    
             return jsonify({'status': 'error', 'message': 'Marker not found'}), 404
 
         @self.app.route('/navigate', methods=['POST'])
@@ -1162,6 +1263,40 @@ class Server:
             logging.error(f"Błąd podczas aktualizacji mapy: {e}")
             self.m = self.create_map()
             return self.m._repr_html_()
+
+    def setup_database(self):
+        """Initialize SQLite database and create tables if they don't exist"""
+        with closing(sqlite3.connect('data/toilets.db')) as conn:
+            with closing(conn.cursor()) as cursor:
+                # Create toilets table
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS toilets (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    lat REAL NOT NULL,
+                    lon REAL NOT NULL,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    payable BOOLEAN NOT NULL DEFAULT 0,
+                    onlyForClients BOOLEAN NOT NULL DEFAULT 0,
+                    forDisabled BOOLEAN NOT NULL DEFAULT 0,
+                    rating REAL DEFAULT 0,
+                    base_rating REAL DEFAULT 0,
+                    photo TEXT
+                )
+                ''')
+                
+                # Create comments table with foreign key to toilets
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS comments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    toilet_id INTEGER NOT NULL,
+                    comment TEXT NOT NULL,
+                    rating REAL NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (toilet_id) REFERENCES toilets (id) ON DELETE CASCADE
+                )
+                ''')
+                conn.commit()
 
     def runThePage(self):
         self.app.run(host = os.environ.get('SERVER_HOST'), port=os.environ.get('SERVER_PORT'))
