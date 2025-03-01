@@ -966,6 +966,87 @@ class Server:
             session.pop('admin_logged_in', None)
             return flask.redirect('/admin/login')
 
+        @self.app.route('/api/toilets/by-name/<string:name>', methods=['PUT'])
+        def update_toilet_by_name(name):
+            """Update a toilet by name"""
+            if not session.get('admin_logged_in'):
+                return jsonify({"error": "Access denied"}), 403
+            
+            data = request.json
+            
+            try:
+                with closing(sqlite3.connect('data/toilets.db')) as conn:
+                    with closing(conn.cursor()) as cursor:
+                        # Find the toilet by name
+                        cursor.execute('SELECT id FROM toilets WHERE name = ?', (name,))
+                        result = cursor.fetchone()
+                        if not result:
+                            return jsonify({"error": "Toilet not found"}), 404
+                        
+                        toilet_id = result[0]
+                        
+                        # Update the toilet
+                        cursor.execute('''
+                        UPDATE toilets SET 
+                            name = ?, 
+                            description = ?, 
+                            payable = ?,
+                            onlyForClients = ?,
+                            forDisabled = ?,
+                            rating = ?,
+                            base_rating = ?
+                        WHERE id = ?
+                        ''', (
+                            data.get('name', ''),
+                            data.get('description', ''),
+                            1 if data.get('payable', False) else 0,
+                            1 if data.get('onlyForClients', False) else 0,
+                            1 if data.get('forDisabled', False) else 0,
+                            self.safe_float(data.get('rating', 0)),
+                            self.safe_float(data.get('base_rating', 0)),
+                            toilet_id
+                        ))
+                        conn.commit()
+                        
+                        # Reload markers
+                        self.markers = self.load_markers()
+                        self.original_markers = self.markers.copy()
+                        
+                        return jsonify({"success": True})
+            except sqlite3.Error as e:
+                return jsonify({"error": str(e)}), 500
+
+        @self.app.route('/api/toilets/by-name/<string:name>', methods=['DELETE'])
+        def delete_toilet_by_name(name):
+            """Delete a toilet by name"""
+            if not session.get('admin_logged_in'):
+                return jsonify({"error": "Access denied"}), 403
+            
+            try:
+                with closing(sqlite3.connect('data/toilets.db')) as conn:
+                    with closing(conn.cursor()) as cursor:
+                        # Find the toilet by name
+                        cursor.execute('SELECT id FROM toilets WHERE name = ?', (name,))
+                        result = cursor.fetchone()
+                        if not result:
+                            return jsonify({"error": "Toilet not found"}), 404
+                        
+                        toilet_id = result[0]
+                        
+                        # Delete comments first
+                        cursor.execute('DELETE FROM comments WHERE toilet_id = ?', (toilet_id,))
+                        # Then delete the toilet
+                        cursor.execute('DELETE FROM toilets WHERE id = ?', (toilet_id,))
+                        conn.commit()
+                        
+                        # Reload markers
+                        self.markers = self.load_markers()
+                        self.original_markers = self.markers.copy()
+                        
+                        return jsonify({"success": True})
+            except sqlite3.Error as e:
+                return jsonify({"error": str(e)}), 500
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.

@@ -279,8 +279,8 @@
                     <td>${toilet.onlyForClients ? 'Yes' : 'No'}</td>
                     <td>${toilet.forDisabled ? 'Yes' : 'No'}</td>
                     <td class="actions">
-                        <button class="edit-btn" data-id="${toilet.id}">Edit</button>
-                        <button class="delete-btn" data-id="${toilet.id}">Delete</button>
+                        <button class="edit-btn" data-name="${encodeURIComponent(toilet.name)}">Edit</button>
+                        <button class="delete-btn" data-name="${encodeURIComponent(toilet.name)}">Delete</button>
                     </td>
                 `;
                 
@@ -299,13 +299,12 @@
         
         // Open the edit modal with toilet data
         function openEditModal() {
-            const toiletId = this.getAttribute('data-id');
-            currentToiletId = toiletId;
+            const toiletName = decodeURIComponent(this.getAttribute('data-name'));
+            currentToiletName = toiletName;
             
-            const toilet = toilets.find(t => t.id == toiletId);
+            const toilet = toilets.find(t => t.name === toiletName);
             
             if (toilet) {
-                document.getElementById('toiletId').value = toilet.id;
                 document.getElementById('name').value = toilet.name || '';
                 document.getElementById('description').value = toilet.description || '';
                 document.getElementById('rating').value = toilet.rating || 0;
@@ -320,22 +319,15 @@
         
         // Open the delete confirmation modal - poprawiona wersja
         function openDeleteModal() {
-            const toiletId = this.getAttribute('data-id');
-            console.log('Opening delete modal for toilet ID:', toiletId); // Dodaj debugowanie
+            const toiletName = decodeURIComponent(this.getAttribute('data-name'));
             
-            if (!toiletId) {
-                alert('Nie można usunąć: brak identyfikatora toalety');
+            if (!toiletName) {
+                alert('Nie można usunąć: brak nazwy toalety');
                 return;
             }
             
-            currentToiletId = toiletId;
+            currentToiletName = toiletName;
             deleteModal.style.display = 'block';
-            
-            // Set up the confirm delete button z zachowaniem ID
-            const id = toiletId; // Zapamiętaj ID w domknięciu
-            confirmDeleteBtn.onclick = function() {
-                deleteToilet(id);
-            };
         }
         
         // Update toilet data
@@ -352,11 +344,10 @@
                 forDisabled: document.getElementById('forDisabled').checked
             };
             
-            fetch(`/api/toilets/${currentToiletId}`, {
+            fetch(`/api/toilets/by-name/${encodeURIComponent(currentToiletName)}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
-                    // Usunięto X-Admin-Key
                 },
                 body: JSON.stringify(toiletData)
             })
