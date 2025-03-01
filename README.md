@@ -18,3 +18,14 @@
 - **Oceny i recenzje użytkowników** ⭐  
   Przeczytaj opinie innych użytkowników i dodaj własną ocenę po skorzystaniu z toalety.
 
+## Tech Stack
+
+**FindMyThrone** został zbudowany z wykorzystaniem następujących technologii:
+
+- **Język programowania**: Python 3.8 lub nowszy
+- **Framework webowy**: Flask
+- **Frontend**: HTML5, CSS3, JavaScript
+- **Baza danych**: SQLite
+- **Geokodowanie i geolokalizacja**: Nominatim
+- **Zarządzanie wersjami**: Git
+- **Hosting kodu źródłowego**: GitHub
