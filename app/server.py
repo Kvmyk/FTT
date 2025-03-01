@@ -807,6 +807,141 @@ class Server:
             
             return jsonify({'status': 'success'})
 
+        @self.app.route('/admin', methods=['GET'])
+        def admin_dashboard():
+            """Admin dashboard to manage toilets"""
+            # Simple authentication
+            password = request.args.get('key')
+            if password != os.environ.get('ADMIN_KEY'):
+                return "Access denied", 403
+            
+            # Get all toilets from database
+            toilets = self.load_markers()
+            
+            return send_from_directory('static/html', 'admin.html')
+
+        @self.app.route('/api/toilets', methods=['GET'])
+        def get_all_toilets():
+            """API endpoint to get all toilets as JSON"""
+            # Simple authentication
+            password = request.headers.get('X-Admin-Key')
+            if password != os.environ.get('ADMIN_KEY'):
+                return jsonify({"error": "Access denied"}), 403
+            
+            toilets = self.load_markers()
+            return jsonify(toilets)
+
+        @self.app.route('/api/toilets/<int:toilet_id>', methods=['DELETE'])
+        def delete_toilet(toilet_id):
+            """Delete a toilet by ID"""
+            # Simple authentication
+            password = request.headers.get('X-Admin-Key')
+            if password != os.environ.get('ADMIN_KEY'):
+                return jsonify({"error": "Access denied"}), 403
+            
+            try:
+                with closing(sqlite3.connect('data/toilets.db')) as conn:
+                    with closing(conn.cursor()) as cursor:
+                        # First delete comments associated with the toilet
+                        cursor.execute('DELETE FROM comments WHERE toilet_id = ?', (toilet_id,))
+                        # Then delete the toilet
+                        cursor.execute('DELETE FROM toilets WHERE id = ?', (toilet_id,))
+                        conn.commit()
+                        
+                        # Reload markers after deletion
+                        self.markers = self.load_markers()
+                        self.original_markers = self.markers.copy()
+                        
+                        return jsonify({"success": True})
+            except sqlite3.Error as e:
+                return jsonify({"error": str(e)}), 500
+
+        @self.app.route('/api/toilets/<int:toilet_id>', methods=['PUT'])
+        def update_toilet(toilet_id):
+            """Update toilet data"""
+            # Simple authentication
+            password = request.headers.get('X-Admin-Key')
+            if password != os.environ.get('ADMIN_KEY'):
+                return jsonify({"error": "Access denied"}), 403
+            
+            data = request.json
+            
+            try:
+                with closing(sqlite3.connect('data/toilets.db')) as conn:
+                    with closing(conn.cursor()) as cursor:
+                        cursor.execute('''
+                        UPDATE toilets SET 
+                            name = ?, 
+                            description = ?, 
+                            payable = ?,
+                            onlyForClients = ?,
+                            forDisabled = ?,
+                            rating = ?,
+                            base_rating = ?
+                        WHERE id = ?
+                        ''', (
+                            data.get('name', ''),
+                            data.get('description', ''),
+                            1 if data.get('payable', False) else 0,
+                            1 if data.get('onlyForClients', False) else 0,
+                            1 if data.get('forDisabled', False) else 0,
+                            self.safe_float(data.get('rating', 0)),
+                            self.safe_float(data.get('base_rating', 0)),
+                            toilet_id
+                        ))
+                        conn.commit()
+                        
+                        # Reload markers after update
+                        self.markers = self.load_markers()
+                        self.original_markers = self.markers.copy()
+                        
+                        return jsonify({"success": True})
+            except sqlite3.Error as e:
+                return jsonify({"error": str(e)}), 500
+
+        @self.app.route('/api/comments/<int:comment_id>', methods=['PUT'])
+        def update_comment(comment_id):
+            """Update a comment by ID"""
+            # Simple authentication
+            password = request.headers.get('X-Admin-Key')
+            if password != os.environ.get('ADMIN_KEY'):
+                return jsonify({"error": "Access denied"}), 403
+            
+            data = request.json
+            try:
+                with closing(sqlite3.connect('data/toilets.db')) as conn:
+                    with closing(conn.cursor()) as cursor:
+                        cursor.execute('''
+                        UPDATE comments SET comment = ?, rating = ?
+                        WHERE id = ?
+                        ''', (
+                            data.get('comment', ''),
+                            self.safe_float(data.get('rating', 0)),
+                            comment_id
+                        ))
+                        conn.commit()
+                        
+                        # Update associated toilet's rating
+                        cursor.execute('SELECT toilet_id FROM comments WHERE id = ?', (comment_id,))
+                        result = cursor.fetchone()
+                        if result:
+                            toilet_id = result[0]
+                            self.update_toilet_rating(toilet_id, cursor)
+                            conn.commit()
+                        
+                        # Reload markers
+                        self.markers = self.load_markers()
+                        self.original_markers = self.markers.copy()
+                        
+                        return jsonify({"success": True})
+            except sqlite3.Error as e:
+                return jsonify({"error": str(e)}), 500
+
+        @self.app.route('/api/comments/<int:comment_id>', methods=['DELETE'])
+        def delete_comment(comment_id):
+            """Delete a comment by ID"""
+            # Authentication and implementation similar to update_comment
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.
