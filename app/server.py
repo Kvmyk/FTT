@@ -414,6 +414,7 @@ class Server:
                     "payable": payable,
                     "onlyForClients": onlyForClients,
                     "rating": rating,
+                    "base_rating": rating,  # Dodaj tę linię, by base_rating było takie samo jak rating
                     "photo": photo_base64,
                     "forDisabled": forDisabled 
                 }
