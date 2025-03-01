@@ -1115,6 +1115,12 @@ class Server:
             comment_index = data.get('comment_index')
             
             try:
+                # Bezpieczna konwersja comment_index na liczbę całkowitą
+                try:
+                    comment_index = int(comment_index)
+                except (ValueError, TypeError):
+                    return jsonify({"error": "Invalid comment index"}), 400
+                    
                 with closing(sqlite3.connect('data/toilets.db')) as conn:
                     conn.row_factory = sqlite3.Row
                     with closing(conn.cursor()) as cursor:
