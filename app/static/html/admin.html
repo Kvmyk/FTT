@@ -217,10 +217,6 @@
     </div>
     
     <script>
-        // Store the admin key from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const adminKey = urlParams.get('key');
-        
         // Global variables for toilet management
         let toilets = [];
         let currentToiletId = null;
@@ -250,11 +246,7 @@
         
         // Load all toilets from the API
         function loadToilets() {
-            fetch('/api/toilets', {
-                headers: {
-                    'X-Admin-Key': adminKey
-                }
-            })
+            fetch('/api/toilets')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to load toilets');
@@ -379,10 +371,7 @@
         // Delete toilet
         function deleteToilet() {
             fetch(`/api/toilets/${currentToiletId}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-Admin-Key': adminKey
-                }
+                method: 'DELETE'
             })
             .then(response => {
                 if (!response.ok) {
