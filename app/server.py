@@ -15,6 +15,8 @@ from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text, is_hate_speech, isInOpoleProvince
 from dotenv import load_dotenv
 
+load_dotenv()
+
 logging.basicConfig(level=logging.DEBUG)
 
 # Ścieżka do pliku z ikoną (w katalogu static)
