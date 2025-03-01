@@ -1,8 +1,8 @@
 ![Logo](https://github.com/user-attachments/assets/0e239207-ddd5-41d8-b4e8-f0679e8e939b)
-# FindMyThrone 🚻
+# Find My Throne 🚻
 ## Opis
 
-**FindMyThrone** to aplikacja, która pomoże Ci szybko znaleźć najbliższą toaletę publiczną! 🚽 Niezależnie od tego, gdzie się znajdujesz, nasza aplikacja wskaże Ci najszybszą drogę do miejsca, gdzie możesz skorzystać z toalety.
+**Find My Throne** to aplikacja, która pomoże Ci szybko znaleźć najbliższą toaletę publiczną! 🚽 Niezależnie od tego, gdzie się znajdujesz, nasza aplikacja wskaże Ci najszybszą drogę do miejsca, gdzie możesz skorzystać z toalety.
 
 ## Funkcje
 
