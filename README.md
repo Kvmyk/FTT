@@ -83,10 +83,3 @@ Dzięki integracji modelu **MOP** z aplikacją **Find My Throne**, wszystkie tre
 - **Hosting kodu źródłowego**:  
   ![GitHub](https://img.shields.io/badge/GitHub-Repo-lightgrey)
 
-## Instalacja
-
-Aby uruchomić aplikację lokalnie:
-
-1. **Sklonuj repozytorium**:
-   ```bash
-   git clone https://github.com/Kvmyk/Find-My-Throne.git
