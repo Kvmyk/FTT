@@ -19,6 +19,10 @@
 - **Oceny i recenzje użytkowników** ⭐  
   Umożliwia przeglądanie opinii innych użytkowników oraz dodawanie własnych ocen po skorzystaniu z toalety.
 
+- **Monitorowanie treści użytkowników** 🛡️  
+  Dzięki integracji z modelem [**MOP**](https://github.com/Kvmyk/MOP) (Monitorowanie Obraźliwych Przekazów), aplikacja automatycznie filtruje obraźliwe lub nieodpowiednie treści w recenzjach i komentarzach, zapewniając przyjazne środowisko dla wszystkich użytkowników.
+
+
 ## Stos technologiczny
 
 **Find My Throne** został zbudowany z wykorzystaniem następujących technologii:
