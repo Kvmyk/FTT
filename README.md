@@ -3,7 +3,7 @@
 
 ## Opis
 
-**Find My Throne** to aplikacja, która pomaga szybko zlokalizować najbliższą toaletę publiczną! 🚽 Bez względu na Twoje położenie, nasza aplikacja wskaże Ci najszybszą drogę do najbliższego miejsca, gdzie możesz skorzystać z toalety.
+**Find My Throne** to strona internetowa, która pomaga szybko zlokalizować najbliższą toaletę publiczną! 🚽 Bez względu na Twoje położenie, nasza aplikacja wskaże Ci najszybszą drogę do najbliższego miejsca, gdzie możesz skorzystać z toalety.
 
 ## Funkcje
 
