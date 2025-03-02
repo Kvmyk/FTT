@@ -22,6 +22,36 @@
 - **Monitorowanie treści użytkowników** 🛡️  
   Dzięki integracji z modelem [**MOP**](https://github.com/Kvmyk/MOP) (Monitorowanie Obraźliwych Przekazów), aplikacja automatycznie filtruje obraźliwe lub nieodpowiednie treści w recenzjach i komentarzach, zapewniając przyjazne środowisko dla wszystkich użytkowników.
 
+## 🔹 Integracja z [MOP](https://github.com/Kvmyk/MOP)
+
+Aby zapewnić bezpieczne i przyjazne środowisko dla wszystkich użytkowników, **Find My Throne** integruje model [**MOP**](https://github.com/Kvmyk/MOP) (Monitorowanie Obraźliwych Przekazów). Model ten analizuje treści generowane przez użytkowników, takie jak recenzje i komentarze, w celu wykrycia i filtrowania obraźliwych lub nieodpowiednich treści.
+
+### 🔍 Cechy modelu MOP:
+
+- **Czyszczenie tekstu**: Usuwa niepotrzebne znaki i formatowania, aby zapewnić spójność danych wejściowych.
+- **Preprocessing**: Konwertuje tekst na małe litery i usuwa znaki specjalne, przygotowując dane do analizy.
+- **Kodowanie tekstu**: Przekształca słowa na indeksy za pomocą słownika słów, umożliwiając modelowi przetwarzanie danych tekstowych.
+- **Architektura modelu**: Wykorzystuje sieć LSTM do analizy sekwencji słów i klasyfikacji treści jako "hate" lub "neutral".
+- **Trening i walidacja**: Model jest trenowany z użyciem funkcji straty BCELoss i optymalizatora Adam, z zastosowaniem technik takich jak early stopping i regularyzacja L2, aby zapewnić wysoką precyzję i generalizację.
+- **API Flask**: Udostępnia interfejs API do analizy tekstu w czasie rzeczywistym, umożliwiając integrację z aplikacją **Find My Throne**.
+
+### 🔗 Przykład użycia API MOP:
+```bash
+curl -X POST http://localhost:5001/analyze -H "Content-Type: application/json" -d '{"text": "Twój tekst do analizy"}'
+```
+
+### 📩 Przykładowa odpowiedź:
+```json
+{
+  "text": "Twój tekst do analizy",
+  "label": "neutral",
+  "score": 0.3,
+  "confidence": 0.4
+}
+```
+
+Dzięki integracji modelu **MOP** z aplikacją **Find My Throne**, wszystkie treści generowane przez użytkowników są monitorowane i filtrowane pod kątem obraźliwych lub nieodpowiednich wypowiedzi, co przyczynia się do utrzymania przyjaznej atmosfery w społeczności użytkowników.
+
 
 ## Stos technologiczny
 
