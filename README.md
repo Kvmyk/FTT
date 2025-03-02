@@ -85,5 +85,4 @@ Dzięki integracji modelu **MOP** z aplikacją **Find My Throne**, wszystkie tre
 
 ## 📜 Licencja
 
-Ten projekt jest objęty licencją **GNU General Public License v3 (GPL-3.0)**. Więcej informacji znajdziesz w pliku [LICENSE](LICENSE) lub na stronie oficjalnej licencji:  
-[GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html).
+Ten projekt jest objęty licencją **GNU General Public License v3 (GPL-3.0)**. Więcej informacji znajdziesz w pliku [LICENSE](LICENSE) lub na stronie oficjalnej licencji: [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html). 
