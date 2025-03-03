@@ -205,7 +205,7 @@ html, body {
 
 #nearestPinInfo {
     position: fixed;
-    bottom: 20px;
+    bottom: 40px; /* Increased from 20px to make room for copyright footer */
     left: 50%;
     transform: translateX(-50%);
     background: white;
@@ -882,5 +882,13 @@ input[type="checkbox"],
 @media screen and (max-width: 768px) {
     .copyright-footer {
         font-size: 10px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    #nearestPinInfo {
+        bottom: 30px; /* Slightly less on mobile but still above copyright */
+        width: 80%; /* Wider on mobile for better readability */
+        padding: 8px 15px; /* Slightly smaller padding on mobile */
     }
 }
