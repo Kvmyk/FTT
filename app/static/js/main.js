@@ -334,11 +334,21 @@ function submitModal() {
         return;
     }
 
+    // Validate character limits
+    if (userInput.length > 512) {
+        alert('Nazwa toalety nie może przekraczać 512 znaków.');
+        return;
+    }
+
+    if (description.length > 512) {
+        alert('Opis toalety nie może przekraczać 512 znaków.');
+        return;
+    }
+
     // Validate rating
     if (!validateRating()) {
         return;
     }
-
 
     checkProfanity(description).then(data => {
         if (data.status === 'hate') {
@@ -417,6 +427,12 @@ function submitComment() {
 
     if (!comment || !rating) {
         alert('Wszystkie pola muszą być wypełnione.');
+        return;
+    }
+
+    // Check comment length
+    if (comment.length > 512) {
+        alert('Komentarz nie może przekraczać 512 znaków.');
         return;
     }
 
