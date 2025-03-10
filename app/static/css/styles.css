@@ -892,3 +892,93 @@ input[type="checkbox"],
         padding: 8px 15px; /* Slightly smaller padding on mobile */
     }
 }
+.leaflet-interactive {
+  pointer-events: auto;
+}
+
+.opening-hours-container {
+  margin: 15px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: #f9f9f9;
+}
+
+.days-selector {
+  display: flex;
+  margin-bottom: 12px;
+  overflow-x: auto;
+}
+
+.day-tab {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-right: 4px;
+}
+
+.day-tab.active {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #388E3C;
+}
+
+.time-inputs {
+  display: none;
+}
+
+.time-inputs.active {
+  display: block;
+}
+
+.hours-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hours-row label {
+  white-space: nowrap;
+}
+
+.hours-row input[type="time"] {
+  width: 120px;
+  padding: 8px;
+}
+
+.small-button {
+  padding: 6px 12px;
+  background-color: #e0e0e0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+  font-size: 0.9em;
+}
+
+.small-button:hover {
+  background-color: #d0d0d0;
+}
+
+.status-open {
+  color: #4CAF50;
+  font-weight: bold;
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: rgba(76, 175, 80, 0.1);
+  border: 1px solid #4CAF50;
+}
+
+.status-closed {
+  color: #F44336;
+  font-weight: bold;
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: rgba(244, 67, 54, 0.1);
+  border: 1px solid #F44336;
+}

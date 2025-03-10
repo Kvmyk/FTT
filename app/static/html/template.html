@@ -56,6 +56,36 @@
         <label><input type="checkbox" id="customersOnlyInput" name="onlyForClients">Tylko dla klientów</label>
         <label><input type="checkbox" id="disabilityInput" name="forDisabled">Dla niepełnosprawnych</label>
         <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10" required>
+        
+        <!-- Add opening hours fields -->
+        <div class="opening-hours-container">
+            <h4>Godziny otwarcia:</h4>
+            <div class="days-selector">
+                <button type="button" class="day-tab active" data-day="monday">Pn</button>
+                <button type="button" class="day-tab" data-day="tuesday">Wt</button>
+                <button type="button" class="day-tab" data-day="wednesday">Śr</button>
+                <button type="button" class="day-tab" data-day="thursday">Cz</button>
+                <button type="button" class="day-tab" data-day="friday">Pt</button>
+                <button type="button" class="day-tab" data-day="saturday">So</button>
+                <button type="button" class="day-tab" data-day="sunday">Nd</button>
+            </div>
+            
+            <div class="opening-hours-inputs">
+                <div class="time-inputs" id="monday-hours">
+                    <div class="hours-row">
+                        <label for="monday-open">Od:</label>
+                        <input type="time" id="monday-open" name="monday-open">
+                        <label for="monday-close">Do:</label>
+                        <input type="time" id="monday-close" name="monday-close">
+                        <label><input type="checkbox" id="monday-closed">Zamknięte</label>
+                    </div>
+                </div>
+                <!-- Other days will be shown/hidden via JS -->
+            </div>
+            
+            <button type="button" id="copy-to-all" class="small-button">Skopiuj do wszystkich dni</button>
+        </div>
+        
         <input type="file" id="photoInput" accept=".jpg,.png" multiple>
         <div id="imagePreviewContainer"></div>
         <label class="switch">

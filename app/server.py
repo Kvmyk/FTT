@@ -10,12 +10,14 @@ import logging
 import threading
 import time
 import sqlite3
+import datetime
 from flask_session import Session
 from flask_compress import Compress
 from flask import Flask, send_from_directory, jsonify, request, session
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text, is_hate_speech, isInOpoleProvince
 from dotenv import load_dotenv
 from contextlib import closing
+
 
 load_dotenv()
 
@@ -167,8 +169,8 @@ class Server:
                         cursor.execute('''
                         INSERT INTO toilets (lat, lon, name, description, payable, 
                                             onlyForClients, forDisabled, rating, 
-                                            base_rating, photo)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                            base_rating, photo, opening_time, closing_time)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ''', (
                             marker['lat'],
                             marker['lon'],
@@ -179,7 +181,9 @@ class Server:
                             1 if marker.get('forDisabled', False) else 0,
                             self.safe_float(marker.get('rating', 0)),
                             self.safe_float(marker.get('base_rating', 0)),
-                            marker.get('photo', None)
+                            marker.get('photo', None),
+                            marker.get('opening_time', None),
+                            marker.get('closing_time', None)
                         ))
                         
                         toilet_id = cursor.lastrowid
@@ -363,6 +367,7 @@ class Server:
             forDisabled = data.get('forDisabled', 'false').lower() == 'true'
             rating = data.get('rating', '0')
             useUserLocation = data.get('useUserLocation', 'false').lower() == 'true'
+            opening_hours = data.get('opening_hours', '{}')  # Get JSON string of opening hours
             photo = request.files.get('photos')  # może być None
             photo_base64 = None
             if photo:
@@ -416,7 +421,8 @@ class Server:
                     "rating": rating,
                     "base_rating": rating,  # Dodaj tę linię, by base_rating było takie samo jak rating
                     "photo": photo_base64,
-                    "forDisabled": forDisabled 
+                    "forDisabled": forDisabled,
+                    "opening_hours": opening_hours
                 }
                 self.markers.append(new_marker)
                 self.original_markers.append(new_marker)
@@ -1392,6 +1398,60 @@ class Server:
                         Dodaj komentarz
                     </button>
                 """
+                opening_hours_json = marker.get('opening_hours')
+                
+                # Determine if toilet is currently open
+                is_open = self.is_toilet_open(opening_hours_json)
+                status_html = ""
+                
+                # Format and display opening hours and status
+                if opening_hours_json:
+                    try:
+                        opening_hours = json.loads(opening_hours_json)
+                        days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                        day_names = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
+                        
+                        # Get current day for highlighting
+                        now = datetime.datetime.now()
+                        current_day = days[now.weekday()]
+                        
+                        # Start building opening hours HTML
+                        hours_html = "<div class='opening-hours-table'>"
+                        hours_html += "<h4>Godziny otwarcia:</h4>"
+                        hours_html += "<table style='width:100%; border-collapse: collapse;'>"
+                        
+                        for i, day in enumerate(days):
+                            day_hours = opening_hours.get(day, {})
+                            day_html = "<tr"
+                            
+                            # Highlight current day
+                            if day == current_day:
+                                day_html += " style='background-color: rgba(76, 175, 80, 0.1);'"
+                            
+                            day_html += ">"
+                            day_html += f"<td><strong>{day_names[i]}:</strong></td><td>"
+                            
+                            if day_hours.get('closed', False):
+                                day_html += "Zamknięte"
+                            elif 'open' in day_hours and 'close' in day_hours:
+                                day_html += f"{day_hours['open']} - {day_hours['close']}"
+                            else:
+                                day_html += "Brak danych"
+                            
+                            day_html += "</td></tr>"
+                            hours_html += day_html
+                        
+                        hours_html += "</table></div>"
+                        
+                        # Add current status
+                        status_class = "status-open" if is_open else "status-closed"
+                        status_text = "Otwarta" if is_open else "Zamknięta"
+                        status_html = f"{hours_html}<p><strong>Status:</strong> <span class='{status_class}'>{status_text}</span></p>"
+                        
+                    except json.JSONDecodeError:
+                        status_html = ""
+                
+                # Modify the wholePopUp variable to include the status_html
                 if not comments_list:
                     wholePopUp = f"""
                         <div style="width: 300px; max-height:300px, overflow-y: auto;">
@@ -1399,8 +1459,9 @@ class Server:
                             <p>{description}</p>
                             <p><strong>Płatna:</strong> {payable}</p>
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
-                            <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
+                            <p><strong>Dla niepełnosprawnych:</strong> {forDisabled}</p>
                             <p><strong>Ocena:</strong> {rating_display}</p>
+                            {status_html}
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
                             </div>
@@ -1418,6 +1479,7 @@ class Server:
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
                             <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
                             <p><strong>Ocena:</strong> {rating_display}</p>
+                            {status_html}
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
                             </div>
@@ -1643,7 +1705,7 @@ class Server:
         """Initialize SQLite database and create tables if they don't exist"""
         with closing(sqlite3.connect('data/toilets.db')) as conn:
             with closing(conn.cursor()) as cursor:
-                # Create toilets table
+                # Create toilets table with opening hours as JSON
                 cursor.execute('''
                 CREATE TABLE IF NOT EXISTS toilets (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1656,22 +1718,66 @@ class Server:
                     forDisabled BOOLEAN NOT NULL DEFAULT 0,
                     rating REAL DEFAULT 0,
                     base_rating REAL DEFAULT 0,
-                    photo TEXT
+                    photo TEXT,
+                    opening_hours TEXT
                 )
                 ''')
                 
-                # Create comments table with foreign key to toilets
-                cursor.execute('''
-                CREATE TABLE IF NOT EXISTS comments (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    toilet_id INTEGER NOT NULL,
-                    comment TEXT NOT NULL,
-                    rating REAL NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (toilet_id) REFERENCES toilets (id) ON DELETE CASCADE
-                )
-                ''')
+                # Rest of your existing code...
                 conn.commit()
+
+    def is_toilet_open(self, opening_hours_json):
+        """Check if a toilet is currently open based on opening hours"""
+        if not opening_hours_json:
+            return True  # If no hours specified, assume it's always open
+            
+        try:
+            # Parse the JSON string into a dictionary
+            opening_hours = json.loads(opening_hours_json)
+            
+            # Get current day of week (0 = Monday, 6 = Sunday in Python's datetime.weekday())
+            now = datetime.datetime.now()
+            days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+            current_day = days[now.weekday()]
+            
+            # Get hours for current day
+            day_hours = opening_hours.get(current_day, {})
+            
+            # Check if the toilet is marked as closed for today
+            if day_hours.get('closed', False):
+                return False
+            
+            # If no hours set for today, assume open
+            if not day_hours or 'open' not in day_hours or 'close' not in day_hours:
+                return True
+                
+            # Parse opening and closing times
+            open_time = day_hours['open']
+            close_time = day_hours['close']
+            
+            # Get current time
+            current_hour = now.hour
+            current_minute = now.minute
+            current_time_minutes = current_hour * 60 + current_minute
+            
+            # Parse opening and closing times
+            opening_hour, opening_minute = map(int, open_time.split(':'))
+            closing_hour, closing_minute = map(int, close_time.split(':'))
+            
+            # Convert to minutes for easier comparison
+            opening_time_minutes = opening_hour * 60 + opening_minute
+            closing_time_minutes = closing_hour * 60 + closing_minute
+            
+            # Check if current time is within opening hours
+            # Handle cases where closing time is on the next day (e.g., 22:00 - 06:00)
+            if closing_time_minutes < opening_time_minutes:
+                return current_time_minutes >= opening_time_minutes or current_time_minutes <= closing_time_minutes
+            else:
+                return opening_time_minutes <= current_time_minutes <= closing_time_minutes
+                
+        except (ValueError, TypeError, json.JSONDecodeError) as e:
+            logging.error(f"Error parsing opening hours: {e}")
+            return True  # Default to open if there's an error
 
     def runThePage(self):
         self.app.run(host = os.environ.get('SERVER_HOST'), port=os.environ.get('SERVER_PORT'))

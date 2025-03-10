@@ -324,13 +324,127 @@ function checkProfanity(text) {
 }
 
 function submitModal() {
-    const description = document.getElementById('descriptionInput').value;
     const userInput = document.getElementById('userInput').value;
+    const description = document.getElementById('descriptionInput').value;
+    const paid = document.getElementById('paidInput').checked;
+    const customersOnly = document.getElementById('customersOnlyInput').checked;
+    const forDisabled = document.getElementById('disabilityInput').checked;
     const rating = document.getElementById('ratingInput').value;
+    const useUserLocation = document.getElementById('useUserLocation').checked;
+    const openingTime = document.getElementById('openingTimeInput').value;
+    const closingTime = document.getElementById('closingTimeInput').value;
+    
+    const formData = new FormData();
+    formData.append('userInput', userInput);
+    formData.append('description', description);
+    formData.append('payable', paid);
+    formData.append('onlyForClients', customersOnly);
+    formData.append('forDisabled', forDisabled);
+    formData.append('rating', rating);
+    formData.append('useUserLocation', useUserLocation);
+    formData.append('opening_time', openingTime);
+    formData.append('closing_time', closingTime);
+    
+    // Add photos if selected
+    const photoInput = document.getElementById('photoInput');
+    if (photoInput.files.length > 0) {
+        formData.append('photos', photoInput.files[0]);
+    }
+    
+    // Rest of the submission code remains the same
+    checkProfanity(description).then(data => {
+        if (data.status === 'hate') {
+            alert('Opis zawiera mowę nienawiści i nie może zostać dodany.');
+            return;
+        }
 
+        // Kontynuuj dodawanie pina, jeśli opis jest neutralny
+        const useUserLocation = document.getElementById('useUserLocation').checked;
+        const userInput = document.getElementById('userInput').value;
+        const payable = document.getElementById('paidInput').checked;
+        const onlyForClients = document.getElementById('customersOnlyInput').checked;
+        const forDisabled = document.getElementById('disabilityInput').checked;
+        const rating = document.getElementById('ratingInput').value;
+        const photoInput = document.getElementById('photoInput').files;
+        const formData = new FormData();
+
+        formData.append('userInput', userInput);
+        formData.append('description', description);
+        formData.append('payable', payable);
+        formData.append('onlyForClients', onlyForClients);
+        formData.append('forDisabled', forDisabled);
+        formData.append('rating', rating);
+        formData.append('useUserLocation', useUserLocation);
+
+        for (var i = 0; i < photoInput.length; i++) {
+            var file = photoInput[i];
+            if (file.size > 5 * 1024 * 1024) { // 5 MB limit
+                alert('Rozmiar pliku nie może przekraczać 5 MB.');
+                return;
+            }
+            if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+                alert('Dozwolone są tylko pliki w formacie .jpg i .png.');
+                return;
+            }
+            formData.append('photos', file);
+        }
+
+        const openingTime = document.getElementById('openingTime').value;
+        const closingTime = document.getElementById('closingTime').value;
+        
+        // Add these values to your toilet data being sent to the server
+        // Example:
+        const toiletData = {
+            // existing fields...
+            openingTime: openingTime,
+            closingTime: closingTime
+        };
+
+        fetch('/submit', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('myModal').style.display = 'none';
+                window.location.reload();
+            } else {
+                console.error('Error:', data.message);
+            }
+        });
+    });
+}
+
+// Dodaj tę funkcję do obsługi godzin otwarcia i zamknięcia toalet
+function collectOpeningHours() {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const openingHours = {};
+    
+    days.forEach(day => {
+        const isClosed = document.getElementById(`${day}-closed`).checked;
+        if (isClosed) {
+            openingHours[day] = { closed: true };
+        } else {
+            const openTime = document.getElementById(`${day}-open`).value;
+            const closeTime = document.getElementById(`${day}-close`).value;
+            if (openTime && closeTime) {
+                openingHours[day] = { open: openTime, close: closeTime };
+            }
+        }
+    });
+    
+    return JSON.stringify(openingHours);
+}
+
+// Zaktualizuj funkcję submitModal, aby zbierała dane o godzinach otwarcia
+function submitModal() {
+    const userInput = document.getElementById('userInput').value;
+    const description = document.getElementById('descriptionInput').value;
+    
     // Check if required fields are filled
-    if (!userInput || !description || !rating) {
-        alert('Wszystkie pola (nazwa, opis i ocena) muszą być wypełnione.');
+    if (!userInput || !description) {
+        alert('Wszystkie pola (nazwa i opis) muszą być wypełnione.');
         return;
     }
 
@@ -358,14 +472,16 @@ function submitModal() {
 
         // Kontynuuj dodawanie pina, jeśli opis jest neutralny
         const useUserLocation = document.getElementById('useUserLocation').checked;
-        const userInput = document.getElementById('userInput').value;
         const payable = document.getElementById('paidInput').checked;
         const onlyForClients = document.getElementById('customersOnlyInput').checked;
         const forDisabled = document.getElementById('disabilityInput').checked;
         const rating = document.getElementById('ratingInput').value;
         const photoInput = document.getElementById('photoInput').files;
+        
+        // Zbierz dane o godzinach otwarcia ze wszystkich dni tygodnia
+        const opening_hours = collectOpeningHours();
+        
         const formData = new FormData();
-
         formData.append('userInput', userInput);
         formData.append('description', description);
         formData.append('payable', payable);
@@ -373,6 +489,7 @@ function submitModal() {
         formData.append('forDisabled', forDisabled);
         formData.append('rating', rating);
         formData.append('useUserLocation', useUserLocation);
+        formData.append('opening_hours', opening_hours);
 
         for (var i = 0; i < photoInput.length; i++) {
             var file = photoInput[i];
@@ -759,3 +876,221 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
         container.innerHTML = '';
     }
 });
+
+// Function to check if a toilet is currently open
+function isToiletOpen(openingTime, closingTime) {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    // Parse opening and closing times
+    const [openHour, openMinute] = openingTime.split(':').map(Number);
+    const [closeHour, closeMinute] = closingTime.split(':').map(Number);
+    
+    // Convert to minutes for easier comparison
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    const openTimeInMinutes = openHour * 60 + openMinute;
+    const closeTimeInMinutes = closeHour * 60 + closeMinute;
+    
+    return currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes <= closeTimeInMinutes;
+}
+
+// Function to display toilet status
+function displayToiletStatus(element, openingTime, closingTime) {
+    const statusElement = document.createElement('div');
+    const isOpen = isToiletOpen(openingTime, closingTime);
+    
+    statusElement.textContent = isOpen ? 'Otwarta' : 'Zamknięta';
+    statusElement.className = isOpen ? 'status-open' : 'status-closed';
+    
+    // Add opening hours information
+    const hoursElement = document.createElement('div');
+    hoursElement.textContent = `Godziny otwarcia: ${openingTime} - ${closingTime}`;
+    
+    element.appendChild(hoursElement);
+    element.appendChild(statusElement);
+}
+
+// Modify your existing submitModal function to include opening hours
+function submitModal() {
+    const description = document.getElementById('descriptionInput').value;
+    const userInput = document.getElementById('userInput').value;
+    const rating = document.getElementById('ratingInput').value;
+
+    // Check if required fields are filled
+    if (!userInput || !description || !rating) {
+        alert('Wszystkie pola (nazwa, opis i ocena) muszą być wypełnione.');
+        return;
+    }
+
+    // Validate character limits
+    if (userInput.length > 512) {
+        alert('Nazwa toalety nie może przekraczać 512 znaków.');
+        return;
+    }
+
+    if (description.length > 512) {
+        alert('Opis toalety nie może przekraczać 512 znaków.');
+        return;
+    }
+
+    // Validate rating
+    if (!validateRating()) {
+        return;
+    }
+
+    checkProfanity(description).then(data => {
+        if (data.status === 'hate') {
+            alert('Opis zawiera mowę nienawiści i nie może zostać dodany.');
+            return;
+        }
+
+        // Kontynuuj dodawanie pina, jeśli opis jest neutralny
+        const useUserLocation = document.getElementById('useUserLocation').checked;
+        const userInput = document.getElementById('userInput').value;
+        const payable = document.getElementById('paidInput').checked;
+        const onlyForClients = document.getElementById('customersOnlyInput').checked;
+        const forDisabled = document.getElementById('disabilityInput').checked;
+        const rating = document.getElementById('ratingInput').value;
+        const photoInput = document.getElementById('photoInput').files;
+        const formData = new FormData();
+
+        formData.append('userInput', userInput);
+        formData.append('description', description);
+        formData.append('payable', payable);
+        formData.append('onlyForClients', onlyForClients);
+        formData.append('forDisabled', forDisabled);
+        formData.append('rating', rating);
+        formData.append('useUserLocation', useUserLocation);
+
+        for (var i = 0; i < photoInput.length; i++) {
+            var file = photoInput[i];
+            if (file.size > 5 * 1024 * 1024) { // 5 MB limit
+                alert('Rozmiar pliku nie może przekraczać 5 MB.');
+                return;
+            }
+            if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+                alert('Dozwolone są tylko pliki w formacie .jpg i .png.');
+                return;
+            }
+            formData.append('photos', file);
+        }
+
+        const openingTime = document.getElementById('openingTime').value;
+        const closingTime = document.getElementById('closingTime').value;
+        
+        // Add these values to your toilet data being sent to the server
+        // Example:
+        const toiletData = {
+            // existing fields...
+            openingTime: openingTime,
+            closingTime: closingTime
+        };
+
+        fetch('/submit', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('myModal').style.display = 'none';
+                window.location.reload();
+            } else {
+                console.error('Error:', data.message);
+            }
+        });
+    });
+}
+
+// Update your code that displays toilet info on the map to include status
+function displayToiletInfo(toilet) {
+    // Existing code to display toilet info...
+    
+    // Add opening hours and status
+    if (toilet.openingTime && toilet.closingTime) {
+        displayToiletStatus(infoElement, toilet.openingTime, toilet.closingTime);
+    }
+}
+
+// Add this to the DOMContentLoaded event or create a new script section
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize opening hours tab functionality
+    setupOpeningHoursUI();
+});
+
+function setupOpeningHoursUI() {
+    // Create time input rows for all days of the week
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const dayNames = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'];
+    const container = document.querySelector('.opening-hours-inputs');
+    
+    // Monday is already in the HTML, create the rest
+    for (let i = 1; i < days.length; i++) {
+        const day = days[i];
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'time-inputs';
+        dayDiv.id = `${day}-hours`;
+        dayDiv.innerHTML = `
+            <div class="hours-row">
+                <label for="${day}-open">Od:</label>
+                <input type="time" id="${day}-open" name="${day}-open">
+                <label for="${day}-close">Do:</label>
+                <input type="time" id="${day}-close" name="${day}-close">
+                <label><input type="checkbox" id="${day}-closed">Zamknięte</label>
+            </div>
+        `;
+        container.appendChild(dayDiv);
+    }
+    
+    // Show Monday hours by default
+    document.getElementById('monday-hours').classList.add('active');
+    
+    // Day tab click handlers
+    document.querySelectorAll('.day-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs and inputs
+            document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.time-inputs').forEach(t => t.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding inputs
+            this.classList.add('active');
+            const day = this.getAttribute('data-day');
+            document.getElementById(`${day}-hours`).classList.add('active');
+        });
+    });
+    
+    // Copy to all days button
+    document.getElementById('copy-to-all').addEventListener('click', function() {
+        const activeDay = document.querySelector('.day-tab.active').getAttribute('data-day');
+        const openTime = document.getElementById(`${activeDay}-open`).value;
+        const closeTime = document.getElementById(`${activeDay}-close`).value;
+        const isClosed = document.getElementById(`${activeDay}-closed`).checked;
+        
+        days.forEach(day => {
+            if (day !== activeDay) {
+                document.getElementById(`${day}-open`).value = openTime;
+                document.getElementById(`${day}-close`).value = closeTime;
+                document.getElementById(`${day}-closed`).checked = isClosed;
+            }
+        });
+        
+        alert('Godziny skopiowane do wszystkich dni tygodnia!');
+    });
+    
+    // Handle closed checkbox
+    days.forEach(day => {
+        document.getElementById(`${day}-closed`).addEventListener('change', function() {
+            const openInput = document.getElementById(`${day}-open`);
+            const closeInput = document.getElementById(`${day}-close`);
+            
+            if (this.checked) {
+                openInput.disabled = true;
+                closeInput.disabled = true;
+            } else {
+                openInput.disabled = false;
+                closeInput.disabled = false;
+            }
+        });
+    });
+}
