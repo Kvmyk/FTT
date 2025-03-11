@@ -292,6 +292,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 
+// Toggle visibility of opening hours inputs based on 24/7 checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    const has24hAccess = document.getElementById('has24hAccess');
+    const openingHoursInputs = document.getElementById('opening-hours-inputs');
+    
+    if (has24hAccess && openingHoursInputs) {
+        has24hAccess.addEventListener('change', function() {
+            openingHoursInputs.style.display = this.checked ? 'none' : 'block';
+        });
+    }
+    
+    // Add copy functionality for opening hours
+    const copyButton = document.getElementById('copy-to-all-days');
+    if (copyButton) {
+        copyButton.addEventListener('click', function() {
+            const mondayOpen = document.getElementById('monday-open').value;
+            const mondayClose = document.getElementById('monday-close').value;
+            
+            if (!mondayOpen || !mondayClose) {
+                alert('Najpierw uzupełnij godziny dla poniedziałku');
+                return;
+            }
+            
+            const days = ['tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            days.forEach(day => {
+                document.getElementById(`${day}-open`).value = mondayOpen;
+                document.getElementById(`${day}-close`).value = mondayClose;
+            });
+        });
+    }
+});
+
 function validateRating() {
     const ratingInput = document.getElementById('ratingInput');
     const rating = parseInt(ratingInput.value, 10);
@@ -323,6 +355,8 @@ function checkProfanity(text) {
     .then(response => response.json());
 }
 
+// Update submitModal function to include opening hours
+
 function submitModal() {
     const description = document.getElementById('descriptionInput').value;
     const userInput = document.getElementById('userInput').value;
@@ -350,6 +384,12 @@ function submitModal() {
         return;
     }
 
+    // Collect opening hours data
+    const openingHours = collectOpeningHours();
+    if (openingHours === null) {
+        return; // Validation failed
+    }
+
     checkProfanity(description).then(data => {
         if (data.status === 'hate') {
             alert('Opis zawiera mowę nienawiści i nie może zostać dodany.');
@@ -373,6 +413,7 @@ function submitModal() {
         formData.append('forDisabled', forDisabled);
         formData.append('rating', rating);
         formData.append('useUserLocation', useUserLocation);
+        formData.append('openingHours', JSON.stringify(openingHours));
 
         for (var i = 0; i < photoInput.length; i++) {
             var file = photoInput[i];
@@ -398,6 +439,7 @@ function submitModal() {
                 window.location.reload();
             } else {
                 console.error('Error:', data.message);
+                alert(data.message || 'Wystąpił błąd podczas dodawania toalety.');
             }
         });
     });
@@ -759,3 +801,54 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
         container.innerHTML = '';
     }
 });
+
+// Add a helper function to collect opening hours data
+function collectOpeningHours() {
+    const has24hAccess = document.getElementById('has24hAccess').checked;
+    
+    if (has24hAccess) {
+        return {
+            is24h: true,
+            schedule: {}
+        };
+    }
+    
+    const schedule = {};
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    
+    let isValid = true;
+    let hasAnyHours = false;
+    
+    days.forEach(day => {
+        const openTime = document.getElementById(`${day}-open`).value;
+        const closeTime = document.getElementById(`${day}-close`).value;
+        
+        if ((openTime && !closeTime) || (!openTime && closeTime)) {
+            alert(`Dla ${day} musisz podać zarówno godzinę otwarcia, jak i zamknięcia`);
+            isValid = false;
+            return;
+        }
+        
+        if (openTime && closeTime) {
+            schedule[day] = { open: openTime, close: closeTime };
+            hasAnyHours = true;
+        }
+    });
+    
+    if (!hasAnyHours && !isValid) {
+        return null;
+    }
+    
+    // If no hours provided, assume it's always closed
+    if (!hasAnyHours) {
+        return {
+            is24h: false,
+            schedule: {}
+        };
+    }
+    
+    return {
+        is24h: false,
+        schedule: schedule
+    };
+}

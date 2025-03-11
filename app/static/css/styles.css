@@ -892,3 +892,58 @@ input[type="checkbox"],
         padding: 8px 15px; /* Slightly smaller padding on mobile */
     }
 }
+
+/* Add to the end of the file */
+.opening-hours-container {
+    margin: 15px 0;
+    width: 85%;
+}
+
+.opening-hours-container h3 {
+    margin-bottom: 10px;
+    font-weight: 400;
+}
+
+.opening-hours-toggle {
+    margin-bottom: 10px;
+}
+
+.day-hours {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.day-hours label {
+    width: 100px;
+    display: inline-block;
+}
+
+.day-hours input[type="time"] {
+    width: 110px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.day-hours span {
+    margin: 0 10px;
+}
+
+#copy-to-all-days {
+    margin-top: 10px;
+    background-color: #666;
+    width: auto;
+    font-size: 14px;
+    padding: 8px 15px;
+}
+
+.status-open {
+    color: #2e7d32;
+    font-weight: bold;
+}
+
+.status-closed {
+    color: #d32f2f;
+    font-weight: bold;
+}

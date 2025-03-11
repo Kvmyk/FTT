@@ -55,6 +55,57 @@
         <label><input type="checkbox" id="paidInput" name="payable">Płatna</label>
         <label><input type="checkbox" id="customersOnlyInput" name="onlyForClients">Tylko dla klientów</label>
         <label><input type="checkbox" id="disabilityInput" name="forDisabled">Dla niepełnosprawnych</label>
+        <div class="opening-hours-container">
+            <h3>Godziny otwarcia</h3>
+            <div class="opening-hours-toggle">
+                <label><input type="checkbox" id="has24hAccess"> Otwarte całą dobę (24/7)</label>
+            </div>
+            <div id="opening-hours-inputs">
+                <div class="day-hours">
+                    <label>Poniedziałek:</label>
+                    <input type="time" id="monday-open" placeholder="Otwarcie">
+                    <span>-</span>
+                    <input type="time" id="monday-close" placeholder="Zamknięcie">
+                </div>
+                <div class="day-hours">
+                    <label>Wtorek:</label>
+                    <input type="time" id="tuesday-open" placeholder="Otwarcie">
+                    <span>-</span>
+                    <input type="time" id="tuesday-close" placeholder="Zamknięcie">
+                </div>
+                <div class="day-hours">
+                    <label>Środa:</label>
+                    <input type="time" id="wednesday-open" placeholder="Otwarcie">
+                    <span>-</span>
+                    <input type="time" id="wednesday-close" placeholder="Zamknięcie">
+                </div>
+                <div class="day-hours">
+                    <label>Czwartek:</label>
+                    <input type="time" id="thursday-open" placeholder="Otwarcie">
+                    <span>-</span>
+                    <input type="time" id="thursday-close" placeholder="Zamknięcie">
+                </div>
+                <div class="day-hours">
+                    <label>Piątek:</label>
+                    <input type="time" id="friday-open" placeholder="Otwarcie">
+                    <span>-</span>
+                    <input type="time" id="friday-close" placeholder="Zamknięcie">
+                </div>
+                <div class="day-hours">
+                    <label>Sobota:</label>
+                    <input type="time" id="saturday-open" placeholder="Otwarcie">
+                    <span>-</span>
+                    <input type="time" id="saturday-close" placeholder="Zamknięcie">
+                </div>
+                <div class="day-hours">
+                    <label>Niedziela:</label>
+                    <input type="time" id="sunday-open" placeholder="Otwarcie">
+                    <span>-</span>
+                    <input type="time" id="sunday-close" placeholder="Zamknięcie">
+                </div>
+                <button type="button" id="copy-to-all-days">Skopiuj poniedziałek do wszystkich dni</button>
+            </div>
+        </div>
         <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10" required>
         <input type="file" id="photoInput" accept=".jpg,.png" multiple>
         <div id="imagePreviewContainer"></div>
