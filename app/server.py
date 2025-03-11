@@ -435,10 +435,10 @@ class Server:
                     "base_rating": rating,  # Dodaj tę linię, by base_rating było takie samo jak rating
                     "photo": photo_base64,
                     "forDisabled": forDisabled,
-                    'weekday_open': data.get('weekdayOpenTime', ''),
-                    'weekday_close': data.get('weekdayCloseTime', ''),
-                    'weekend_open': data.get('weekendOpenTime', ''),
-                    'weekend_close': data.get('weekendCloseTime', '')
+                    'weekday_open': data.get('weekday_open', ''),
+                    'weekday_close': data.get('weekday_close', ''),
+                    'weekend_open': data.get('weekend_open', ''),
+                    'weekend_close': data.get('weekend_close', '')
                 }
                 self.markers.append(new_marker)
                 self.original_markers.append(new_marker)
