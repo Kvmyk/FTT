@@ -959,75 +959,103 @@ input[type="checkbox"],
 .opening-hours-container h3 {
     margin-top: 0;
     margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.opening-hours-container h4 {
+    margin: 12px 0 8px 0;
+    font-size: 16px;
+    color: #555;
+}
+
+.hours-section {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
 }
 
 .day-hours {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
     margin-bottom: 10px;
     padding-bottom: 8px;
-    border-bottom: 1px solid #eee;
-}
-
-.day-hours label {
-    font-weight: bold;
-    margin-right: 10px;
-    min-width: 100px;
 }
 
 .day-hours input[type="time"] {
-    padding: 8px;
-    margin: 5px;
+    padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 16px; /* Zapobiega zoom na iOS */
+    width: 45%;
+    max-width: 150px;
+}
+
+.day-hours span {
+    margin: 0 10px;
+    font-weight: bold;
+}
+
+.custom-hours-toggle {
+    margin: 15px 0;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+}
+
+.custom-hours-toggle label {
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+}
+
+.custom-hours-toggle input[type="checkbox"] {
+    margin-right: 8px;
 }
 
 /* Mobilna responsywność dla godzin otwarcia */
 @media screen and (max-width: 768px) {
-    .day-hours {
-        flex-direction: column;
-        align-items: flex-start;
+    .hours-section {
         padding: 10px;
-        background-color: #f9f9f9;
-        border-radius: 8px;
-        margin-bottom: 12px;
     }
-
-    .day-hours label {
-        margin-bottom: 8px;
-        font-size: 16px;
-        display: block;
-        width: 100%;
+    
+    .day-hours {
+        flex-direction: row;
+        flex-wrap: wrap;
     }
-
-    .day-hours span {
-        margin: 8px 0;
-    }
-
+    
     .day-hours input[type="time"] {
-        width: 100%;
-        max-width: none;
+        width: 45%;
+        height: 44px;
         margin: 5px 0;
-        height: 40px;
-        font-size: 16px;
     }
     
-    #copy-to-all-days {
-        width: 100%;
-        margin-top: 15px;
-        padding: 12px;
-        font-size: 16px;
-        background-color: #f0f0f0;
-        border: 1px solid #ddd;
-        border-radius: 4px;
+    .day-hours span {
+        width: 10%;
+        text-align: center;
+        margin: 0;
     }
     
-    .opening-hours-toggle label {
+    .custom-hours-toggle label {
         font-size: 16px;
         padding: 8px 0;
-        display: block;
+    }
+    
+    /* Style dla indywidualnych dni w trybie niestandardowym */
+    #custom-hours .day-hours {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    #custom-hours .day-hours label {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    
+    #custom-hours .day-hours input[type="time"] {
+        width: 100%;
+        max-width: none;
     }
 }
 

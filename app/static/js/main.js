@@ -759,3 +759,67 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
         container.innerHTML = '';
     }
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Obsługa przełącznika niestandardowych godzin
+    const customHoursToggle = document.getElementById('use-custom-hours');
+    const customHoursSection = document.getElementById('custom-hours');
+    
+    if (customHoursToggle && customHoursSection) {
+        customHoursToggle.addEventListener('change', function() {
+            customHoursSection.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+    
+    // Obsługa przełącznika 24/7
+    const has24hToggle = document.getElementById('has24hAccess');
+    const hoursInputs = document.getElementById('opening-hours-inputs');
+    
+    if (has24hToggle && hoursInputs) {
+        has24hToggle.addEventListener('change', function() {
+            const disableInputs = this.checked;
+            hoursInputs.querySelectorAll('input[type="time"]').forEach(input => {
+                input.disabled = disableInputs;
+            });
+            document.getElementById('use-custom-hours').disabled = disableInputs;
+        });
+    }
+     
+    // Funkcjonalność kopiowania godzin dla dni tygodnia
+    document.getElementById('weekday-open').addEventListener('change', function() {
+        if (!document.getElementById('use-custom-hours').checked) {
+            const value = this.value;
+            ['monday-open', 'tuesday-open', 'wednesday-open', 'thursday-open', 'friday-open'].forEach(id => {
+                document.getElementById(id).value = value;
+            });
+        }
+    });
+    
+    document.getElementById('weekday-close').addEventListener('change', function() {
+        if (!document.getElementById('use-custom-hours').checked) {
+            const value = this.value;
+            ['monday-close', 'tuesday-close', 'wednesday-close', 'thursday-close', 'friday-close'].forEach(id => {
+                document.getElementById(id).value = value;
+            });
+        }
+    });
+    
+    // Funkcjonalność kopiowania godzin dla weekendów
+    document.getElementById('weekend-open').addEventListener('change', function() {
+        if (!document.getElementById('use-custom-hours').checked) {
+            const value = this.value;
+            ['saturday-open', 'sunday-open'].forEach(id => {
+                document.getElementById(id).value = value;
+            });
+        }
+    });
+    
+    document.getElementById('weekend-close').addEventListener('change', function() {
+        if (!document.getElementById('use-custom-hours').checked) {
+            const value = this.value;
+            ['saturday-close', 'sunday-close'].forEach(id => {
+                document.getElementById(id).value = value;
+            });
+        }
+    });
+});
