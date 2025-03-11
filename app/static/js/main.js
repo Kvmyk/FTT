@@ -540,24 +540,21 @@ function navigateToToilet(targetLat, targetLon) {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    // Stop tracking if it's enabled
                     if (trackingEnabled) {
+                        // If tracking is enabled, just restart tracking
                         stopIntelligentTracking();
-                    }
-                    
-                    // Continue with navigation logic
-                    if (data.status === 'success') {
-                        return fetch('/render_map');
+                        startIntelligentTracking();
+                    } else {
+                        // Continue with the rest of the navigation logic
+                        if (data.status === 'success') {
+                            return fetch('/render_map');
+                        }
                     }
                 })
-                .then(response => response ? response.text() : null)
+                .then(response => response && !trackingEnabled ? response.text() : null)
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
-                        // Restart tracking here, after map is updated
-                        if (trackingEnabled) {
-                            startIntelligentTracking();
-                        }
                         // Dodatkowy fetch do /navigate_toilet_distance
                         return fetch('/navigate_toilet_distance', {
                             method: 'POST',
