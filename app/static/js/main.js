@@ -526,6 +526,12 @@ function navigateToToilet(targetLat, targetLon) {
                     return;
                 }
 
+                // Pokaż informację "Trasa jest obliczana..."
+                const nearestPinInfo = document.getElementById('nearestPinInfo');
+                const nearestPinText = document.getElementById('nearestPinText');
+                nearestPinText.innerText = "Trasa jest obliczana...";
+                nearestPinInfo.classList.add('show');
+
                 fetch('/navigate', {
                     method: 'POST',
                     headers: {
@@ -540,22 +546,22 @@ function navigateToToilet(targetLat, targetLon) {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (trackingEnabled) {
-                        // If tracking is enabled, just restart tracking
-                        stopIntelligentTracking();
-                        startIntelligentTracking();
-                    } else {
-                        // Continue with the rest of the navigation logic
-                        if (data.status === 'success') {
-                            return fetch('/render_map');
-                        }
+                    if (data.status === 'success') {
+                        // Zawsze renderuj mapę, niezależnie od tego czy śledzenie jest włączone
+                        return fetch('/render_map');
                     }
                 })
-                .then(response => response && !trackingEnabled ? response.text() : null)
+                .then(response => response ? response.text() : null)
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
-                        // Dodatkowy fetch do /navigate_toilet_distance
+                        
+                        // Po odświeżeniu mapy, możemy zrestartować śledzenie lub pobrać informacje o odległości
+                        if (trackingEnabled) {
+                            stopIntelligentTracking();
+                            startIntelligentTracking();
+                        }
+                        
                         return fetch('/navigate_toilet_distance', {
                             method: 'POST',
                             headers: {
