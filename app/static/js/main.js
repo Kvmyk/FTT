@@ -506,9 +506,6 @@ function navigateToToilet(targetLat, targetLon) {
     // Zapisz nowy cel w localStorage
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
-
-    // Jeśli śledzenie jest włączone, zrestartuj je z nowym celem
-    const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
     
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -532,6 +529,7 @@ function navigateToToilet(targetLat, targetLon) {
                 nearestPinText.innerText = "Trasa jest obliczana...";
                 nearestPinInfo.classList.add('show');
 
+                // Najpierw nawiguj do toalety
                 fetch('/navigate', {
                     method: 'POST',
                     headers: {
@@ -547,21 +545,25 @@ function navigateToToilet(targetLat, targetLon) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // Zawsze renderuj mapę, niezależnie od tego czy śledzenie jest włączone
+                        // ZAWSZE odśwież mapę - to jest kluczowa zmiana
                         return fetch('/render_map');
                     }
                 })
                 .then(response => response ? response.text() : null)
                 .then(html => {
                     if (html) {
+                        // Aktualizuj mapę w interfejsie
                         document.getElementById('map').innerHTML = html;
                         
-                        // Po odświeżeniu mapy, możemy zrestartować śledzenie lub pobrać informacje o odległości
+                        // PO aktualizacji mapy ewentualnie restartuj śledzenie
+                        const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
                         if (trackingEnabled) {
+                            // Zatrzymaj i uruchom ponownie śledzenie, ale dopiero po odświeżeniu mapy
                             stopIntelligentTracking();
                             startIntelligentTracking();
                         }
                         
+                        // Pobierz informacje o odległości do toalety
                         return fetch('/navigate_toilet_distance', {
                             method: 'POST',
                             headers: {
