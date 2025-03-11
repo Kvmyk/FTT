@@ -441,7 +441,7 @@ class Server:
                 if 'photos' in request.files:
                     photo_files = request.files.getlist('photos')
                     for file in photo_files:
-                        if file and allowed_file(file.filename):
+                        if file and self.allowed_file(file.filename):
                             # Convert to base64 for storage
                             file_data = file.read()
                             encoded_string = base64.b64encode(file_data).decode('utf-8')
