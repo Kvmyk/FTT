@@ -10,7 +10,6 @@ import logging
 import threading
 import time
 import sqlite3
-import datetime
 from flask_session import Session
 from flask_compress import Compress
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -122,53 +121,33 @@ class Server:
         """Loads toilet markers from SQLite database."""
         try:
             with closing(sqlite3.connect('data/toilets.db')) as conn:
-                conn.row_factory = sqlite3.Row
+                conn.row_factory = sqlite3.Row  # This enables column access by name
                 with closing(conn.cursor()) as cursor:
-                    # Fetch all toilets
-                    cursor.execute('''
-                    SELECT * FROM toilets
-                    ''')
+                    markers = []
                     
-                    toilets = []
-                    for row in cursor.fetchall():
-                        toilet = {
-                            'lat': row['lat'],
-                            'lon': row['lon'],
-                            'name': row['name'],
-                            'description': row['description'],
-                            'payable': bool(row['payable']),
-                            'onlyForClients': bool(row['onlyForClients']),
-                            'forDisabled': bool(row['forDisabled']),
-                            'rating': row['rating'],
-                            'base_rating': row['base_rating'],
-                            'photo': row['photo'],
-                            'weekday_open': row['weekday_open'],
-                            'weekday_close': row['weekday_close'],
-                            'weekday_closed': bool(row['weekday_closed']),
-                            'weekend_open': row['weekend_open'],
-                            'weekend_close': row['weekend_close'],
-                            'weekend_closed': bool(row['weekend_closed'])
-                        }
-                        
-                        # Fetch comments for this toilet
-                        cursor.execute('''
-                        SELECT * FROM comments
-                        WHERE toilet_id = ?
-                        ORDER BY created_at DESC
-                        ''', (row['id'],))
-                        
-                        comments = []
-                        for comment_row in cursor.fetchall():
-                            comment = {
-                                'comment': comment_row['comment'],
-                                'rating': comment_row['rating']
-                            }
-                            comments.append(comment)
-                        
-                        toilet['comments'] = comments
-                        toilets.append(toilet)
+                    # Query all toilets
+                    cursor.execute('SELECT * FROM toilets')
+                    toilets = cursor.fetchall()
                     
-                    return toilets
+                    for toilet in toilets:
+                        # Convert SQLite Row to dict
+                        marker = dict(toilet)
+                        
+                        # Convert boolean integers to Python booleans
+                        marker['payable'] = bool(marker['payable'])
+                        marker['onlyForClients'] = bool(marker['onlyForClients'])
+                        marker['forDisabled'] = bool(marker['forDisabled'])
+                        
+                        # Get comments for this toilet
+                        cursor.execute('SELECT comment, rating FROM comments WHERE toilet_id = ?', 
+                                      (toilet['id'],))
+                        comments = [dict(c) for c in cursor.fetchall()]
+                        if comments:
+                            marker['comments'] = comments
+                        
+                        markers.append(marker)
+                    
+                    return markers
         except sqlite3.Error as e:
             logging.error(f"SQLite error loading markers: {e}")
             return []
@@ -179,19 +158,17 @@ class Server:
             with closing(sqlite3.connect('data/toilets.db')) as conn:
                 with closing(conn.cursor()) as cursor:
                     # For simplicity, we're recreating all data
+                    # In production, you'd want to do proper inserts/updates
                     cursor.execute('DELETE FROM comments')
                     cursor.execute('DELETE FROM toilets')
                     
                     for marker in self.original_markers:
-                        # Insert toilet record with opening hours
+                        # Insert toilet record
                         cursor.execute('''
-                        INSERT INTO toilets (
-                            lat, lon, name, description, payable, 
-                            onlyForClients, forDisabled, rating, 
-                            base_rating, photo, weekday_open, weekday_close,
-                            weekday_closed, weekend_open, weekend_close, weekend_closed
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO toilets (lat, lon, name, description, payable, 
+                                            onlyForClients, forDisabled, rating, 
+                                            base_rating, photo)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ''', (
                             marker['lat'],
                             marker['lon'],
@@ -202,16 +179,21 @@ class Server:
                             1 if marker.get('forDisabled', False) else 0,
                             self.safe_float(marker.get('rating', 0)),
                             self.safe_float(marker.get('base_rating', 0)),
-                            marker.get('photo', None),
-                            marker.get('weekday_open', ''),
-                            marker.get('weekday_close', ''),
-                            1 if marker.get('weekday_closed', False) else 0,
-                            marker.get('weekend_open', ''),
-                            marker.get('weekend_close', ''),
-                            1 if marker.get('weekend_closed', False) else 0
+                            marker.get('photo', None)
                         ))
                         
-                        # Dalszy kod dla komentarzy...
+                        toilet_id = cursor.lastrowid
+                        
+                        # Insert comments if any
+                        for comment in marker.get('comments', []):
+                            cursor.execute('''
+                            INSERT INTO comments (toilet_id, comment, rating)
+                            VALUES (?, ?, ?)
+                            ''', (
+                                toilet_id,
+                                comment.get('comment', ''),
+                                self.safe_float(comment.get('rating', 0))
+                            ))
                     
                     conn.commit()
         except sqlite3.Error as e:
@@ -424,12 +406,6 @@ class Server:
                 computed_rating = (base_rating + sum(comment_ratings)) / (1 + len(comment_ratings))
                 existing_marker['rating'] = f"{computed_rating:.1f}"
             else:
-                weekday_closed = data.get('weekday_closed', 'false').lower() == 'true'
-                weekday_open = data.get('weekday_open', '')
-                weekday_close = data.get('weekday_close', '')
-                weekend_closed = data.get('weekend_closed', 'false').lower() == 'true'
-                weekend_open = data.get('weekend_open', '')
-                weekend_close = data.get('weekend_close', '')
                 new_marker = {
                     "lat": lat,
                     "lon": lon,
@@ -437,16 +413,10 @@ class Server:
                     "description": description,
                     "payable": payable,
                     "onlyForClients": onlyForClients,
-                    "forDisabled": forDisabled,
                     "rating": rating,
                     "base_rating": rating,  # Dodaj tę linię, by base_rating było takie samo jak rating
                     "photo": photo_base64,
-                    "weekday_closed": weekday_closed,
-                    "weekday_open": weekday_open,
-                    "weekday_close": weekday_close,
-                    "weekend_closed": weekend_closed,
-                    "weekend_open": weekend_open,
-                    "weekend_close": weekend_close
+                    "forDisabled": forDisabled 
                 }
                 self.markers.append(new_marker)
                 self.original_markers.append(new_marker)
@@ -1422,45 +1392,6 @@ class Server:
                         Dodaj komentarz
                     </button>
                 """
-                # Sprawdź czy toaleta jest otwarta
-                is_open = self.is_toilet_open(marker)
-                status_class = "status-open" if is_open else "status-closed"
-                status_text = "Otwarta" if is_open else "Zamknięta"
-
-                # Przygotuj HTML dla statusu
-                status_html = f"""
-                    <p><strong>Status:</strong> <span class="{status_class}">{status_text}</span></p>
-                """
-
-                # Przygotuj HTML dla godzin otwarcia
-                opening_hours_html = ""
-                weekday_closed = marker.get('weekday_closed', False)
-                weekend_closed = marker.get('weekend_closed', False)
-                weekday_open = marker.get('weekday_open', '')
-                weekday_close = marker.get('weekday_close', '')
-                weekend_open = marker.get('weekend_open', '')
-                weekend_close = marker.get('weekend_close', '')
-
-                opening_hours_html += "<p><strong>Godziny otwarcia:</strong></p>"
-                opening_hours_html += "<ul style='margin-top: 5px; padding-left: 20px;'>"
-
-
-                if weekday_closed:
-                    opening_hours_html += "<li><strong>Dni robocze:</strong> Zamknięte</li>"
-                elif weekday_open and weekday_close:
-                    opening_hours_html += f"<li><strong>Dni robocze:</strong> {weekday_open} - {weekday_close}</li>"
-                else:
-                    opening_hours_html += "<li><strong>Dni robocze:</strong> Brak danych</li>"
-
-                if weekend_closed:
-                    opening_hours_html += "<li><strong>Weekendy:</strong> Zamknięte</li>"
-                elif weekend_open and weekend_close:
-                    opening_hours_html += f"<li><strong>Weekendy:</strong> {weekend_open} - {weekend_close}</li>"
-                else:
-                    opening_hours_html += "<li><strong>Weekendy:</strong> Brak danych</li>"
-
-                opening_hours_html += "</ul>"
-
                 if not comments_list:
                     wholePopUp = f"""
                         <div style="width: 300px; max-height:300px, overflow-y: auto;">
@@ -1470,8 +1401,6 @@ class Server:
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
                             <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
                             <p><strong>Ocena:</strong> {rating_display}</p>
-                            {status_html}
-                            {opening_hours_html}
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
                             </div>
@@ -1489,8 +1418,6 @@ class Server:
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
                             <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
                             <p><strong>Ocena:</strong> {rating_display}</p>
-                            {status_html}
-                            {opening_hours_html}
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
                             </div>
@@ -1716,7 +1643,7 @@ class Server:
         """Initialize SQLite database and create tables if they don't exist"""
         with closing(sqlite3.connect('data/toilets.db')) as conn:
             with closing(conn.cursor()) as cursor:
-                # Create toilets table if it doesn't exist
+                # Create toilets table
                 cursor.execute('''
                 CREATE TABLE IF NOT EXISTS toilets (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1733,25 +1660,6 @@ class Server:
                 )
                 ''')
                 
-                # Check if opening hours columns exist, and add them if they don't
-                # First, get the current columns
-                cursor.execute("PRAGMA table_info(toilets)")
-                columns = [col[1] for col in cursor.fetchall()]
-                
-                # Add new columns if they don't exist
-                if 'weekday_open' not in columns:
-                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekday_open TEXT')
-                if 'weekday_close' not in columns:
-                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekday_close TEXT')
-                if 'weekday_closed' not in columns:
-                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekday_closed BOOLEAN DEFAULT 0')
-                if 'weekend_open' not in columns:
-                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekend_open TEXT')
-                if 'weekend_close' not in columns:
-                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekend_close TEXT')
-                if 'weekend_closed' not in columns:
-                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekend_closed BOOLEAN DEFAULT 0')
-                
                 # Create comments table with foreign key to toilets
                 cursor.execute('''
                 CREATE TABLE IF NOT EXISTS comments (
@@ -1767,57 +1675,3 @@ class Server:
 
     def runThePage(self):
         self.app.run(host = os.environ.get('SERVER_HOST'), port=os.environ.get('SERVER_PORT'))
-
-    def is_toilet_open(self, marker):
-        """Check if a toilet is currently open based on the current day and time"""
-        # Pobierz dane o godzinach otwarcia
-        weekday_closed = marker.get('weekday_closed', False)
-        weekend_closed = marker.get('weekend_closed', False)
-        weekday_open = marker.get('weekday_open', '')
-        weekday_close = marker.get('weekday_close', '')
-        weekend_open = marker.get('weekend_open', '')
-        weekend_close = marker.get('weekend_close', '')
-        
-        # Jeśli brak danych o godzinach otwarcia, zakładamy że zawsze otwarte
-        if not (weekday_open and weekday_close) and not (weekend_open and weekend_close):
-            return True
-        
-        # Sprawdź aktualny dzień tygodnia (0-6, gdzie 0 to poniedziałek)
-        now = datetime.datetime.now()
-        current_day = now.weekday()
-        current_time = now.time()
-        
-        # Konwersja godziny aktualnej do minut
-        current_minutes = current_time.hour * 60 + current_time.minute
-        
-        # Sprawdź czy to dzień roboczy (0-4) czy weekend (5-6)
-        is_weekend = current_day >= 5  # Sobota (5) lub niedziela (6)
-        
-        # Sprawdź czy w dany dzień toaleta jest zamknięta
-        if (is_weekend and weekend_closed) or (not is_weekend and weekday_closed):
-            return False
-        
-        # Pobierz odpowiednie godziny otwarcia zależnie od dnia
-        if is_weekend:
-            open_time = weekend_open
-            close_time = weekend_close
-        else:
-            open_time = weekday_open
-            close_time = weekday_close
-        
-        # Jeśli brak godzin dla danego typu dnia, zakładamy że zamknięte
-        if not open_time or not close_time:
-            return False
-        
-        # Konwersja godzin otwarcia i zamknięcia na minuty
-        open_hour, open_minute = map(int, open_time.split(':'))
-        close_hour, close_minute = map(int, close_time.split(':'))
-        open_minutes = open_hour * 60 + open_minute
-        close_minutes = close_hour * 60 + close_minute
-        
-        # Sprawdź czy aktualny czas mieści się w godzinach otwarcia
-        # Obsłuż przypadek, gdy godzina zamknięcia jest po północy
-        if close_minutes < open_minutes:
-            return current_minutes >= open_minutes or current_minutes <= close_minutes
-        else:
-            return open_minutes <= current_minutes <= close_minutes

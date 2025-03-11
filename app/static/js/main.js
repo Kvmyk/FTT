@@ -290,11 +290,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Inicjalizacja zakładek godzin otwarcia
-    setupOpeningHoursTabs();
-    
-    // Obsługa checkboxów zamknięcia
-    setupClosedCheckboxes();
 });
 
 function validateRating() {
@@ -369,27 +364,8 @@ function submitModal() {
         const forDisabled = document.getElementById('disabilityInput').checked;
         const rating = document.getElementById('ratingInput').value;
         const photoInput = document.getElementById('photoInput').files;
-        
-        // Pobierz dane o godzinach otwarcia
-        const weekdayClosed = document.getElementById('weekday-closed').checked;
-        const weekendClosed = document.getElementById('weekend-closed').checked;
-        
-        let weekdayOpenTime = '';
-        let weekdayCloseTime = '';
-        let weekendOpenTime = '';
-        let weekendCloseTime = '';
-        
-        if (!weekdayClosed) {
-            weekdayOpenTime = document.getElementById('weekday-open').value;
-            weekdayCloseTime = document.getElementById('weekday-close').value;
-        }
-        
-        if (!weekendClosed) {
-            weekendOpenTime = document.getElementById('weekend-open').value;
-            weekendCloseTime = document.getElementById('weekend-close').value;
-        }
-        
         const formData = new FormData();
+
         formData.append('userInput', userInput);
         formData.append('description', description);
         formData.append('payable', payable);
@@ -397,14 +373,6 @@ function submitModal() {
         formData.append('forDisabled', forDisabled);
         formData.append('rating', rating);
         formData.append('useUserLocation', useUserLocation);
-        
-        // Dodaj godziny otwarcia do formData
-        formData.append('weekday_closed', weekdayClosed);
-        formData.append('weekday_open', weekdayOpenTime);
-        formData.append('weekday_close', weekdayCloseTime);
-        formData.append('weekend_closed', weekendClosed);
-        formData.append('weekend_open', weekendOpenTime);
-        formData.append('weekend_close', weekendCloseTime);
 
         for (var i = 0; i < photoInput.length; i++) {
             var file = photoInput[i];
@@ -791,47 +759,3 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
         container.innerHTML = '';
     }
 });
-
-function setupOpeningHoursTabs() {
-    // Znajdujemy przyciski zakładek (jeśli istnieją)
-    const tabButtons = document.querySelectorAll('.tab-button');
-    if (tabButtons.length === 0) return;
-    
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Usuń klasę 'active' ze wszystkich przycisków
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            
-            // Dodaj klasę 'active' do klikniętego przycisku
-            this.classList.add('active');
-            
-            // Ukryj wszystkie zawartości zakładek
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(content => content.classList.remove('active'));
-            
-            // Pokaż zawartość odpowiadającą klikniętej zakładce
-            const tabId = this.getAttribute('data-tab') + '-tab';
-            document.getElementById(tabId).classList.add('active');
-        });
-    });
-}
-
-function setupClosedCheckboxes() {
-    // Obsługa checkboxa "Zamknięte" dla dni roboczych
-    const weekdayClosed = document.getElementById('weekday-closed');
-    if (weekdayClosed) {
-        weekdayClosed.addEventListener('change', function() {
-            document.getElementById('weekday-open').disabled = this.checked;
-            document.getElementById('weekday-close').disabled = this.checked;
-        });
-    }
-    
-    // Obsługa checkboxa "Zamknięte" dla weekendów
-    const weekendClosed = document.getElementById('weekend-closed');
-    if (weekendClosed) {
-        weekendClosed.addEventListener('change', function() {
-            document.getElementById('weekend-open').disabled = this.checked;
-            document.getElementById('weekend-close').disabled = this.checked;
-        });
-    }
-}

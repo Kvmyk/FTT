@@ -892,86 +892,30 @@ input[type="checkbox"],
         padding: 8px 15px; /* Slightly smaller padding on mobile */
     }
 }
-    .leaflet-interactive {
-        pointer-events: auto;
-    }
-    
-    .opening-hours-container {
-        margin: 15px 0;
-        padding: 10px;
-        background-color: #f9f9f9;
-        border-radius: 5px;
-        border: 1px solid #ddd;
-    }
-    
-    .tabs {
-        display: flex;
-        margin-bottom: 10px;
-    }
-    
-    .tab-button {
-        padding: 8px 15px;
-        background-color: #e0e0e0;
-        border: 1px solid #ccc;
-        border-radius: 4px 4px 0 0;
-        cursor: pointer;
-        flex-grow: 1;
-    }
-    
-    .tab-button.active {
-        background-color: #ffffff;
-        border-bottom-color: #ffffff;
-    }
-    
-    .tab-content {
-        display: none;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 0 0 4px 4px;
-    }
-    
-    .tab-content.active {
-        display: block;
-    }
-    
-    .time-inputs {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    
-    .time-inputs div {
-        flex: 1;
-        min-width: 120px;
-    }
-    
-    .time-inputs label {
-        margin-bottom: 5px;
-        display: block;
-    }
-    
-    .time-inputs input[type="time"] {
-        width: 100%;
-        padding: 8px;
-    }
-    
-    .status-open {
-        color: #4CAF50;
-        font-weight: bold;
-        display: inline-block;
-        padding: 3px 8px;
-        border-radius: 4px;
-        background-color: rgba(76, 175, 80, 0.1);
-        border: 1px solid #4CAF50;
-    }
-    
-    .status-closed {
-        color: #F44336;
-        font-weight: bold;
-        display: inline-block;
-        padding: 3px 8px;
-        border-radius: 4px;
-        background-color: rgba(244, 67, 54, 0.1);
-        border: 1px solid #F44336;
-    }
+
+.hours-section {
+    margin-top: 15px;
+    width: 85%;
+}
+
+.hours-section h4 {
+    margin-bottom: 8px;
+    font-weight: 400;
+}
+
+.hours-inputs {
+    display: flex;
+    gap: 15px;
+}
+
+.hours-inputs label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.hours-inputs input[type="time"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
