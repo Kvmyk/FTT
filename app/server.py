@@ -435,10 +435,10 @@ class Server:
                     "base_rating": rating,  # Dodaj tę linię, by base_rating było takie samo jak rating
                     "photo": photo_base64,
                     "forDisabled": forDisabled,
-                    'weekdayOpenTime': data.get('weekdayOpenTime', ''),
-                    'weekdayCloseTime': data.get('weekdayCloseTime', ''),
-                    'weekendOpenTime': data.get('weekendOpenTime', ''),
-                    'weekendCloseTime': data.get('weekendCloseTime', '')
+                    'weekday_open': data.get('weekdayOpenTime', ''),
+                    'weekday_close': data.get('weekdayCloseTime', ''),
+                    'weekend_open': data.get('weekendOpenTime', ''),
+                    'weekend_close': data.get('weekendCloseTime', '')
                 }
                 self.markers.append(new_marker)
                 self.original_markers.append(new_marker)
@@ -1415,10 +1415,10 @@ class Server:
                     </button>
                 """
                 # Get opening hours information
-                weekday_open = marker.get('weekdayOpenTime', '')
-                weekday_close = marker.get('weekdayCloseTime', '')
-                weekend_open = marker.get('weekendOpenTime', '')
-                weekend_close = marker.get('weekendCloseTime', '')
+                weekday_open = marker.get('weekday_open', '')
+                weekday_close = marker.get('weekday_close', '')
+                weekend_open = marker.get('weekend_open', '')
+                weekend_close = marker.get('weekend_close', '')
 
                 # Check if the toilet is currently open
                 is_open = False
