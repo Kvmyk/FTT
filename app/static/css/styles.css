@@ -892,3 +892,30 @@ input[type="checkbox"],
         padding: 8px 15px; /* Slightly smaller padding on mobile */
     }
 }
+
+.hours-section {
+    margin-top: 15px;
+    width: 85%;
+}
+
+.hours-section h4 {
+    margin-bottom: 8px;
+    font-weight: 400;
+}
+
+.hours-inputs {
+    display: flex;
+    gap: 15px;
+}
+
+.hours-inputs label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.hours-inputs input[type="time"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}

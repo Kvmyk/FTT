@@ -10,6 +10,7 @@ import logging
 import threading
 import time
 import sqlite3
+import datetime
 from flask_session import Session
 from flask_compress import Compress
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -44,8 +45,8 @@ class Server:
         self.start_cleanup_thread()
         
         # Domyślne współrzędne (np. Warszawa) - użyte TYLKO gdy user nie ustawił własnych
-        self.default_lat = 52.2297
-        self.default_lon = 21.0122
+        self.default_lat = 50.6751
+        self.default_lon = 17.9213
 
         # Setup database
         self.setup_database()
@@ -121,7 +122,7 @@ class Server:
         """Loads toilet markers from SQLite database."""
         try:
             with closing(sqlite3.connect('data/toilets.db')) as conn:
-                conn.row_factory = sqlite3.Row  # This enables column access by name
+                conn.row_factory = sqlite3.Row
                 with closing(conn.cursor()) as cursor:
                     markers = []
                     
@@ -137,6 +138,12 @@ class Server:
                         marker['payable'] = bool(marker['payable'])
                         marker['onlyForClients'] = bool(marker['onlyForClients'])
                         marker['forDisabled'] = bool(marker['forDisabled'])
+                        
+                        # Add opening hours to the marker
+                        marker['weekday_open'] = toilet['weekday_open']
+                        marker['weekday_close'] = toilet['weekday_close']
+                        marker['weekend_open'] = toilet['weekend_open']
+                        marker['weekend_close'] = toilet['weekend_close']
                         
                         # Get comments for this toilet
                         cursor.execute('SELECT comment, rating FROM comments WHERE toilet_id = ?', 
@@ -158,17 +165,17 @@ class Server:
             with closing(sqlite3.connect('data/toilets.db')) as conn:
                 with closing(conn.cursor()) as cursor:
                     # For simplicity, we're recreating all data
-                    # In production, you'd want to do proper inserts/updates
                     cursor.execute('DELETE FROM comments')
                     cursor.execute('DELETE FROM toilets')
                     
                     for marker in self.original_markers:
-                        # Insert toilet record
+                        # Insert toilet record with opening hours
                         cursor.execute('''
                         INSERT INTO toilets (lat, lon, name, description, payable, 
                                             onlyForClients, forDisabled, rating, 
-                                            base_rating, photo)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                            base_rating, weekday_open, weekday_close,
+                                            weekend_open, weekend_close, photo)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ''', (
                             marker['lat'],
                             marker['lon'],
@@ -179,6 +186,10 @@ class Server:
                             1 if marker.get('forDisabled', False) else 0,
                             self.safe_float(marker.get('rating', 0)),
                             self.safe_float(marker.get('base_rating', 0)),
+                            marker.get('weekday_open', ''),
+                            marker.get('weekday_close', ''),
+                            marker.get('weekend_open', ''),
+                            marker.get('weekend_close', ''),
                             marker.get('photo', None)
                         ))
                         
@@ -363,6 +374,13 @@ class Server:
             forDisabled = data.get('forDisabled', 'false').lower() == 'true'
             rating = data.get('rating', '0')
             useUserLocation = data.get('useUserLocation', 'false').lower() == 'true'
+            
+            # Get opening hours
+            weekday_open = data.get('weekdayOpenTime', '')
+            weekday_close = data.get('weekdayCloseTime', '')
+            weekend_open = data.get('weekendOpenTime', '')
+            weekend_close = data.get('weekendCloseTime', '')
+            
             photo = request.files.get('photos')  # może być None
             photo_base64 = None
             if photo:
@@ -416,7 +434,11 @@ class Server:
                     "rating": rating,
                     "base_rating": rating,  # Dodaj tę linię, by base_rating było takie samo jak rating
                     "photo": photo_base64,
-                    "forDisabled": forDisabled 
+                    "forDisabled": forDisabled,
+                    'weekdayOpenTime': data.get('weekdayOpenTime', ''),
+                    'weekdayCloseTime': data.get('weekdayCloseTime', ''),
+                    'weekendOpenTime': data.get('weekendOpenTime', ''),
+                    'weekendCloseTime': data.get('weekendCloseTime', '')
                 }
                 self.markers.append(new_marker)
                 self.original_markers.append(new_marker)
@@ -1392,6 +1414,60 @@ class Server:
                         Dodaj komentarz
                     </button>
                 """
+                # Get opening hours information
+                weekday_open = marker.get('weekdayOpenTime', '')
+                weekday_close = marker.get('weekdayCloseTime', '')
+                weekend_open = marker.get('weekendOpenTime', '')
+                weekend_close = marker.get('weekendCloseTime', '')
+
+                # Check if the toilet is currently open
+                is_open = False
+                has_hours = False
+                current_status = ""
+                hours_info = ""
+
+                if weekday_open and weekday_close or weekend_open and weekend_close:
+                    has_hours = True
+                    now = datetime.datetime.now()
+                    current_day = now.weekday()  # 0-4 for weekdays, 5-6 for weekend
+                    current_time = now.time()
+                    
+                    # Format time strings for display
+                    weekday_hours = f"{weekday_open} - {weekday_close}" if weekday_open and weekday_close else "Nieznane"
+                    weekend_hours = f"{weekend_open} - {weekend_close}" if weekend_open and weekend_close else "Nieznane"
+                    
+                    # Create hours info for display
+                    hours_info = f"""
+                        <p><strong>Godziny otwarcia:</strong></p>
+                        <p>Dni powszednie: {weekday_hours}</p>
+                        <p>Weekendy: {weekend_hours}</p>
+                    """
+                    
+                    # Check if currently open
+                    if 0 <= current_day <= 4:  # Weekday
+                        if weekday_open and weekday_close:
+                            try:
+                                open_time = datetime.datetime.strptime(weekday_open, "%H:%M").time()
+                                close_time = datetime.datetime.strptime(weekday_close, "%H:%M").time()
+                                is_open = open_time <= current_time <= close_time
+                            except ValueError:
+                                is_open = False
+                    else:  # Weekend
+                        if weekend_open and weekend_close:
+                            try:
+                                open_time = datetime.datetime.strptime(weekend_open, "%H:%M").time()
+                                close_time = datetime.datetime.strptime(weekend_close, "%H:%M").time()
+                                is_open = open_time <= current_time <= close_time
+                            except ValueError:
+                                is_open = False
+
+                # Create status HTML with appropriate color
+                if has_hours:
+                    if is_open:
+                        current_status = '<p><strong style="color: green;">Otwarte</strong></p>'
+                    else:
+                        current_status = '<p><strong style="color: red;">Zamknięta</strong></p>'
+
                 if not comments_list:
                     wholePopUp = f"""
                         <div style="width: 300px; max-height:300px, overflow-y: auto;">
@@ -1401,6 +1477,8 @@ class Server:
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
                             <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
                             <p><strong>Ocena:</strong> {rating_display}</p>
+                            {current_status if has_hours else ""}
+                            {hours_info if has_hours else ""}
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
                             </div>
@@ -1418,6 +1496,8 @@ class Server:
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
                             <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
                             <p><strong>Ocena:</strong> {rating_display}</p>
+                            {current_status if has_hours else ""}
+                            {hours_info if has_hours else ""}
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
                             </div>
@@ -1522,116 +1602,124 @@ class Server:
                 user_data = session.get(user_id, {})
                 user_marker = user_data.get('marker')
                 if user_marker:
+                    # Always add user marker regardless of location
                     self.add_marker_to_map(user_marker)
-
-                    # Filtrujemy by nie brać pod uwagę markera użytkownika
-                    filtered_markers = [
-                        marker for marker in markers_to_add 
-                        if marker.get('name', '') != "User Location"
-                    ]
-                    # Sprawdź czy zapisany cel nawigacji nadal istnieje po filtrowaniu
-                    selected_target = user_data.get('selected_target')
-                    if selected_target:
-                        target_lat = selected_target.get('lat')
-                        target_lon = selected_target.get('lon')
-                        
-                        # Sprawdź czy cel nawigacji nadal istnieje w przefiltrowanych markerach
-                        target_exists = any(
-                            abs(marker['lat'] - target_lat) < 0.0001 and abs(marker['lon'] - target_lon) < 0.0001
-                            for marker in filtered_markers
-                        )
-
-                        if not target_exists:
-                            # Cel nawigacji nie istnieje po filtrowaniu, usuwamy trasę i cel
-                            user_data['current_route'] = None
-                            user_data['selected_target'] = None
-                            session[user_id] = user_data
-            
-                    if not filtered_markers:
+                    
+                    # Rest of code for filtering and route calculation
+                    # Only skip route generation if outside Opole, but still show the marker
+                    if not isInOpoleProvince(user_marker['lat'], user_marker['lon']):
+                        logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
                         user_data['current_route'] = None
                         session[user_id] = user_data
                     else:
-                        # Dodaj sprawdzenie dla lokalizacji użytkownika
-                        if user_marker and not isInOpoleProvince(user_marker['lat'], user_marker['lon']):
-                            logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
+                        # Route generation code remains the same...
+                        filtered_markers = [
+                            marker for marker in markers_to_add 
+                            if marker.get('name', '') != "User Location"
+                        ]
+                        # Sprawdź czy zapisany cel nawigacji nadal istnieje po filtrowaniu
+                        selected_target = user_data.get('selected_target')
+                        if selected_target:
+                            target_lat = selected_target.get('lat')
+                            target_lon = selected_target.get('lon')
+                            
+                            # Sprawdź czy cel nawigacji nadal istnieje w przefiltrowanych markerach
+                            target_exists = any(
+                                abs(marker['lat'] - target_lat) < 0.0001 and abs(marker['lon'] - target_lon) < 0.0001
+                                for marker in filtered_markers
+                            )
+
+                            if not target_exists:
+                                # Cel nawigacji nie istnieje po filtrowaniu, usuwamy trasę i cel
+                                user_data['current_route'] = None
+                                user_data['selected_target'] = None
+                                session[user_id] = user_data
+                
+                        if not filtered_markers:
                             user_data['current_route'] = None
                             session[user_id] = user_data
                         else:
-                            # Używamy trasy zapisanej w sesji, jeśli istnieje
-                            route = user_data.get('current_route')
-                            
-                            # Sprawdź czy cel nawigacji jest w województwie opolskim
-                            selected_target = user_data.get('selected_target')
-                            if selected_target and not isInOpoleProvince(selected_target['lat'], selected_target['lon']):
-                                logging.warning("Cel nawigacji poza województwem opolskim - usuwam trasę.")
+                            # Dodaj sprawdzenie dla lokalizacji użytkownika
+                            if user_marker and not isInOpoleProvince(user_marker['lat'], user_marker['lon']):
+                                logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
                                 user_data['current_route'] = None
-                                route = None
                                 session[user_id] = user_data
-                            
-                            if not route:
-                                # Reszta kodu bez zmian...
-                                route = None
-                                nearest_marker = find_nearest_marker(user_marker, filtered_markers)
-                                if nearest_marker:
-                                    # Sprawdzamy województwo przed jakimkolwiek generowaniem trasy
-                                    if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
-                                        logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
-                                        user_data['current_route'] = None
-                                        session[user_id] = user_data
-                                    else:
-                                        route = get_route(
-                                            user_marker['lat'], user_marker['lon'],
-                                            nearest_marker['lat'], nearest_marker['lon']
-                                        )
-                                        if route:
-                                            user_data['current_route'] = route
+                            else:
+                                # Używamy trasy zapisanej w sesji, jeśli istnieje
+                                route = user_data.get('current_route')
+                                
+                                # Sprawdź czy cel nawigacji jest w województwie opolskim
+                                selected_target = user_data.get('selected_target')
+                                if selected_target and not isInOpoleProvince(selected_target['lat'], selected_target['lon']):
+                                    logging.warning("Cel nawigacji poza województwem opolskim - usuwam trasę.")
+                                    user_data['current_route'] = None
+                                    route = None
+                                    session[user_id] = user_data
+                                
+                                if not route:
+                                    # Reszta kodu bez zmian...
+                                    route = None
+                                    nearest_marker = find_nearest_marker(user_marker, filtered_markers)
+                                    if nearest_marker:
+                                        # Sprawdzamy województwo przed jakimkolwiek generowaniem trasy
+                                        if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
+                                            logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
+                                            user_data['current_route'] = None
                                             session[user_id] = user_data
+                                        else:
+                                            route = get_route(
+                                                user_marker['lat'], user_marker['lon'],
+                                                nearest_marker['lat'], nearest_marker['lon']
+                                            )
+                                            if route:
+                                                user_data['current_route'] = route
+                                                session[user_id] = user_data
 
-                        # Wyświetlamy trasę tylko jeśli route istnieje i marker jest w województwie
-                        if route:
-                            coordinates = [
-                                (coord[1], coord[0])
-                                for coord in route['routes'][0]['geometry']['coordinates']
-                            ]
-                            distance = route['routes'][0]['distance']  # w metrach
-                            distance_text = f"{distance / 1000:.2f} km"
+                            # Wyświetlamy trasę tylko jeśli route istnieje i marker jest w województwie
+                            if route:
+                                coordinates = [
+                                    (coord[1], coord[0])
+                                    for coord in route['routes'][0]['geometry']['coordinates']
+                                ]
+                                distance = route['routes'][0]['distance']  # w metrach
+                                distance_text = f"{distance / 1000:.2f} km"
 
-                            folium.PolyLine(
-                                locations=coordinates,
-                                color='#d00000',
-                                weight=5,
-                                opacity=0.7
-                            ).add_to(self.m)
+                                folium.PolyLine(
+                                    locations=coordinates,
+                                    color='#d00000',
+                                    weight=5,
+                                    opacity=0.7
+                                ).add_to(self.m)
 
-                            mid_point_index = len(coordinates) // 2
-                            mid_point = coordinates[mid_point_index]
-                            offset_latitude = 0.0007
-                            offset_longitude = 0.0007
-                            mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
+                                mid_point_index = len(coordinates) // 2
+                                mid_point = coordinates[mid_point_index]
+                                offset_latitude = 0.0007
+                                offset_longitude = 0.0007
+                                mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
 
-                            folium.Marker(
-                                location=mid_point_with_offset,
-                                icon=folium.DivIcon(
-                                    html=f"""
-                                        <div style="
-                                            font-size: 14px; 
-                                            color: #D32F2F;
-                                            font-weight: bold;
-                                            background-color: rgba(255, 255, 255, 0.9);
-                                            padding: 0.4em 0.8em;
-                                            border-radius: 0.3em;
-                                            text-align: center;
-                                            font-family: Arial, sans-serif;
-                                            box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
-                                            display: inline-block;
-                                            min-width: max-content;
-                                            white-space: nowrap;
-                                        ">
-                                            {distance_text}
-                                        </div>
-                                    """
-                                )
-                            ).add_to(self.m)
+                                folium.Marker(
+                                    location=mid_point_with_offset,
+                                    icon=folium.DivIcon(
+                                        html=f"""
+                                            <div style="
+                                                font-size: 14px; 
+                                                color: #D32F2F;
+                                                font-weight: bold;
+                                                background-color: rgba(255, 255, 255, 0.9);
+                                                padding: 0.4em 0.8em;
+                                                border-radius: 0.3em;
+                                                text-align: center;
+                                                font-family: Arial, sans-serif;
+                                                box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
+                                                display: inline-block;
+                                                min-width: max-content;
+                                                white-space: nowrap;
+                                            ">
+                                                {distance_text}
+                                            </div>
+                                        """
+                                    )
+                                ).add_to(self.m)
 
             return self.m._repr_html_()
         except Exception as e:
@@ -1656,6 +1744,10 @@ class Server:
                     forDisabled BOOLEAN NOT NULL DEFAULT 0,
                     rating REAL DEFAULT 0,
                     base_rating REAL DEFAULT 0,
+                    weekday_open TEXT,
+                    weekday_close TEXT,
+                    weekend_open TEXT,
+                    weekend_close TEXT,
                     photo TEXT
                 )
                 ''')
