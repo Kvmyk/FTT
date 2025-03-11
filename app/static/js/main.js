@@ -506,6 +506,9 @@ function navigateToToilet(targetLat, targetLon) {
     // Zapisz nowy cel w localStorage
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
+
+    // Jeśli śledzenie jest włączone, zrestartuj je z nowym celem
+    const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
     
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -523,13 +526,6 @@ function navigateToToilet(targetLat, targetLon) {
                     return;
                 }
 
-                // Pokaż informację "Trasa jest obliczana..."
-                const nearestPinInfo = document.getElementById('nearestPinInfo');
-                const nearestPinText = document.getElementById('nearestPinText');
-                nearestPinText.innerText = "Trasa jest obliczana...";
-                nearestPinInfo.classList.add('show');
-
-                // Utwórz zapytanie do nawigacji
                 fetch('/navigate', {
                     method: 'POST',
                     headers: {
@@ -544,29 +540,22 @@ function navigateToToilet(targetLat, targetLon) {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.status === 'success') {
-                        const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
-                        
-                        // Jeśli śledzenie jest włączone, nie restartuj go, tylko zaktualizuj mapę
-                        if (trackingEnabled) {
-                            // Zamiast restartować śledzenie, zaktualizuj tylko cel i trasę
-                            lastPosition = null; // Reset ostatniej pozycji, aby wymusić aktualizację
-                            
-                            // Aktualizuj mapę bez restartowania śledzenia
-                            return fetch('/render_map');
-                        } else {
-                            // Dla wyłączonego śledzenia, standardowa procedura
+                    if (trackingEnabled) {
+                        // If tracking is enabled, just restart tracking
+                        stopIntelligentTracking();
+                        startIntelligentTracking();
+                    } else {
+                        // Continue with the rest of the navigation logic
+                        if (data.status === 'success') {
                             return fetch('/render_map');
                         }
                     }
                 })
-                .then(response => response ? response.text() : null)
+                .then(response => response && !trackingEnabled ? response.text() : null)
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
-                        
-                        // Nie restartuj śledzenia, ono się samo zaktualizuje przy następnej zmianie pozycji
-                        
+                        // Dodatkowy fetch do /navigate_toilet_distance
                         return fetch('/navigate_toilet_distance', {
                             method: 'POST',
                             headers: {
