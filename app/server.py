@@ -365,6 +365,13 @@ class Server:
             forDisabled = data.get('forDisabled', 'false').lower() == 'true'
             rating = data.get('rating', '0')
             useUserLocation = data.get('useUserLocation', 'false').lower() == 'true'
+            
+            # Get opening hours
+            weekday_open = data.get('weekdayOpenTime', '')
+            weekday_close = data.get('weekdayCloseTime', '')
+            weekend_open = data.get('weekendOpenTime', '')
+            weekend_close = data.get('weekendCloseTime', '')
+            
             photo = request.files.get('photos')  # może być None
             photo_base64 = None
             if photo:
@@ -422,22 +429,15 @@ class Server:
                     'weekdayOpenTime': data.get('weekdayOpenTime', ''),
                     'weekdayCloseTime': data.get('weekdayCloseTime', ''),
                     'weekendOpenTime': data.get('weekendOpenTime', ''),
-                    'weekendCloseTime': data.get('weekendCloseTime', '')
+                    'weekendCloseTime': data.get('weekendCloseTime', ''),
+                    "weekday_open": weekday_open,
+                    "weekday_close": weekday_close,
+                    "weekend_open": weekend_open,
+                    "weekend_close": weekend_close
                 }
                 self.markers.append(new_marker)
                 self.original_markers.append(new_marker)
             self.save_markers()
-
-            user_id = session.get('user_id')
-            if user_id:
-                user_data = session.get(user_id, {})
-                filters = user_data.get('filters', {})
-                filter_payable = filters.get('filterPayable', False)
-                filter_for_clients = filters.get('filterForClients', False)
-                filter_for_disabled = filters.get('filterForDisabled', False)
-                filter_rating = float(filters.get('filterRating', 0))
-                markers_to_search = self.original_markers
-                if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
                     markers_to_search = [
                         marker for marker in self.original_markers
                         if (not filter_payable or marker.get('payable', False)) and
@@ -1728,6 +1728,10 @@ class Server:
                     forDisabled BOOLEAN NOT NULL DEFAULT 0,
                     rating REAL DEFAULT 0,
                     base_rating REAL DEFAULT 0,
+                    weekday_open TEXT,
+                    weekday_close TEXT,
+                    weekend_open TEXT,
+                    weekend_close TEXT,
                     photo TEXT
                 )
                 ''')
