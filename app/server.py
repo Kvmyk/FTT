@@ -44,9 +44,10 @@ class Server:
         self.cleanup_thread = None
         self.start_cleanup_thread()
         
-        # Domyślne współrzędne (np. Warszawa) - użyte TYLKO gdy user nie ustawił własnych
-        self.default_lat = 52.2297
-        self.default_lon = 21.0122
+
+        #Wspolrzedne centrum Opola
+        self.default_lat = 50.6751
+        self.default_lon = 17.9213
 
         # Setup database
         self.setup_database()
