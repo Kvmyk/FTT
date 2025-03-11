@@ -506,9 +506,6 @@ function navigateToToilet(targetLat, targetLon) {
     // Zapisz nowy cel w localStorage
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
-
-    // Jeśli śledzenie jest włączone, zrestartuj je z nowym celem
-    const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
     
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -532,6 +529,7 @@ function navigateToToilet(targetLat, targetLon) {
                 nearestPinText.innerText = "Trasa jest obliczana...";
                 nearestPinInfo.classList.add('show');
 
+                // Utwórz zapytanie do nawigacji
                 fetch('/navigate', {
                     method: 'POST',
                     headers: {
@@ -547,8 +545,19 @@ function navigateToToilet(targetLat, targetLon) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // Zawsze renderuj mapę, niezależnie od tego czy śledzenie jest włączone
-                        return fetch('/render_map');
+                        const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
+                        
+                        // Jeśli śledzenie jest włączone, nie restartuj go, tylko zaktualizuj mapę
+                        if (trackingEnabled) {
+                            // Zamiast restartować śledzenie, zaktualizuj tylko cel i trasę
+                            lastPosition = null; // Reset ostatniej pozycji, aby wymusić aktualizację
+                            
+                            // Aktualizuj mapę bez restartowania śledzenia
+                            return fetch('/render_map');
+                        } else {
+                            // Dla wyłączonego śledzenia, standardowa procedura
+                            return fetch('/render_map');
+                        }
                     }
                 })
                 .then(response => response ? response.text() : null)
@@ -556,11 +565,7 @@ function navigateToToilet(targetLat, targetLon) {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
                         
-                        // Po odświeżeniu mapy, możemy zrestartować śledzenie lub pobrać informacje o odległości
-                        if (trackingEnabled) {
-                            stopIntelligentTracking();
-                            startIntelligentTracking();
-                        }
+                        // Nie restartuj śledzenia, ono się samo zaktualizuje przy następnej zmianie pozycji
                         
                         return fetch('/navigate_toilet_distance', {
                             method: 'POST',
