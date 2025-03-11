@@ -540,16 +540,22 @@ function navigateToToilet(targetLat, targetLon) {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.status === 'success') {
-                        // Zawsze pobierz nową mapę, niezależnie od statusu śledzenia
-                        return fetch('/render_map');
+                    if (trackingEnabled) {
+                        // If tracking is enabled, just restart tracking
+                        stopIntelligentTracking();
+                        window.location.reload();
+                        startIntelligentTracking();
+                    } else {
+                        // Continue with the rest of the navigation logic
+                        if (data.status === 'success') {
+                            return fetch('/render_map');
+                        }
                     }
                 })
-                .then(response => response ? response.text() : null)
+                .then(response => response && !trackingEnabled ? response.text() : null)
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
-                        
                         // Dodatkowy fetch do /navigate_toilet_distance
                         return fetch('/navigate_toilet_distance', {
                             method: 'POST',
@@ -573,12 +579,6 @@ function navigateToToilet(targetLat, targetLon) {
                         const nearestPinText = document.getElementById('nearestPinText');
                         nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                         nearestPinInfo.classList.add('show');
-                    }
-                    
-                    // Jeśli śledzenie jest włączone, zrestartuj je po odświeżeniu mapy
-                    if (trackingEnabled) {
-                        stopIntelligentTracking();
-                        startIntelligentTracking();
                     }
                 })
                 .catch(error => console.error('Error:', error));
