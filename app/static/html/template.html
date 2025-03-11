@@ -56,6 +56,41 @@
         <label><input type="checkbox" id="customersOnlyInput" name="onlyForClients">Tylko dla klientów</label>
         <label><input type="checkbox" id="disabilityInput" name="forDisabled">Dla niepełnosprawnych</label>
         <input type="number" id="ratingInput" placeholder="Ocena (1-10)" min="1" max="10" required>
+        <div class="opening-hours-container">
+            <h4>Godziny otwarcia:</h4>
+            <div class="tabs">
+                <button type="button" class="tab-button active" data-tab="weekday">Dni robocze</button>
+                <button type="button" class="tab-button" data-tab="weekend">Weekendy</button>
+            </div>
+            
+            <div class="tab-content active" id="weekday-tab">
+                <div class="time-inputs">
+                    <div>
+                        <label for="weekday-open">Od:</label>
+                        <input type="time" id="weekday-open" name="weekday-open">
+                    </div>
+                    <div>
+                        <label for="weekday-close">Do:</label>
+                        <input type="time" id="weekday-close" name="weekday-close">
+                    </div>
+                    <label><input type="checkbox" id="weekday-closed">Zamknięte</label>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="weekend-tab">
+                <div class="time-inputs">
+                    <div>
+                        <label for="weekend-open">Od:</label>
+                        <input type="time" id="weekend-open" name="weekend-open">
+                    </div>
+                    <div>
+                        <label for="weekend-close">Do:</label>
+                        <input type="time" id="weekend-close" name="weekend-close">
+                    </div>
+                    <label><input type="checkbox" id="weekend-closed">Zamknięte</label>
+                </div>
+            </div>
+        </div>
         <input type="file" id="photoInput" accept=".jpg,.png" multiple>
         <div id="imagePreviewContainer"></div>
         <label class="switch">
