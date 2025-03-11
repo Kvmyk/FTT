@@ -1716,7 +1716,7 @@ class Server:
         """Initialize SQLite database and create tables if they don't exist"""
         with closing(sqlite3.connect('data/toilets.db')) as conn:
             with closing(conn.cursor()) as cursor:
-                # Create toilets table
+                # Create toilets table if it doesn't exist
                 cursor.execute('''
                 CREATE TABLE IF NOT EXISTS toilets (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1729,15 +1729,28 @@ class Server:
                     forDisabled BOOLEAN NOT NULL DEFAULT 0,
                     rating REAL DEFAULT 0,
                     base_rating REAL DEFAULT 0,
-                    photo TEXT,
-                    weekday_open TEXT,
-                    weekday_close TEXT,
-                    weekday_closed BOOLEAN DEFAULT 0,
-                    weekend_open TEXT,
-                    weekend_close TEXT,
-                    weekend_closed BOOLEAN DEFAULT 0
+                    photo TEXT
                 )
                 ''')
+                
+                # Check if opening hours columns exist, and add them if they don't
+                # First, get the current columns
+                cursor.execute("PRAGMA table_info(toilets)")
+                columns = [col[1] for col in cursor.fetchall()]
+                
+                # Add new columns if they don't exist
+                if 'weekday_open' not in columns:
+                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekday_open TEXT')
+                if 'weekday_close' not in columns:
+                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekday_close TEXT')
+                if 'weekday_closed' not in columns:
+                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekday_closed BOOLEAN DEFAULT 0')
+                if 'weekend_open' not in columns:
+                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekend_open TEXT')
+                if 'weekend_close' not in columns:
+                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekend_close TEXT')
+                if 'weekend_closed' not in columns:
+                    cursor.execute('ALTER TABLE toilets ADD COLUMN weekend_closed BOOLEAN DEFAULT 0')
                 
                 # Create comments table with foreign key to toilets
                 cursor.execute('''
