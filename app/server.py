@@ -1432,6 +1432,10 @@ class Server:
                     current_day = now.weekday()  # 0-4 for weekdays, 5-6 for weekend
                     current_time = now.time()
                     
+                    # Dodaj 1 godzinę do aktualnego czasu dla porównania
+                    current_time_plus_1h = (datetime.datetime.combine(datetime.date.today(), current_time) + 
+                                           datetime.timedelta(hours=1)).time()
+                    
                     # Format time strings for display
                     weekday_hours = f"{weekday_open} - {weekday_close}" if weekday_open and weekday_close else "Nieznane"
                     weekend_hours = f"{weekend_open} - {weekend_close}" if weekend_open and weekend_close else "Nieznane"
@@ -1449,7 +1453,8 @@ class Server:
                             try:
                                 open_time = datetime.datetime.strptime(weekday_open, "%H:%M").time()
                                 close_time = datetime.datetime.strptime(weekday_close, "%H:%M").time()
-                                is_open = open_time <= current_time <= close_time
+                                # Użyj czasu z dodaną godziną zamiast oryginalnego
+                                is_open = open_time <= current_time_plus_1h <= close_time
                             except ValueError:
                                 is_open = False
                     else:  # Weekend
@@ -1457,7 +1462,8 @@ class Server:
                             try:
                                 open_time = datetime.datetime.strptime(weekend_open, "%H:%M").time()
                                 close_time = datetime.datetime.strptime(weekend_close, "%H:%M").time()
-                                is_open = open_time <= current_time <= close_time
+                                # Tutaj też użyj czasu z dodaną godziną
+                                is_open = open_time <= current_time_plus_1h <= close_time
                             except ValueError:
                                 is_open = False
 
