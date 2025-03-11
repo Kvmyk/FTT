@@ -10,7 +10,6 @@ import logging
 import threading
 import time
 import sqlite3
-import datetime
 from flask_session import Session
 from flask_compress import Compress
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -121,129 +120,84 @@ class Server:
     def load_markers(self):
         """Loads toilet markers from SQLite database."""
         try:
-            markers = []
-            with closing(sqlite3.connect('toilets.db')) as conn:
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                
-                cursor.execute('''
-                CREATE TABLE IF NOT EXISTS toilets (
-                    id INTEGER PRIMARY KEY,
-                    lat REAL,
-                    lon REAL,
-                    name TEXT,
-                    description TEXT,
-                    payable INTEGER,
-                    onlyForClients INTEGER,
-                    forDisabled INTEGER,
-                    rating REAL,
-                    base_rating REAL,
-                    photos TEXT,
-                    comments TEXT,
-                    openingHours TEXT
-                )
-                ''')
-                
-                # Check if we need to add the openingHours column
-                cursor.execute("PRAGMA table_info(toilets)")
-                columns = [col[1] for col in cursor.fetchall()]
-                if "openingHours" not in columns:
-                    cursor.execute("ALTER TABLE toilets ADD COLUMN openingHours TEXT")
-                    conn.commit()
-                
-                cursor.execute('SELECT * FROM toilets')
-                rows = cursor.fetchall()
-                
-                for row in rows:
-                    try:
-                        photos = json.loads(row['photos']) if row['photos'] else []
-                    except:
-                        photos = []
-                        
-                    try:
-                        comments = json.loads(row['comments']) if row['comments'] else []
-                    except:
-                        comments = []
-                        
-                    try:
-                        opening_hours = json.loads(row['openingHours']) if row['openingHours'] else {"is24h": False, "schedule": {}}
-                    except:
-                        opening_hours = {"is24h": False, "schedule": {}}
+            with closing(sqlite3.connect('data/toilets.db')) as conn:
+                conn.row_factory = sqlite3.Row  # This enables column access by name
+                with closing(conn.cursor()) as cursor:
+                    markers = []
                     
-                    markers.append({
-                        'lat': row['lat'],
-                        'lon': row['lon'],
-                        'name': row['name'],
-                        'description': row['description'],
-                        'payable': bool(row['payable']),
-                        'onlyForClients': bool(row['onlyForClients']),
-                        'forDisabled': bool(row['forDisabled']),
-                        'rating': row['rating'],
-                        'base_rating': row['base_rating'],
-                        'photos': photos,
-                        'comments': comments,
-                        'openingHours': opening_hours
-                    })
+                    # Query all toilets
+                    cursor.execute('SELECT * FROM toilets')
+                    toilets = cursor.fetchall()
                     
-            self.markers = markers
-            self.original_markers = markers
-            logging.info(f"Successfully loaded {len(markers)} markers from database")
-            return markers
-        except Exception as e:
-            logging.error(f"Error loading markers from database: {str(e)}")
+                    for toilet in toilets:
+                        # Convert SQLite Row to dict
+                        marker = dict(toilet)
+                        
+                        # Convert boolean integers to Python booleans
+                        marker['payable'] = bool(marker['payable'])
+                        marker['onlyForClients'] = bool(marker['onlyForClients'])
+                        marker['forDisabled'] = bool(marker['forDisabled'])
+                        
+                        # Get comments for this toilet
+                        cursor.execute('SELECT comment, rating FROM comments WHERE toilet_id = ?', 
+                                      (toilet['id'],))
+                        comments = [dict(c) for c in cursor.fetchall()]
+                        if comments:
+                            marker['comments'] = comments
+                        
+                        markers.append(marker)
+                    
+                    return markers
+        except sqlite3.Error as e:
+            logging.error(f"SQLite error loading markers: {e}")
             return []
 
     def save_markers(self):
         """Save markers to SQLite database."""
         try:
-            with closing(sqlite3.connect('toilets.db')) as conn:
-                conn.execute('''
-                CREATE TABLE IF NOT EXISTS toilets (
-                    id INTEGER PRIMARY KEY,
-                    lat REAL,
-                    lon REAL,
-                    name TEXT,
-                    description TEXT,
-                    payable INTEGER,
-                    onlyForClients INTEGER,
-                    forDisabled INTEGER,
-                    rating REAL,
-                    base_rating REAL,
-                    photos TEXT,
-                    comments TEXT,
-                    openingHours TEXT
-                )
-                ''')
-                
-                conn.execute('DELETE FROM toilets')
-                
-                for marker in self.original_markers:
-                    photos_json = json.dumps(marker.get('photos', []))
-                    comments_json = json.dumps(marker.get('comments', []))
-                    opening_hours_json = json.dumps(marker.get('openingHours', {"is24h": False, "schedule": {}}))
+            with closing(sqlite3.connect('data/toilets.db')) as conn:
+                with closing(conn.cursor()) as cursor:
+                    # For simplicity, we're recreating all data
+                    # In production, you'd want to do proper inserts/updates
+                    cursor.execute('DELETE FROM comments')
+                    cursor.execute('DELETE FROM toilets')
                     
-                    conn.execute(
-                        'INSERT INTO toilets (lat, lon, name, description, payable, onlyForClients, forDisabled, rating, base_rating, photos, comments, openingHours) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                        (
+                    for marker in self.original_markers:
+                        # Insert toilet record
+                        cursor.execute('''
+                        INSERT INTO toilets (lat, lon, name, description, payable, 
+                                            onlyForClients, forDisabled, rating, 
+                                            base_rating, photo)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (
                             marker['lat'],
                             marker['lon'],
-                            marker.get('name', ''),
+                            marker.get('name', 'Unknown'),
                             marker.get('description', ''),
                             1 if marker.get('payable', False) else 0,
                             1 if marker.get('onlyForClients', False) else 0,
                             1 if marker.get('forDisabled', False) else 0,
-                            marker.get('rating', 0),
-                            marker.get('base_rating', marker.get('rating', 0)),
-                            photos_json,
-                            comments_json,
-                            opening_hours_json
-                        )
-                    )
-                
-                conn.commit()
-                logging.info(f"Successfully saved {len(self.original_markers)} markers to database")
-        except Exception as e:
-            logging.error(f"Error saving markers to database: {str(e)}")
+                            self.safe_float(marker.get('rating', 0)),
+                            self.safe_float(marker.get('base_rating', 0)),
+                            marker.get('photo', None)
+                        ))
+                        
+                        toilet_id = cursor.lastrowid
+                        
+                        # Insert comments if any
+                        for comment in marker.get('comments', []):
+                            cursor.execute('''
+                            INSERT INTO comments (toilet_id, comment, rating)
+                            VALUES (?, ?, ?)
+                            ''', (
+                                toilet_id,
+                                comment.get('comment', ''),
+                                self.safe_float(comment.get('rating', 0))
+                            ))
+                    
+                    conn.commit()
+        except sqlite3.Error as e:
+            logging.error(f"SQLite error saving markers: {e}")
 
     def setup_routes(self):
         @self.app.route('/')
@@ -401,80 +355,123 @@ class Server:
 
         @self.app.route('/submit', methods=['POST'])
         def submit():
-            """Handles form submissions for new toilet markers."""
-            try:
-                userInput = request.form.get('userInput')
-                description = request.form.get('description')
-                payable = request.form.get('payable') == 'true'
-                onlyForClients = request.form.get('onlyForClients') == 'true'
-                forDisabled = request.form.get('forDisabled') == 'true'
-                rating = request.form.get('rating')
-                useUserLocation = request.form.get('useUserLocation') == 'true'
-                
-                # Parse opening hours JSON
-                opening_hours_json = request.form.get('openingHours')
-                opening_hours = json.loads(opening_hours_json) if opening_hours_json else {"is24h": False, "schedule": {}}
+            data = request.form
+            userInput = data.get('userInput', '')
+            description = data.get('description', '')
+            payable = data.get('payable', 'false').lower() == 'true'
+            onlyForClients = data.get('onlyForClients', 'false').lower() == 'true'
+            forDisabled = data.get('forDisabled', 'false').lower() == 'true'
+            rating = data.get('rating', '0')
+            useUserLocation = data.get('useUserLocation', 'false').lower() == 'true'
+            photo = request.files.get('photos')  # może być None
+            photo_base64 = None
+            if photo:
+                photo_base64 = base64.b64encode(photo.read()).decode('utf-8')
 
-                # Validate input
-                if not userInput or not description or not rating:
-                    return jsonify({'status': 'error', 'message': 'Missing required fields'})
+            if useUserLocation:
+                user_id = session.get('user_id')
+                if not user_id:
+                    return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
 
-                if useUserLocation:
-                    user_id = session.get('user_id')
-                    if not user_id:
-                        return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
+                user_data = session.get(user_id, {})
+                user_marker = user_data.get('marker')
+                if not user_marker:
+                    return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
 
-                    user_data = session.get(user_id, {})
-                    user_marker = user_data.get('marker')
-                    if not user_marker:
-                        return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
+                lat = user_marker['lat']
+                lon = user_marker['lon']
+            else:
+                lat, lon = get_coordinates(userInput)
+                if not lat or not lon:
+                    return jsonify({'status': 'error', 'message': 'Nie udało się ustalić współrzędnych.'})
 
-                    lat = user_marker['lat']
-                    lon = user_marker['lon']
-                else:
-                    lat, lon = get_coordinates(userInput)
-                    if not lat or not lon:
-                        return jsonify({'status': 'error', 'message': 'Nie udało się ustalić współrzędnych.'})
-
-                # Process photos if any
-                photos = []
-                if 'photos' in request.files:
-                    photo_files = request.files.getlist('photos')
-                    for file in photo_files:
-                        if file and self.allowed_file(file.filename):
-                            # Convert to base64 for storage
-                            file_data = file.read()
-                            encoded_string = base64.b64encode(file_data).decode('utf-8')
-                            photos.append(encoded_string)
-
-                # Create new marker
+            existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
+            if existing_marker:
+                existing_marker.setdefault('comments', []).append({
+                    'comment': description,
+                    'rating': rating
+                })
+                if 'base_rating' not in existing_marker:
+                    existing_marker['base_rating'] = existing_marker.get('rating', rating)
+                try:
+                    base_rating = float(existing_marker.get('base_rating', 0))
+                except ValueError:
+                    base_rating = 0
+                comment_ratings = []
+                for c in existing_marker.get('comments', []):
+                    try:
+                        comment_ratings.append(float(c.get('rating', 0)))
+                    except ValueError:
+                        pass
+                computed_rating = (base_rating + sum(comment_ratings)) / (1 + len(comment_ratings))
+                existing_marker['rating'] = f"{computed_rating:.1f}"
+            else:
                 new_marker = {
-                    'lat': lat,
-                    'lon': lon,
-                    'name': userInput,
-                    'description': description,
-                    'payable': payable,
-                    'onlyForClients': onlyForClients,
-                    'forDisabled': forDisabled,
-                    'rating': float(rating),
-                    'photos': photos,
-                    'openingHours': opening_hours
+                    "lat": lat,
+                    "lon": lon,
+                    "name": userInput,
+                    "description": description,
+                    "payable": payable,
+                    "onlyForClients": onlyForClients,
+                    "rating": rating,
+                    "base_rating": rating,  # Dodaj tę linię, by base_rating było takie samo jak rating
+                    "photo": photo_base64,
+                    "forDisabled": forDisabled 
                 }
-
-                # Add marker to the list and save
                 self.markers.append(new_marker)
                 self.original_markers.append(new_marker)
-                self.save_markers()
+            self.save_markers()
 
-                # Update map with the new marker
-                self.add_marker_to_map(new_marker)
-                self.update_map()
+            user_id = session.get('user_id')
+            if user_id:
+                user_data = session.get(user_id, {})
+                filters = user_data.get('filters', {})
+                filter_payable = filters.get('filterPayable', False)
+                filter_for_clients = filters.get('filterForClients', False)
+                filter_for_disabled = filters.get('filterForDisabled', False)
+                filter_rating = float(filters.get('filterRating', 0))
+                markers_to_search = self.original_markers
+                if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
+                    markers_to_search = [
+                        marker for marker in self.original_markers
+                        if (not filter_payable or marker.get('payable', False)) and
+                           (not filter_for_clients or marker.get('onlyForClients', False)) and
+                           (not filter_for_disabled or marker.get('forDisabled', False)) and
+                           (float(marker.get('rating', 0)) >= filter_rating)
+                    ]
+                user_marker = user_data.get('marker')
+                if user_marker:
+                    filtered_markers = [
+                        marker for marker in markers_to_search 
+                        if marker.get('name', '') != "User Location"
+                    ]
+                    if filtered_markers:
+                        nearest_marker = find_nearest_marker(user_marker, filtered_markers)
+                        if nearest_marker:
+                            route = get_route(
+                                user_marker['lat'], user_marker['lon'],
+                                nearest_marker['lat'], nearest_marker['lon']
+                            )
+                            if route:
+                                self.add_route_to_map(route)
+            self.update_map()
+            return jsonify({'status': 'success'})
 
-                # Success!
-                return jsonify({'status': 'success'})
-            except Exception as e:
-                logging.error(f"Error in submit handler: {str(e)}")
-                return jsonify({'status': 'error', 'message': str(e)})
+        @self.app.after_request
+        def add_header(response):
+            """
+            Wyłączamy cache, by mieć pewność że mapy/markery nie są trzymane w pamięci przeglądarki.
+            """
+            response.headers['Cache-Control'] = 'no-store'
+            return response
+
+        @self.app.route('/render_map', methods=['GET'])
+        def render_map():
+            """
+            Endpoint, który zwraca HTML (mapę z poliliniami i markerami)
+            do wstawienia w <div id="map"> w pliku HTML.
+            """
+            return self.update_map()
 
         @self.app.route('/add_comment', methods=['POST'])
         def add_comment():
@@ -1395,44 +1392,6 @@ class Server:
                         Dodaj komentarz
                     </button>
                 """
-                # Check if toilet is currently open
-                is_open, status_text = self.is_toilet_open(marker)
-                status_class = "status-open" if is_open else "status-closed"
-                
-                # Display opening hours status
-                opening_hours_html = f"""
-                    <p><strong>Status:</strong> <span class="{status_class}">{status_text}</span></p>
-                """
-                
-                # Add opening hours details
-                opening_hours = marker.get('openingHours', {})
-                if opening_hours.get('is24h', False):
-                    opening_hours_html += "<p><strong>Godziny otwarcia:</strong> Czynne całą dobę</p>"
-                else:
-                    schedule = opening_hours.get('schedule', {})
-                    if schedule:
-                        opening_hours_html += "<details><summary><strong>Godziny otwarcia</strong></summary><div style='margin-top: 5px;'>"
-                        day_names = {
-                            'monday': 'Poniedziałek',
-                            'tuesday': 'Wtorek',
-                            'wednesday': 'Środa',
-                            'thursday': 'Czwartek',
-                            'friday': 'Piątek',
-                            'saturday': 'Sobota',
-                            'sunday': 'Niedziela'
-                        }
-                        
-                        for day_key, day_name in day_names.items():
-                            day_schedule = schedule.get(day_key)
-                            if day_schedule:
-                                opening_hours_html += f"<p>{day_name}: {day_schedule['open']} - {day_schedule['close']}</p>"
-                            else:
-                                opening_hours_html += f"<p>{day_name}: Zamknięte</p>"
-                        
-                        opening_hours_html += "</div></details>"
-                    else:
-                        opening_hours_html += "<p><strong>Godziny otwarcia:</strong> Brak danych</p>"
-
                 if not comments_list:
                     wholePopUp = f"""
                         <div style="width: 300px; max-height:300px, overflow-y: auto;">
@@ -1441,7 +1400,6 @@ class Server:
                             <p><strong>Płatna:</strong> {payable}</p>
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
                             <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
-                            {opening_hours_html}
                             <p><strong>Ocena:</strong> {rating_display}</p>
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
@@ -1459,7 +1417,6 @@ class Server:
                             <p><strong>Płatna:</strong> {payable}</p>
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
                             <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
-                            {opening_hours_html}
                             <p><strong>Ocena:</strong> {rating_display}</p>
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
@@ -1718,75 +1675,3 @@ class Server:
 
     def runThePage(self):
         self.app.run(host = os.environ.get('SERVER_HOST'), port=os.environ.get('SERVER_PORT'))
-
-    def is_toilet_open(self, marker):
-        """Checks if a toilet is currently open based on its opening hours."""
-        try:
-            # Get current day and time
-            now = datetime.datetime.now()
-            current_day = now.strftime('%A').lower()  # Get day name in lowercase
-            current_time = now.strftime('%H:%M')  # Get time in HH:MM format
-            
-            # Map English day names to our keys
-            day_map = {
-                'monday': 'monday',
-                'tuesday': 'tuesday',
-                'wednesday': 'wednesday',
-                'thursday': 'thursday',
-                'friday': 'friday',
-                'saturday': 'saturday',
-                'sunday': 'sunday'
-            }
-            
-            # Get opening hours
-            opening_hours = marker.get('openingHours', {})
-            
-            # If it's open 24/7
-            if opening_hours.get('is24h', False):
-                return True, "Otwarte 24/7"
-                
-            # Get schedule for current day
-            day_key = day_map.get(current_day)
-            if not day_key:
-                return False, "Brak danych o godzinach"
-                
-            schedule = opening_hours.get('schedule', {})
-            day_schedule = schedule.get(day_key)
-            
-            # If no schedule for today, assume it's closed
-            if not day_schedule:
-                return False, "Dzisiaj zamknięte"
-                
-            open_time = day_schedule.get('open')
-            close_time = day_schedule.get('close')
-            
-            # If missing opening or closing time, assume it's closed
-            if not open_time or not close_time:
-                return False, "Brak danych o godzinach"
-                
-            # Check if current time is between open and close times
-            is_open = open_time <= current_time <= close_time
-            
-            if is_open:
-                return True, f"Otwarte (do {close_time})"
-            else:
-                if current_time < open_time:
-                    return False, f"Zamknięte (otwarcie o {open_time})"
-                else:
-                    return False, "Zamknięte"
-                    
-        except Exception as e:
-            logging.error(f"Error checking if toilet is open: {e}")
-            return False, "Brak danych o godzinach"
-
-    def allowed_file(self, filename):
-        """Check if uploaded file has an allowed extension"""
-        if not filename:
-            return False
-            
-        # Define allowed extensions for image uploads
-        ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-        
-        # Check if the file has a '.' and the extension is in allowed extensions
-        return '.' in filename and \
-               filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
