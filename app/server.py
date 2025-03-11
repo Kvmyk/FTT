@@ -10,6 +10,7 @@ import logging
 import threading
 import time
 import sqlite3
+import datetime
 from flask_session import Session
 from flask_compress import Compress
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -416,7 +417,11 @@ class Server:
                     "rating": rating,
                     "base_rating": rating,  # Dodaj tę linię, by base_rating było takie samo jak rating
                     "photo": photo_base64,
-                    "forDisabled": forDisabled 
+                    "forDisabled": forDisabled,
+                    'weekdayOpenTime': data.get('weekdayOpenTime', ''),
+                    'weekdayCloseTime': data.get('weekdayCloseTime', ''),
+                    'weekendOpenTime': data.get('weekendOpenTime', ''),
+                    'weekendCloseTime': data.get('weekendCloseTime', '')
                 }
                 self.markers.append(new_marker)
                 self.original_markers.append(new_marker)
@@ -1392,6 +1397,60 @@ class Server:
                         Dodaj komentarz
                     </button>
                 """
+                # Get opening hours information
+                weekday_open = marker.get('weekdayOpenTime', '')
+                weekday_close = marker.get('weekdayCloseTime', '')
+                weekend_open = marker.get('weekendOpenTime', '')
+                weekend_close = marker.get('weekendCloseTime', '')
+
+                # Check if the toilet is currently open
+                is_open = False
+                has_hours = False
+                current_status = ""
+                hours_info = ""
+
+                if weekday_open and weekday_close or weekend_open and weekend_close:
+                    has_hours = True
+                    now = datetime.datetime.now()
+                    current_day = now.weekday()  # 0-4 for weekdays, 5-6 for weekend
+                    current_time = now.time()
+                    
+                    # Format time strings for display
+                    weekday_hours = f"{weekday_open} - {weekday_close}" if weekday_open and weekday_close else "Nieznane"
+                    weekend_hours = f"{weekend_open} - {weekend_close}" if weekend_open and weekend_close else "Nieznane"
+                    
+                    # Create hours info for display
+                    hours_info = f"""
+                        <p><strong>Godziny otwarcia:</strong></p>
+                        <p>Dni powszednie: {weekday_hours}</p>
+                        <p>Weekendy: {weekend_hours}</p>
+                    """
+                    
+                    # Check if currently open
+                    if 0 <= current_day <= 4:  # Weekday
+                        if weekday_open and weekday_close:
+                            try:
+                                open_time = datetime.datetime.strptime(weekday_open, "%H:%M").time()
+                                close_time = datetime.datetime.strptime(weekday_close, "%H:%M").time()
+                                is_open = open_time <= current_time <= close_time
+                            except ValueError:
+                                is_open = False
+                    else:  # Weekend
+                        if weekend_open and weekend_close:
+                            try:
+                                open_time = datetime.datetime.strptime(weekend_open, "%H:%M").time()
+                                close_time = datetime.datetime.strptime(weekend_close, "%H:%M").time()
+                                is_open = open_time <= current_time <= close_time
+                            except ValueError:
+                                is_open = False
+
+                # Create status HTML with appropriate color
+                if has_hours:
+                    if is_open:
+                        current_status = '<p><strong style="color: green;">Otwarte</strong></p>'
+                    else:
+                        current_status = '<p><strong style="color: red;">Zamknięta</strong></p>'
+
                 if not comments_list:
                     wholePopUp = f"""
                         <div style="width: 300px; max-height:300px, overflow-y: auto;">
@@ -1401,6 +1460,8 @@ class Server:
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
                             <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
                             <p><strong>Ocena:</strong> {rating_display}</p>
+                            {current_status if has_hours else ""}
+                            {hours_info if has_hours else ""}
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
                             </div>
@@ -1418,6 +1479,8 @@ class Server:
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
                             <p><strong>Dla niepełnosprawnych:</strong>{forDisabled}</p>
                             <p><strong>Ocena:</strong> {rating_display}</p>
+                            {current_status if has_hours else ""}
+                            {hours_info if has_hours else ""}
                             <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
                                 {photo_html}
                             </div>

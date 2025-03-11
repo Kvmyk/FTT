@@ -373,6 +373,10 @@ function submitModal() {
         formData.append('forDisabled', forDisabled);
         formData.append('rating', rating);
         formData.append('useUserLocation', useUserLocation);
+        formData.append('weekdayOpenTime', document.getElementById('weekdayOpenTime').value);
+        formData.append('weekdayCloseTime', document.getElementById('weekdayCloseTime').value);
+        formData.append('weekendOpenTime', document.getElementById('weekendOpenTime').value);
+        formData.append('weekendCloseTime', document.getElementById('weekendCloseTime').value);
 
         for (var i = 0; i < photoInput.length; i++) {
             var file = photoInput[i];
