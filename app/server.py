@@ -1586,124 +1586,116 @@ class Server:
                 user_data = session.get(user_id, {})
                 user_marker = user_data.get('marker')
                 if user_marker:
-                    # Always add user marker regardless of location
                     self.add_marker_to_map(user_marker)
-                    
-                    # Rest of code for filtering and route calculation
-                    # Only skip route generation if outside Opole, but still show the marker
-                    if not isInOpoleProvince(user_marker['lat'], user_marker['lon']):
-                        logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
+
+                    # Filtrujemy by nie brać pod uwagę markera użytkownika
+                    filtered_markers = [
+                        marker for marker in markers_to_add 
+                        if marker.get('name', '') != "User Location"
+                    ]
+                    # Sprawdź czy zapisany cel nawigacji nadal istnieje po filtrowaniu
+                    selected_target = user_data.get('selected_target')
+                    if selected_target:
+                        target_lat = selected_target.get('lat')
+                        target_lon = selected_target.get('lon')
+                        
+                        # Sprawdź czy cel nawigacji nadal istnieje w przefiltrowanych markerach
+                        target_exists = any(
+                            abs(marker['lat'] - target_lat) < 0.0001 and abs(marker['lon'] - target_lon) < 0.0001
+                            for marker in filtered_markers
+                        )
+
+                        if not target_exists:
+                            # Cel nawigacji nie istnieje po filtrowaniu, usuwamy trasę i cel
+                            user_data['current_route'] = None
+                            user_data['selected_target'] = None
+                            session[user_id] = user_data
+            
+                    if not filtered_markers:
                         user_data['current_route'] = None
                         session[user_id] = user_data
                     else:
-                        # Route generation code remains the same...
-                        filtered_markers = [
-                            marker for marker in markers_to_add 
-                            if marker.get('name', '') != "User Location"
-                        ]
-                        # Sprawdź czy zapisany cel nawigacji nadal istnieje po filtrowaniu
-                        selected_target = user_data.get('selected_target')
-                        if selected_target:
-                            target_lat = selected_target.get('lat')
-                            target_lon = selected_target.get('lon')
-                            
-                            # Sprawdź czy cel nawigacji nadal istnieje w przefiltrowanych markerach
-                            target_exists = any(
-                                abs(marker['lat'] - target_lat) < 0.0001 and abs(marker['lon'] - target_lon) < 0.0001
-                                for marker in filtered_markers
-                            )
-
-                            if not target_exists:
-                                # Cel nawigacji nie istnieje po filtrowaniu, usuwamy trasę i cel
-                                user_data['current_route'] = None
-                                user_data['selected_target'] = None
-                                session[user_id] = user_data
-                
-                        if not filtered_markers:
+                        # Dodaj sprawdzenie dla lokalizacji użytkownika
+                        if user_marker and not isInOpoleProvince(user_marker['lat'], user_marker['lon']):
+                            logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
                             user_data['current_route'] = None
                             session[user_id] = user_data
                         else:
-                            # Dodaj sprawdzenie dla lokalizacji użytkownika
-                            if user_marker and not isInOpoleProvince(user_marker['lat'], user_marker['lon']):
-                                logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
+                            # Używamy trasy zapisanej w sesji, jeśli istnieje
+                            route = user_data.get('current_route')
+                            
+                            # Sprawdź czy cel nawigacji jest w województwie opolskim
+                            selected_target = user_data.get('selected_target')
+                            if selected_target and not isInOpoleProvince(selected_target['lat'], selected_target['lon']):
+                                logging.warning("Cel nawigacji poza województwem opolskim - usuwam trasę.")
                                 user_data['current_route'] = None
+                                route = None
                                 session[user_id] = user_data
-                            else:
-                                # Używamy trasy zapisanej w sesji, jeśli istnieje
-                                route = user_data.get('current_route')
-                                
-                                # Sprawdź czy cel nawigacji jest w województwie opolskim
-                                selected_target = user_data.get('selected_target')
-                                if selected_target and not isInOpoleProvince(selected_target['lat'], selected_target['lon']):
-                                    logging.warning("Cel nawigacji poza województwem opolskim - usuwam trasę.")
-                                    user_data['current_route'] = None
-                                    route = None
-                                    session[user_id] = user_data
-                                
-                                if not route:
-                                    # Reszta kodu bez zmian...
-                                    route = None
-                                    nearest_marker = find_nearest_marker(user_marker, filtered_markers)
-                                    if nearest_marker:
-                                        # Sprawdzamy województwo przed jakimkolwiek generowaniem trasy
-                                        if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
-                                            logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
-                                            user_data['current_route'] = None
+                            
+                            if not route:
+                                # Reszta kodu bez zmian...
+                                route = None
+                                nearest_marker = find_nearest_marker(user_marker, filtered_markers)
+                                if nearest_marker:
+                                    # Sprawdzamy województwo przed jakimkolwiek generowaniem trasy
+                                    if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
+                                        logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
+                                        user_data['current_route'] = None
+                                        session[user_id] = user_data
+                                    else:
+                                        route = get_route(
+                                            user_marker['lat'], user_marker['lon'],
+                                            nearest_marker['lat'], nearest_marker['lon']
+                                        )
+                                        if route:
+                                            user_data['current_route'] = route
                                             session[user_id] = user_data
-                                        else:
-                                            route = get_route(
-                                                user_marker['lat'], user_marker['lon'],
-                                                nearest_marker['lat'], nearest_marker['lon']
-                                            )
-                                            if route:
-                                                user_data['current_route'] = route
-                                                session[user_id] = user_data
 
-                            # Wyświetlamy trasę tylko jeśli route istnieje i marker jest w województwie
-                            if route:
-                                coordinates = [
-                                    (coord[1], coord[0])
-                                    for coord in route['routes'][0]['geometry']['coordinates']
-                                ]
-                                distance = route['routes'][0]['distance']  # w metrach
-                                distance_text = f"{distance / 1000:.2f} km"
+                        # Wyświetlamy trasę tylko jeśli route istnieje i marker jest w województwie
+                        if route:
+                            coordinates = [
+                                (coord[1], coord[0])
+                                for coord in route['routes'][0]['geometry']['coordinates']
+                            ]
+                            distance = route['routes'][0]['distance']  # w metrach
+                            distance_text = f"{distance / 1000:.2f} km"
 
-                                folium.PolyLine(
-                                    locations=coordinates,
-                                    color='#d00000',
-                                    weight=5,
-                                    opacity=0.7
-                                ).add_to(self.m)
+                            folium.PolyLine(
+                                locations=coordinates,
+                                color='#d00000',
+                                weight=5,
+                                opacity=0.7
+                            ).add_to(self.m)
 
-                                mid_point_index = len(coordinates) // 2
-                                mid_point = coordinates[mid_point_index]
-                                offset_latitude = 0.0007
-                                offset_longitude = 0.0007
-                                mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
+                            mid_point_index = len(coordinates) // 2
+                            mid_point = coordinates[mid_point_index]
+                            offset_latitude = 0.0007
+                            offset_longitude = 0.0007
+                            mid_point_with_offset = [mid_point[0] + offset_latitude, mid_point[1] + offset_longitude]
 
-                                folium.Marker(
-                                    location=mid_point_with_offset,
-                                    icon=folium.DivIcon(
-                                        html=f"""
-                                            <div style="
-                                                font-size: 14px; 
-                                                color: #D32F2F;
-                                                font-weight: bold;
-                                                background-color: rgba(255, 255, 255, 0.9);
-                                                padding: 0.4em 0.8em;
-                                                border-radius: 0.3em;
-                                                text-align: center;
-                                                font-family: Arial, sans-serif;
-                                                box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
-                                                display: inline-block;
-                                                min-width: max-content;
-                                                white-space: nowrap;
-                                            ">
-                                                {distance_text}
-                                            </div>
-                                        """
-                                    )
-                                ).add_to(self.m)
+                            folium.Marker(
+                                location=mid_point_with_offset,
+                                icon=folium.DivIcon(
+                                    html=f"""
+                                        <div style="
+                                            font-size: 14px; 
+                                            color: #D32F2F;
+                                            font-weight: bold;
+                                            background-color: rgba(255, 255, 255, 0.9);
+                                            padding: 0.4em 0.8em;
+                                            border-radius: 0.3em;
+                                            text-align: center;
+                                            font-family: Arial, sans-serif;
+                                            box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
+                                            display: inline-block;
+                                            min-width: max-content;
+                                            white-space: nowrap;
+                                        ">
+                                            {distance_text}
+                                        </div>
+                                    """
+                                )
+                            ).add_to(self.m)
 
             return self.m._repr_html_()
         except Exception as e:
