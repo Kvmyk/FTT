@@ -947,3 +947,98 @@ input[type="checkbox"],
     color: #d32f2f;
     font-weight: bold;
 }
+
+/* Responsywność dla godzin otwarcia */
+.opening-hours-container {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    width: 100%;
+    max-width: 100%;
+}
+
+.opening-hours-container h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.day-hours {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.day-hours label {
+    font-weight: bold;
+    margin-right: 10px;
+    min-width: 100px;
+}
+
+.day-hours input[type="time"] {
+    padding: 8px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px; /* Zapobiega zoom na iOS */
+}
+
+/* Mobilna responsywność dla godzin otwarcia */
+@media screen and (max-width: 768px) {
+    .day-hours {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+
+    .day-hours label {
+        margin-bottom: 8px;
+        font-size: 16px;
+        display: block;
+        width: 100%;
+    }
+
+    .day-hours span {
+        margin: 8px 0;
+    }
+
+    .day-hours input[type="time"] {
+        width: 100%;
+        max-width: none;
+        margin: 5px 0;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    #copy-to-all-days {
+        width: 100%;
+        margin-top: 15px;
+        padding: 12px;
+        font-size: 16px;
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .opening-hours-toggle label {
+        font-size: 16px;
+        padding: 8px 0;
+        display: block;
+    }
+}
+
+/* Łatwiejszy dostęp na urządzeniach dotykowych */
+@media (pointer: coarse) {
+    .day-hours input[type="time"] {
+        height: 44px;
+        font-size: 16px;
+    }
+    
+    #copy-to-all-days {
+        padding: 14px;
+    }
+}
