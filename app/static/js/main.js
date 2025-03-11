@@ -555,7 +555,7 @@ function navigateToToilet(targetLat, targetLon) {
                         startIntelligentTracking();
                     }
                 })
-                .then(response => response && !trackingEnabled ? response.text() : null)
+                .then(response => response ? response.text() : null)  // Remove the !trackingEnabled condition
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
