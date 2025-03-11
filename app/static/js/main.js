@@ -543,7 +543,6 @@ function navigateToToilet(targetLat, targetLon) {
                     if (trackingEnabled) {
                         // If tracking is enabled, just restart tracking
                         stopIntelligentTracking();
-                        window.location.reload();
                         startIntelligentTracking();
                     } else {
                         // Continue with the rest of the navigation logic
