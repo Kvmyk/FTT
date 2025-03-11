@@ -507,7 +507,7 @@ function navigateToToilet(targetLat, targetLon) {
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
 
-    // Jeśli śledzenie jest włączone, zrestartuj je z nowym celem
+    // Jeśli śledzenie jest włączone, opcjonalnie zapamiętujemy ten stan
     const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
     
     if (navigator.geolocation) {
@@ -540,18 +540,13 @@ function navigateToToilet(targetLat, targetLon) {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (trackingEnabled) {
-                        // If tracking is enabled, just restart tracking
-                        stopIntelligentTracking();
-                        startIntelligentTracking();
+                    if (data.status === 'success') {
+                        return fetch('/render_map');
                     } else {
-                        // Continue with the rest of the navigation logic
-                        if (data.status === 'success') {
-                            return fetch('/render_map');
-                        }
+                        throw new Error('Navigation request failed');
                     }
                 })
-                .then(response => response && !trackingEnabled ? response.text() : null)
+                .then(response => response ? response.text() : null)
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
@@ -578,6 +573,11 @@ function navigateToToilet(targetLat, targetLon) {
                         const nearestPinText = document.getElementById('nearestPinText');
                         nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                         nearestPinInfo.classList.add('show');
+                    }
+                    // Jeśli tracking jest włączony, restart trackingu
+                    if (trackingEnabled) {
+                        stopIntelligentTracking();
+                        startIntelligentTracking();
                     }
                 })
                 .catch(error => console.error('Error:', error));
