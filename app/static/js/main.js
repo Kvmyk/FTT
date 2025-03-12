@@ -543,17 +543,12 @@ function navigateToToilet(targetLat, targetLon) {
                     if (trackingEnabled) {
                         stopIntelligentTracking();
                         startIntelligentTracking();
-                        if (data.status === 'success') {
-                            return fetch('/render_map');
-                        }
-                    } else {
-                        // Continue with the rest of the navigation logic
-                        if (data.status === 'success') {
-                            return fetch('/render_map');
-                        }
+                    }
+                    if (data.status === 'success') {
+                        return fetch('/render_map');
                     }
                 })
-                .then(response => response && !trackingEnabled ? response.text() : null)
+                .then(response => response ? response.text() : null)
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
