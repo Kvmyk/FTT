@@ -510,42 +510,13 @@ function navigateToToilet(targetLat, targetLon) {
     // Jeśli śledzenie jest włączone, zrestartuj je z nowym celem
     const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
     if (trackingEnabled) {
-        // Najpierw pobierz aktualną lokalizację i wykonaj navigate
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const userLat = position.coords.latitude;
-                    const userLon = position.coords.longitude;
-                    
-                    fetch('/navigate', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            user_lat: userLat,
-                            user_lon: userLon,
-                            target_lat: targetLat,
-                            target_lon: targetLon
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            // Dopiero po udanym navigate, zrestartuj śledzenie
-                            stopIntelligentTracking();
-                            startIntelligentTracking();
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-                },
-                (error) => console.error('Error getting position:', error)
-            );
-        }
+        // If tracking is enabled, just restart tracking
+        stopIntelligentTracking();
+        startIntelligentTracking();
         return;
     }
 
-    // Reszta kodu dla przypadku gdy tracking jest wyłączony...
+
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
