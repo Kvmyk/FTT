@@ -546,16 +546,10 @@ function navigateToToilet(targetLat, targetLon) {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (trackingEnabled) {
-                        // If tracking is enabled, just restart tracking
-                        stopIntelligentTracking();
-                        startIntelligentTracking();
-                    } else {
                         // Continue with the rest of the navigation logic
                         if (data.status === 'success') {
                             return fetch('/render_map');
                         }
-                    }
                 })
                 .then(response => response && !trackingEnabled ? response.text() : null)
                 .then(html => {
