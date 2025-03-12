@@ -544,7 +544,9 @@ function navigateToToilet(targetLat, targetLon) {
                         // If tracking is enabled, just restart tracking
                         stopIntelligentTracking();
                         startIntelligentTracking();
-                        window.location.reload();
+                        if (data.status === 'success') {
+                            return fetch('/render_map');
+                        }
                     } else {
                         // Continue with the rest of the navigation logic
                         if (data.status === 'success') {
