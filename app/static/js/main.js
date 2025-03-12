@@ -509,7 +509,13 @@ function navigateToToilet(targetLat, targetLon) {
 
     // Jeśli śledzenie jest włączone, zrestartuj je z nowym celem
     const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
-    
+    if (trackingEnabled) {
+        stopIntelligentTracking();
+        startIntelligentTracking();
+        return; // Nie wykonuj jednorazowej nawigacji
+    }
+
+    // Reszta kodu dla jednorazowej nawigacji...
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -540,40 +546,30 @@ function navigateToToilet(targetLat, targetLon) {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (trackingEnabled) {
-                        // If tracking is enabled, just restart tracking
-                        stopIntelligentTracking();
-                        startIntelligentTracking();
-                    } else {
-                        // Continue with the rest of the navigation logic
-                        if (data.status === 'success') {
-                            return fetch('/render_map');
-                        }
+                    if (data.status === 'success') {
+                        return fetch('/render_map');
                     }
                 })
-                .then(response => response && !trackingEnabled ? response.text() : null)
+                .then(response => response.text())
                 .then(html => {
-                    if (html) {
-                        document.getElementById('map').innerHTML = html;
-                        // Dodatkowy fetch do /navigate_toilet_distance
-                        return fetch('/navigate_toilet_distance', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                user_lat: userLat,
-                                user_lon: userLon,
-                                target_lat: parseFloat(targetLat),
-                                target_lon: parseFloat(targetLon)
-                            })
-                        });
-                    }
-                    return null;
+                    document.getElementById('map').innerHTML = html;
+                    // Dodatkowy fetch do /navigate_toilet_distance
+                    return fetch('/navigate_toilet_distance', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            user_lat: userLat,
+                            user_lon: userLon,
+                            target_lat: parseFloat(targetLat),
+                            target_lon: parseFloat(targetLon)
+                        })
+                    });
                 })
-                .then(response => response ? response.json() : null)
+                .then(response => response.json())
                 .then(data => {
-                    if (data && data.status === 'success') {
+                    if (data.status === 'success') {
                         const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
                         nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
