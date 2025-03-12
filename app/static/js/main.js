@@ -513,6 +513,7 @@ function navigateToToilet(targetLat, targetLon) {
         // If tracking is enabled, just restart tracking
         stopIntelligentTracking();
         startIntelligentTracking();
+        return;
     }
 
 
