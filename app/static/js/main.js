@@ -25,8 +25,6 @@ function startIntelligentTracking() {
         return;
     }
 
-    stopIntelligentTracking();
-
     // Sprawdź czy cel nawigacji nadal istnieje po zastosowaniu filtrów
     const targetLat = localStorage.getItem('targetLat');
     const targetLon = localStorage.getItem('targetLon');
