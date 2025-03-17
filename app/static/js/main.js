@@ -552,7 +552,7 @@ function navigateToToilet(targetLat, targetLon) {
                     }
                     return fetch('/render_map');
                 })
-                .then(response => response && !trackingEnabled ? response.text() : null)
+                .then(response => response ? response.text() : null)
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
@@ -767,3 +767,4 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
         container.innerHTML = '';
     }
 });
+
