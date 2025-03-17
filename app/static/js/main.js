@@ -583,10 +583,6 @@ function navigateToToilet(targetLat, targetLon) {
                         }
                     }
                 })
-                .then(() => {
-                    // Ręczne odświeżenie mapy po zakończeniu nawigacji
-                    updateMapWithStoredLocation();
-                })
                 .catch(error => console.error('Error:', error));
             }
         );
