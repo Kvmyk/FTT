@@ -547,7 +547,7 @@ function navigateToToilet(targetLat, targetLon) {
                 .then(data => {
                     return fetch('/render_map');
                 })
-                .then(response => response && !trackingEnabled ? response.text() : null)
+                .then(response => response ? response.text() : null)
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
