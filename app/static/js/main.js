@@ -480,20 +480,6 @@ function submitComment() {
     });
 }
 
-function animateRoute(map, coordinates) {
-    let currentIndex = 0;
-    let polyline = L.polyline([], { color: 'red', weight: 5 }).addTo(map);
-
-    function drawSegment() {
-      if (currentIndex < coordinates.length) {
-        polyline.addLatLng(L.latLng(coordinates[currentIndex]));
-        currentIndex++;
-        requestAnimationFrame(drawSegment);
-      }
-    }
-    drawSegment();
-  }
-
 function isInOpoleProvince(lat, lon) {
     // Granice województwa opolskiego (przybliżone)
     const opoleBounds = {
