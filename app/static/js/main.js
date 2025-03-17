@@ -350,6 +350,8 @@ function submitModal() {
         return;
     }
 
+    document.getElementById('myModal').style.display = 'none';
+
     checkProfanity(description).then(data => {
         if (data.status === 'hate') {
             alert('Opis zawiera mowę nienawiści i nie może zostać dodany.');
@@ -443,6 +445,8 @@ function submitComment() {
     if (!validateCommentRating()) {
         return;
     }
+
+    document.getElementById('commentModal').style.display = 'none';
 
     checkProfanity(comment).then(data => {
         if (data.status === 'hate') {
