@@ -290,18 +290,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Dodaj listener na zmianę widoczności strony, by odświeżyć mapę przy powrocie
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            fetch('/render_map')
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('map').innerHTML = html;
-                })
-                .catch(error => console.error('Error refreshing map:', error));
-        }
-    });
-
 });
 
 function validateRating() {
