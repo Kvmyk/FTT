@@ -507,13 +507,6 @@ function isInOpoleProvince(lat, lon) {
 }
 
 function navigateToToilet(targetLat, targetLon) {
-    // Zapisz nowy cel w localStorage
-    localStorage.setItem('targetLat', targetLat);
-    localStorage.setItem('targetLon', targetLon);
-
-    // Jeśli śledzenie jest włączone, zrestartuj je z nowym celem
-    const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
-    
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -530,6 +523,13 @@ function navigateToToilet(targetLat, targetLon) {
                     return;
                 }
 
+                // Zaktualizuj cel śledzenia w localStorage
+                localStorage.setItem('targetLat', targetLat);
+                localStorage.setItem('targetLon', targetLon);
+
+                // Sprawdzamy, czy śledzenie jest włączone (choć nie restartujemy go)
+                const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
+
                 fetch('/navigate', {
                     method: 'POST',
                     headers: {
@@ -544,11 +544,7 @@ function navigateToToilet(targetLat, targetLon) {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (trackingEnabled) {
-                        // If tracking is enabled, just restart tracking
-                        stopIntelligentTracking();
-                        startIntelligentTracking();
-                    }
+                    // Usuwamy restart inteligentnego śledzenia – nie zatrzymujemy i nie uruchamiamy go ponownie.
                     return fetch('/render_map');
                 })
                 .then(response => response ? response.text() : null)
@@ -578,9 +574,6 @@ function navigateToToilet(targetLat, targetLon) {
                         const nearestPinText = document.getElementById('nearestPinText');
                         nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                         nearestPinInfo.classList.add('show');
-                        if (data.status === 'success') {
-                            return fetch('/render_map');
-                        }
                     }
                 })
                 .catch(error => console.error('Error:', error));
