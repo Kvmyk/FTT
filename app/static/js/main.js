@@ -548,7 +548,6 @@ function navigateToToilet(targetLat, targetLon) {
                         // If tracking is enabled, just restart tracking
                         stopIntelligentTracking();
                         startIntelligentTracking();
-                        
                     }
                     return fetch('/render_map');
                 })
@@ -583,6 +582,10 @@ function navigateToToilet(targetLat, targetLon) {
                             return fetch('/render_map');
                         }
                     }
+                })
+                .then(() => {
+                    // Ręczne odświeżenie mapy po zakończeniu nawigacji
+                    updateMapWithStoredLocation();
                 })
                 .catch(error => console.error('Error:', error));
             }
