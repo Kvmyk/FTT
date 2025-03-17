@@ -1258,7 +1258,7 @@ class Server:
                 disabled_attr = "" if is_within_range else 'disabled="disabled"'
 
                 navigate_button_html = f"""
-                    <button onclick="{onclick_attr}"
+                    <button onclick="{onclick_attr}; this.closest('.leaflet-popup').style.display='none';"
                             class="popup-button" 
                             style="
                                 opacity: {'1' if is_within_range else '0.7'};
