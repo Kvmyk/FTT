@@ -549,12 +549,8 @@ function navigateToToilet(targetLat, targetLon) {
                         stopIntelligentTracking();
                         startIntelligentTracking();
                         
-                    } else {
-                        // Continue with the rest of the navigation logic
-                        if (data.status === 'success') {
-                            return fetch('/render_map');
-                        }
                     }
+                    return fetch('/render_map');
                 })
                 .then(response => response && !trackingEnabled ? response.text() : null)
                 .then(html => {
