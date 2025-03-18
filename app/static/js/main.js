@@ -17,7 +17,17 @@ function blockUserInteractions() {
     blocker.style.zIndex = '9999';
     blocker.style.pointerEvents = 'all'; // Uniemożliwia wszelkie interakcje
     blocker.style.touchAction = 'none'; // Blokuje gesty dotykowe
+    blocker.style.userSelect = 'none'; // Blokuje zaznaczanie tekstu
+    blocker.style.webkitUserSelect = 'none'; // Blokuje zaznaczanie tekstu w Safari
+    blocker.style.msUserSelect = 'none'; // Blokuje zaznaczanie tekstu w IE
+    blocker.style.mozUserSelect = 'none'; // Blokuje zaznaczanie tekstu w Firefox
     document.body.appendChild(blocker);
+
+    // Wyłącz wszystkie zdarzenia dotykowe i kliknięcia na mapie
+    const mapContainer = document.querySelector('.leaflet-container');
+    if (mapContainer) {
+        mapContainer.style.pointerEvents = 'none';
+    }
 }
 
 // Dodaj funkcję odblokowującą interakcje użytkownika
@@ -25,6 +35,12 @@ function unblockUserInteractions() {
     const blocker = document.getElementById('interactionBlocker');
     if (blocker) {
         blocker.remove();
+    }
+
+    // Włącz ponownie zdarzenia dotykowe i kliknięcia na mapie
+    const mapContainer = document.querySelector('.leaflet-container');
+    if (mapContainer) {
+        mapContainer.style.pointerEvents = 'auto';
     }
 }
 
