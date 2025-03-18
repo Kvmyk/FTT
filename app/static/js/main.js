@@ -4,6 +4,28 @@ let lastPosition = null;
 const MIN_DISTANCE = 10; // minimalna odległość w metrach do wywołania aktualizacji
 const UPDATE_INTERVAL = 30000; // 30 sekund
 
+// Dodaj funkcję blokującą interakcje użytkownika
+function blockUserInteractions() {
+    const blocker = document.createElement('div');
+    blocker.id = 'interactionBlocker';
+    blocker.style.position = 'fixed';
+    blocker.style.top = '0';
+    blocker.style.left = '0';
+    blocker.style.width = '100%';
+    blocker.style.height = '100%';
+    blocker.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    blocker.style.zIndex = '9999';
+    document.body.appendChild(blocker);
+}
+
+// Dodaj funkcję odblokowującą interakcje użytkownika
+function unblockUserInteractions() {
+    const blocker = document.getElementById('interactionBlocker');
+    if (blocker) {
+        blocker.remove();
+    }
+}
+
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3; // promień Ziemi w metrach
     const φ1 = lat1 * Math.PI/180;
@@ -106,12 +128,14 @@ function startIntelligentTracking() {
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
+                            blockUserInteractions(); // Blokuj interakcje przed odświeżeniem mapy
                             return fetch('/render_map');
                         }
                     })
                     .then(response => response.text())
                     .then(html => {
                         document.getElementById('map').innerHTML = html;
+                        unblockUserInteractions(); // Odblokuj interakcje po odświeżeniu mapy
                         
                         // After map is updated, get distance info if we have a target
                         if (targetLat && targetLon) {
@@ -139,10 +163,16 @@ function startIntelligentTracking() {
                             nearestPinInfo.classList.add('show');
                         }
                     })
-                    .catch(error => console.error('Error:', error));
+                    .catch(error => {
+                        console.error('Error:', error);
+                        unblockUserInteractions(); // Odblokuj interakcje w przypadku błędu
+                    });
                 }
             },
-            (error) => console.error('Error:', error),
+            (error) => {
+                console.error('Error:', error);
+                unblockUserInteractions(); // Odblokuj interakcje w przypadku błędu
+            },
             {
                 enableHighAccuracy: true,
                 timeout: 10000,
@@ -150,7 +180,10 @@ function startIntelligentTracking() {
             }
         );
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        unblockUserInteractions(); // Odblokuj interakcje w przypadku błędu
+    });
 }
 
 function stopIntelligentTracking() {
@@ -159,6 +192,7 @@ function stopIntelligentTracking() {
         watchId = null;
         lastPosition = null;
     }
+    unblockUserInteractions(); // Odblokuj interakcje po zatrzymaniu śledzenia
 }
 
 function getLocation() {
