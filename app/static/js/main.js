@@ -501,6 +501,12 @@ function navigateToToilet(targetLat, targetLon) {
     // Jeśli śledzenie jest włączone, zrestartuj je z nowym celem
     const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
     
+    if (trackingEnabled) {
+        // Restart śledzenia by uwzględnić nowy cel
+        stopIntelligentTracking();
+        startIntelligentTracking();
+    }
+    
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
