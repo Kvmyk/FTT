@@ -505,7 +505,6 @@ function navigateToToilet(targetLat, targetLon) {
         // Restart śledzenia by uwzględnić nowy cel
         stopIntelligentTracking();
         startIntelligentTracking();
-        return fetch('/render_map');
     }
     
     if (navigator.geolocation) {
@@ -536,10 +535,6 @@ function navigateToToilet(targetLat, targetLon) {
                         target_lon: targetLon
                     })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    return fetch('/render_map');
-                })
                 .then(response => response ? response.text() : null)
                 .then(html => {
                     if (html) {
@@ -569,7 +564,7 @@ function navigateToToilet(targetLat, targetLon) {
                         nearestPinInfo.classList.add('show');
                         if (data.status === 'success') {
                             return fetch('/render_map');
-                        }
+                    }
                     }
                 })
                 .catch(error => console.error('Error:', error));
