@@ -567,6 +567,9 @@ function navigateToToilet(targetLat, targetLon) {
                         const nearestPinText = document.getElementById('nearestPinText');
                         nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                         nearestPinInfo.classList.add('show');
+                        if (data.status === 'success') {
+                            return fetch('/render_map');
+                        }
                     }
                 })
                 .catch(error => console.error('Error:', error));
