@@ -751,3 +751,43 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
         container.innerHTML = '';
     }
 });
+
+// Dodaj po załadowaniu mapy
+document.addEventListener('DOMContentLoaded', function() {
+    // Istniejący kod...
+    
+    // Dodaj nową funkcję naprawiającą problemy z klikaniem po odświeżeniu
+    function resetMapInteractions() {
+        const mapElement = document.getElementById('map');
+        const mapContainer = document.querySelector('.leaflet-container');
+        
+        if (mapContainer) {
+            // Usuń i ponownie dodaj nasłuchiwacz zdarzeń dotknięcia
+            mapContainer.style.touchAction = 'none';
+            setTimeout(() => {
+                mapContainer.style.touchAction = 'auto';
+            }, 100);
+            
+            // Wymuś odświeżenie wskaźników zdarzeń
+            const allClickableElements = document.querySelectorAll('.circle-plus, .filter-button, #nearestPinInfo, .location-tracking-toggle, .popup-button, button, input[type="checkbox"]');
+            allClickableElements.forEach(el => {
+                el.style.pointerEvents = 'none';
+                setTimeout(() => {
+                    el.style.pointerEvents = 'auto';
+                }, 50);
+            });
+        }
+    }
+    
+    // Wywołaj po każdym odświeżeniu mapy
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+        const result = originalFetch.apply(this, args);
+        if (args[0].includes('/render_map')) {
+            result.then(() => {
+                setTimeout(resetMapInteractions, 300);
+            });
+        }
+        return result;
+    };
+});
