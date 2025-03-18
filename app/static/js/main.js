@@ -505,7 +505,6 @@ function navigateToToilet(targetLat, targetLon) {
         // Restart śledzenia by uwzględnić nowy cel
         stopIntelligentTracking();
         startIntelligentTracking();
-        return fetch('/render_map');
     }
     
     if (navigator.geolocation) {
