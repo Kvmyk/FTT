@@ -498,16 +498,7 @@ function navigateToToilet(targetLat, targetLon) {
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
 
-    // Jeśli śledzenie jest włączone, zrestartuj je z nowym celem
-    const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
-    
-    if (trackingEnabled) {
-        // Restart śledzenia by uwzględnić nowy cel
-        stopIntelligentTracking();
-        startIntelligentTracking();
-        return;
-    }
-    
+    // Zawsze generuj trasę natychmiast, niezależnie od trybu śledzenia
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -544,7 +535,14 @@ function navigateToToilet(targetLat, targetLon) {
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
-                        // Dodatkowy fetch do /navigate_toilet_distance
+                        
+                        // Dopiero po wygenerowaniu trasy, restart śledzenia jeśli potrzeba
+                        const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
+                        if (trackingEnabled) {
+                            stopIntelligentTracking();
+                            startIntelligentTracking();
+                        }
+                        
                         return fetch('/navigate_toilet_distance', {
                             method: 'POST',
                             headers: {
@@ -567,7 +565,6 @@ function navigateToToilet(targetLat, targetLon) {
                         const nearestPinText = document.getElementById('nearestPinText');
                         nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                         nearestPinInfo.classList.add('show');
-                        return fetch('/render_map');
                     }
                 })
                 .catch(error => console.error('Error:', error));
