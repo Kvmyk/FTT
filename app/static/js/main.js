@@ -15,6 +15,8 @@ function blockUserInteractions() {
     blocker.style.height = '100%';
     blocker.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
     blocker.style.zIndex = '9999';
+    blocker.style.pointerEvents = 'all'; // Uniemożliwia wszelkie interakcje
+    blocker.style.touchAction = 'none'; // Blokuje gesty dotykowe
     document.body.appendChild(blocker);
 }
 
