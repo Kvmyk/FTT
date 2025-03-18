@@ -535,6 +535,10 @@ function navigateToToilet(targetLat, targetLon) {
                         target_lon: targetLon
                     })
                 })
+                .then(response => response.json())
+                .then(data => {
+                    return fetch('/render_map');
+                })
                 .then(response => response ? response.text() : null)
                 .then(html => {
                     if (html) {
@@ -562,9 +566,7 @@ function navigateToToilet(targetLat, targetLon) {
                         const nearestPinText = document.getElementById('nearestPinText');
                         nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                         nearestPinInfo.classList.add('show');
-                        if (data.status === 'success') {
-                            return fetch('/render_map');
-                    }
+                        return fetch('/render_map');
                     }
                 })
                 .catch(error => console.error('Error:', error));
