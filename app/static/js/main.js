@@ -1,7 +1,7 @@
 // Dodaj globalne zmienne na górze pliku
 let watchId = null;
 let lastPosition = null;
-const MIN_DISTANCE = 10; // minimalna odległość w metrach do wywołania aktualizacji
+const MIN_DISTANCE = 25; // minimalna odległość w metrach do wywołania aktualizacji
 const UPDATE_INTERVAL = 30000; // 30 sekund
 
 // Dodaj funkcję blokującą interakcje użytkownika
