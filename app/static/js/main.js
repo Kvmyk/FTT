@@ -146,14 +146,12 @@ function startIntelligentTracking() {
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
-                            blockUserInteractions(); // Blokuj interakcje przed odświeżeniem mapy
                             return fetch('/render_map');
                         }
                     })
                     .then(response => response.text())
                     .then(html => {
                         document.getElementById('map').innerHTML = html;
-                        unblockUserInteractions(); // Odblokuj interakcje po odświeżeniu mapy
                         
                         // After map is updated, get distance info if we have a target
                         if (targetLat && targetLon) {
@@ -183,13 +181,11 @@ function startIntelligentTracking() {
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        unblockUserInteractions(); // Odblokuj interakcje w przypadku błędu
                     });
                 }
             },
             (error) => {
                 console.error('Error:', error);
-                unblockUserInteractions(); // Odblokuj interakcje w przypadku błędu
             },
             {
                 enableHighAccuracy: true,
@@ -200,7 +196,6 @@ function startIntelligentTracking() {
     })
     .catch(error => {
         console.error('Error:', error);
-        unblockUserInteractions(); // Odblokuj interakcje w przypadku błędu
     });
 }
 
@@ -210,7 +205,6 @@ function stopIntelligentTracking() {
         watchId = null;
         lastPosition = null;
     }
-    unblockUserInteractions(); // Odblokuj interakcje po zatrzymaniu śledzenia
 }
 
 function getLocation() {
