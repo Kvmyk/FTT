@@ -11,6 +11,7 @@ import threading
 import time
 import sqlite3
 import datetime
+import gc
 from flask_session import Session
 from flask_compress import Compress
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -98,6 +99,7 @@ class Server:
         if hasattr(self, 'm') and self.m is not None:
             del self.m  # Explicitly delete old map
             self.m = None
+            gc.collect()  # Force garbage collection
             
         if center_lat is None:
             center_lat = self.default_lat
@@ -1564,6 +1566,7 @@ class Server:
             if hasattr(self, 'm') and self.m is not None:
                 del self.m
                 self.m = None
+                gc.collect()  # Force garbage collection
                 
             # Ustaw centrum mapy
             user_id = session.get('user_id')

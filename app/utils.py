@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 geolocator = Nominatim(user_agent=os.environ.get('USER_AGENT'))
 
-@lru_cache(maxsize=100)
+
 def get_coordinates(location):
     location = geolocator.geocode(location)
     if location:
