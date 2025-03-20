@@ -1205,6 +1205,113 @@ class Server:
             except sqlite3.Error as e:
                 return jsonify({"error": str(e)}), 500
 
+        @self.app.route('/navigate_complete', methods=['POST'])
+        def navigate_complete():
+            """Połączony endpoint realizujący wszystkie operacje związane z nawigacją w jednym zapytaniu"""
+            data = request.json
+            user_lat = data.get('user_lat')
+            user_lon = data.get('user_lon')
+            target_lat = data.get('target_lat')
+            target_lon = data.get('target_lon')
+            
+            # 1. Walidacja danych wejściowych
+            if not all([user_lat, user_lon, target_lat, target_lon]):
+                return jsonify({'status': 'error', 'message': 'Brak wymaganych danych'}), 400
+            
+            # 2. Sprawdź ograniczenia geograficzne
+            if not isInOpoleProvince(user_lat, user_lon) or not isInOpoleProvince(target_lat, target_lon):
+                return jsonify({
+                    'status': 'error', 
+                    'message': 'Nawigacja dostępna tylko w województwie opolskim',
+                    'province_error': True
+                }), 400
+            
+            # 3. Pobierz/utwórz sesję użytkownika
+            user_id = session.get('user_id')
+            if not user_id:
+                user_id = str(uuid.uuid4())
+                session['user_id'] = user_id
+            
+            user_data = session.get(user_id, {})
+            
+            # 4. Zaktualizuj marker użytkownika
+            user_marker = {
+                "lat": user_lat,
+                "lon": user_lon,
+                "name": "User Location",
+                "description": "This is your location"
+            }
+            user_data["marker"] = user_marker
+            
+            # 5. Oblicz trasę
+            route = get_route(user_lat, user_lon, target_lat, target_lon)
+            if not route:
+                return jsonify({'status': 'error', 'message': 'Nie można obliczyć trasy'}), 400
+            
+            # 6. Zapisz informacje o trasie w sesji
+            user_data['current_route'] = route
+            user_data['selected_target'] = {
+                'lat': target_lat,
+                'lon': target_lon,
+                'time': time.time()
+            }
+            session[user_id] = user_data
+            
+            # 7. Znajdź nazwę celu
+            target_marker = next((m for m in self.markers 
+                             if abs(m['lat'] - target_lat) < 0.0001 
+                             and abs(m['lon'] - target_lon) < 0.0001), None)
+            target_name = target_marker['name'] if target_marker else 'Unknown'
+            
+            # 8. Oblicz odległość i czas
+            distance = route['routes'][0]['distance']  # w metrach
+            duration = route['routes'][0]['duration'] / 60  # w minutach
+            distance_text = format_distance_text(distance)
+            
+            # 9. Wygeneruj HTML mapy (opcjonalnie)
+            map_html = self.update_map()
+            
+            # 10. Zwróć wszystkie potrzebne dane w jednej odpowiedzi
+            return jsonify({
+                'status': 'success',
+                'distance': distance_text,
+                'duration': f"{duration:.0f}",
+                'name': target_name,
+                'map_html': map_html,
+                'has_route': True
+            })
+
+        @self.app.route('/update_location_and_map', methods=['POST'])
+        def update_location_and_map():
+            """Zaktualizuj lokalizację użytkownika i zwróć nową mapę w jednym zapytaniu"""
+            data = request.json
+            user_lat = data.get('user_lat')
+            user_lon = data.get('user_lon')
+            
+            # Aktualizacja sesji użytkownika
+            user_id = session.get('user_id')
+            if not user_id:
+                user_id = str(uuid.uuid4())
+                session['user_id'] = user_id
+            
+            user_data = session.get(user_id, {})
+            user_marker = {
+                "lat": user_lat,
+                "lon": user_lon,
+                "name": "User Location",
+                "description": "This is your location"
+            }
+            user_data["marker"] = user_marker
+            session[user_id] = user_data
+            
+            # Wygeneruj nową mapę
+            map_html = self.update_map()
+            
+            return jsonify({
+                'status': 'success',
+                'map_html': map_html
+            })
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.

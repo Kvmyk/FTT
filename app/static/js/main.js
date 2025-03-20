@@ -540,28 +540,21 @@ function isInOpoleProvince(lat, lon) {
 }
 
 function navigateToToilet(targetLat, targetLon) {
-    // Zapisz nowy cel w localStorage
+    // Pokaż wskaźnik ładowania
+    document.getElementById('loadingOverlay').style.display = 'block';
+    
+    // Zapisz cel w localStorage
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
 
-    // Zawsze generuj trasę natychmiast, niezależnie od trybu śledzenia
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const userLat = position.coords.latitude;
                 const userLon = position.coords.longitude;
 
-                if (!isInOpoleProvince(userLat, userLon)) {
-                    alert('Znajdujesz się poza województwem opolskim. Nawigacja jest dostępna tylko w województwie opolskim.');
-                    return;
-                }
-
-                if (!isInOpoleProvince(targetLat, targetLon)) {
-                    alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
-                    return;
-                }
-
-                fetch('/navigate', {
+                // Jedno, kompletne zapytanie zamiast sekwencyjnych
+                fetch('/navigate_complete', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -575,46 +568,54 @@ function navigateToToilet(targetLat, targetLon) {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    return fetch('/render_map');
-                })
-                .then(response => response ? response.text() : null)
-                .then(html => {
-                    if (html) {
-                        document.getElementById('map').innerHTML = html;
+                    // Ukryj wskaźnik ładowania
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    
+                    if (data.status === 'error') {
+                        if (data.province_error) {
+                            alert('Nawigacja jest dostępna tylko w województwie opolskim.');
+                        } else {
+                            alert(data.message || 'Wystąpił błąd podczas nawigacji.');
+                        }
+                        return;
+                    }
+                    
+                    // Zaktualizuj mapę (jednorazowo)
+                    document.getElementById('map').innerHTML = data.map_html;
+                    
+                    // Zaktualizuj informacje o trasie
+                    if (data.has_route) {
+                        const nearestPinInfo = document.getElementById('nearestPinInfo');
+                        const nearestPinText = document.getElementById('nearestPinText');
+                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                        nearestPinInfo.classList.add('show');
+                    }
+                    
+                    // Zresetuj interakcje mapy, aby zapewnić poprawne działanie
+                    setTimeout(() => {
+                        const mapContainer = document.querySelector('.leaflet-container');
+                        if (mapContainer) {
+                            mapContainer.style.pointerEvents = 'auto';
+                        }
                         
-                        // Dopiero po wygenerowaniu trasy, restart śledzenia jeśli potrzeba
+                        // Restart śledzenia, jeśli włączone
                         const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
                         if (trackingEnabled) {
                             stopIntelligentTracking();
                             startIntelligentTracking();
                         }
-                        
-                        return fetch('/navigate_toilet_distance', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                user_lat: userLat,
-                                user_lon: userLon,
-                                target_lat: parseFloat(targetLat),
-                                target_lon: parseFloat(targetLon)
-                            })
-                        });
-                    }
-                    return null;
+                    }, 300);
                 })
-                .then(response => response ? response.json() : null)
-                .then(data => {
-                    if (data && data.status === 'success') {
-                        const nearestPinInfo = document.getElementById('nearestPinInfo');
-                        const nearestPinText = document.getElementById('nearestPinText');
-                        nearestPinText.innerText = `Od twojej lokalizacji do toalety jest ${data.distance} – ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                        nearestPinInfo.classList.add('show');
-                        return fetch('/render_map');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    console.error('Error:', error);
+                    alert('Wystąpił błąd podczas nawigacji. Spróbuj ponownie.');
+                });
+            },
+            (error) => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                console.error('Geolocation error:', error);
+                showError(error);
             }
         );
     }
