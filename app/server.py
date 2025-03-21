@@ -61,7 +61,7 @@ class Server:
         self.setup_database()
 
         # Upewnij się, że katalog na zdjęcia istnieje
-        self.uploads_dir = os.path.join('data', 'uploads')
+        self.uploads_dir = os.path.join('static', 'uploads')
         if not os.path.exists(self.uploads_dir):
             os.makedirs(self.uploads_dir)
     
@@ -395,7 +395,7 @@ class Server:
                 
                 # Poprawnie definiuj ścieżki
                 photo_path = os.path.join('uploads', photo_filename)  # Względna ścieżka dla HTML/DB
-                full_path = os.path.join('data', photo_path)  # Pełna ścieżka do zapisu pliku
+                full_path = os.path.join('static', photo_path)  # Pełna ścieżka do zapisu pliku
                 
                 # Zapisz plik
                 photo.save(full_path)
@@ -1336,7 +1336,7 @@ class Server:
                 photo_html = ""
                 if photo_path:
                     photo_html = f"""
-                        <img src="/data/{photo_path}" 
+                        <img src="/static/{photo_path}" 
                             style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
                                     object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;"
                             loading="lazy">
