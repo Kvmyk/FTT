@@ -392,10 +392,12 @@ class Server:
                 # Generuj unikalną nazwę pliku z rozszerzeniem
                 file_ext = os.path.splitext(photo.filename)[1] if photo.filename else '.jpg'
                 photo_filename = f"{uuid.uuid4()}{file_ext}"
-                photo_path = os.path.join('data','uploads', photo_filename)  # Względna ścieżka dla HTML
                 
-                # Zapisz plik w katalogu uploads
-                full_path = os.path.join('data','uploads', photo_path)
+                # Poprawnie definiuj ścieżki
+                photo_path = os.path.join('uploads', photo_filename)  # Względna ścieżka dla HTML/DB
+                full_path = os.path.join('data', photo_path)  # Pełna ścieżka do zapisu pliku
+                
+                # Zapisz plik
                 photo.save(full_path)
 
             if useUserLocation:
@@ -1334,7 +1336,7 @@ class Server:
                 photo_html = ""
                 if photo_path:
                     photo_html = f"""
-                        <img src="/data/uploads/{photo_path}" 
+                        <img src="/data/{photo_path}" 
                             style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
                                     object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;"
                             loading="lazy">
@@ -1807,9 +1809,11 @@ class Server:
                     file_path = os.path.join('uploads', filename)
                     if file_path not in used_photos:
                         # Usuń plik, jeśli nie jest używany przez żaden marker
-                        full_path = os.path.join('data','uploads', file_path)
+                        full_path = os.path.join('data', 'uploads', filename)  # POPRAWIONA ŚCIEŻKA
                         if os.path.exists(full_path):
                             os.remove(full_path)
                             logging.info(f"Usunięto osierocony plik zdjęcia: {full_path}")
         except Exception as e:
             logging.error(f"Błąd podczas czyszczenia osieroconych zdjęć: {e}")
+
+
