@@ -1,9 +1,6 @@
 import os
 import folium
 import flask
-import requests
-import geopy
-import json
 import base64
 import uuid
 import logging
@@ -12,6 +9,7 @@ import time
 import sqlite3
 import datetime
 import gc
+import shutil
 from flask_session import Session
 from flask_compress import Compress
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -61,6 +59,11 @@ class Server:
 
         self.setup_routes()
         self.setup_database()
+
+        # Upewnij się, że katalog na zdjęcia istnieje
+        self.uploads_dir = os.path.join('data', 'uploads')
+        if not os.path.exists(self.uploads_dir):
+            os.makedirs(self.uploads_dir)
     
     def start_cleanup_thread(self):
         if not self.cleanup_thread:
@@ -384,9 +387,16 @@ class Server:
             weekend_close = data.get('weekendCloseTime', '')
             
             photo = request.files.get('photos')  # może być None
-            photo_base64 = None
+            photo_path = None
             if photo:
-                photo_base64 = base64.b64encode(photo.read()).decode('utf-8')
+                # Generuj unikalną nazwę pliku z rozszerzeniem
+                file_ext = os.path.splitext(photo.filename)[1] if photo.filename else '.jpg'
+                photo_filename = f"{uuid.uuid4()}{file_ext}"
+                photo_path = os.path.join('data','uploads', photo_filename)  # Względna ścieżka dla HTML
+                
+                # Zapisz plik w katalogu uploads
+                full_path = os.path.join('data','uploads', photo_path)
+                photo.save(full_path)
 
             if useUserLocation:
                 user_id = session.get('user_id')
@@ -435,7 +445,7 @@ class Server:
                     "onlyForClients": onlyForClients,
                     "rating": rating,
                     "base_rating": rating,  # Dodaj tę linię, by base_rating było takie samo jak rating
-                    "photo": photo_base64,
+                    "photo": photo_path,  # Ścieżka zamiast base64
                     "forDisabled": forDisabled,
                     'weekday_open': data.get('weekday_open', ''),
                     'weekday_close': data.get('weekday_close', ''),
@@ -872,6 +882,7 @@ class Server:
                         # Reload markers after deletion
                         self.markers = self.load_markers()
                         self.original_markers = self.markers.copy()
+                        self.clean_orphaned_photos()
                         
                         return jsonify({"success": True})
             except sqlite3.Error as e:
@@ -1066,6 +1077,7 @@ class Server:
                         # Reload markers
                         self.markers = self.load_markers()
                         self.original_markers = self.markers.copy()
+                        self.clean_orphaned_photos()  # Dodaj tę linię
                         
                         return jsonify({"success": True})
             except sqlite3.Error as e:
@@ -1317,14 +1329,15 @@ class Server:
                     rating_display = f"{base_rating:.1f}"
                 else:
                     rating_display = "Brak oceny"
-                photo_base64 = marker.get('photo', None)
+                photo_path = marker.get('photo', None)
                 comments_list = marker.get('comments', [])
                 photo_html = ""
-                if photo_base64:
+                if photo_path:
                     photo_html = f"""
-                        <img src="data:image/jpeg;base64,{photo_base64}" 
+                        <img src="/data/uploads/{photo_path}" 
                             style="max-width: 150px; max-height: 150px; width: auto; height: auto; 
-                                    object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;">
+                                    object-fit: contain; border-radius: 4px; display: block; margin: 10px 0;"
+                            loading="lazy">
                     """
 
                 # Sekcja komentarzy
@@ -1776,3 +1789,27 @@ class Server:
 
     def runThePage(self):
         self.app.run(host = os.environ.get('SERVER_HOST'), port=os.environ.get('SERVER_PORT'))
+
+    def clean_orphaned_photos(self):
+        """Usuwa osierocone pliki zdjęć, które nie są powiązane z żadnym markerem"""
+        try:
+            # Zbierz wszystkie ścieżki zdjęć używane przez markery
+            used_photos = set()
+            for marker in self.original_markers:
+                photo_path = marker.get('photo')
+                if photo_path:
+                    used_photos.add(photo_path)
+            
+            # Sprawdź pliki w katalogu uploads
+            uploads_dir = os.path.join('data', 'uploads')
+            if os.path.exists(uploads_dir):
+                for filename in os.listdir(uploads_dir):
+                    file_path = os.path.join('uploads', filename)
+                    if file_path not in used_photos:
+                        # Usuń plik, jeśli nie jest używany przez żaden marker
+                        full_path = os.path.join('data','uploads', file_path)
+                        if os.path.exists(full_path):
+                            os.remove(full_path)
+                            logging.info(f"Usunięto osierocony plik zdjęcia: {full_path}")
+        except Exception as e:
+            logging.error(f"Błąd podczas czyszczenia osieroconych zdjęć: {e}")
