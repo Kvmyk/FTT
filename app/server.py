@@ -1803,13 +1803,13 @@ class Server:
                     used_photos.add(photo_path)
             
             # Sprawdź pliki w katalogu uploads
-            uploads_dir = os.path.join('data', 'uploads')
+            uploads_dir = os.path.join('static', 'uploads')
             if os.path.exists(uploads_dir):
                 for filename in os.listdir(uploads_dir):
                     file_path = os.path.join('uploads', filename)
                     if file_path not in used_photos:
                         # Usuń plik, jeśli nie jest używany przez żaden marker
-                        full_path = os.path.join('data', 'uploads', filename)  # POPRAWIONA ŚCIEŻKA
+                        full_path = os.path.join('static', 'uploads', filename)  # POPRAWIONA ŚCIEŻKA
                         if os.path.exists(full_path):
                             os.remove(full_path)
                             logging.info(f"Usunięto osierocony plik zdjęcia: {full_path}")
