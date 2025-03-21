@@ -377,6 +377,7 @@ function submitModal() {
                 window.location.reload();
             } else {
                 console.error('Error:', data.message);
+                alert('Error: ' + data.message);
             }
         });
     });
