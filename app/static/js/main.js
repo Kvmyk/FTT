@@ -199,7 +199,6 @@ function sendPosition(position) {
     .then(html => {
         document.getElementById('map').innerHTML = html;
         document.getElementById('loadingOverlay').style.display = 'none';
-        // Now that the user location is set, call nearest_toilet_distance
         return fetch('/nearest_toilet_distance');
     })
     .then(response => response.json())
