@@ -4,46 +4,6 @@ let lastPosition = null;
 const MIN_DISTANCE = 25; // minimalna odległość w metrach do wywołania aktualizacji
 const UPDATE_INTERVAL = 30000; // 30 sekund
 
-// Dodaj funkcję blokującą interakcje użytkownika
-function blockUserInteractions() {
-    const blocker = document.createElement('div');
-    blocker.id = 'interactionBlocker';
-    blocker.style.position = 'fixed';
-    blocker.style.top = '0';
-    blocker.style.left = '0';
-    blocker.style.width = '100%';
-    blocker.style.height = '100%';
-    blocker.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    blocker.style.zIndex = '9999';
-    blocker.style.pointerEvents = 'all'; // Uniemożliwia wszelkie interakcje
-    blocker.style.touchAction = 'none'; // Blokuje gesty dotykowe
-    blocker.style.userSelect = 'none'; // Blokuje zaznaczanie tekstu
-    blocker.style.webkitUserSelect = 'none'; // Blokuje zaznaczanie tekstu w Safari
-    blocker.style.msUserSelect = 'none'; // Blokuje zaznaczanie tekstu w IE
-    blocker.style.mozUserSelect = 'none'; // Blokuje zaznaczanie tekstu w Firefox
-    document.body.appendChild(blocker);
-
-    // Wyłącz wszystkie zdarzenia dotykowe i kliknięcia na mapie
-    const mapContainer = document.querySelector('.leaflet-container');
-    if (mapContainer) {
-        mapContainer.style.pointerEvents = 'none';
-    }
-}
-
-// Dodaj funkcję odblokowującą interakcje użytkownika
-function unblockUserInteractions() {
-    const blocker = document.getElementById('interactionBlocker');
-    if (blocker) {
-        blocker.remove();
-    }
-
-    // Włącz ponownie zdarzenia dotykowe i kliknięcia na mapie
-    const mapContainer = document.querySelector('.leaflet-container');
-    if (mapContainer) {
-        mapContainer.style.pointerEvents = 'auto';
-    }
-}
-
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3; // promień Ziemi w metrach
     const φ1 = lat1 * Math.PI/180;
@@ -270,38 +230,6 @@ function showError(error) {
         case error.UNKNOWN_ERROR:
             alert("An unknown error occurred.");
             break;
-    }
-}
-
-function updateMapWithStoredLocation() {
-    const lat = localStorage.getItem('lat');
-    const lon = localStorage.getItem('lon');
-    if (lat && lon) {
-        fetch('/location', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                lat: parseFloat(lat),
-                lon: parseFloat(lon)
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data);
-            localStorage.setItem('locationUpdated', 'true');
-            // Zamiast reload, załaduj mapę dynamicznie
-            fetch('/render_map')
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('map').innerHTML = html;
-                })
-                .catch(error => console.error('Error loading map:', error));
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
     }
 }
 
