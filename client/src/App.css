@@ -1,0 +1,176 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+
+/* Base styles */
+body, html {
+  font-family: 'Roboto', sans-serif;
+  height: 100%;
+  overflow: hidden;
+  font-weight: 300;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  width: 100%;
+  height: 100%;
+}
+
+.app {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+/* Plus button for adding toilets */
+.circle-plus {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border: 3px solid red;
+  border-radius: 50%;
+  color: red;
+  font-size: 28px;
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  cursor: pointer; 
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.circle-plus:hover {
+  transform: scale(1.1);
+  background-color: #EEEEEE;    
+}
+
+/* Filter button */
+.filter-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border: 3px solid red;
+  border-radius: 50%;
+  color: red;
+  font-size: 16px;
+  position: fixed;
+  top: 60px;
+  right: 10px;
+  z-index: 1000;
+  cursor: pointer; 
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.filter-button:hover {
+  transform: scale(1.1);
+  background-color: #EEEEEE;    
+}
+
+/* Location tracking toggle */
+.location-tracking-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: white;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 3px solid red;
+}
+
+/* Switch styles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: red;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.switch-label {
+  margin-left: 10px;
+  font-weight: 300;
+}
+
+/* Copyright footer */
+.copyright-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  padding: 5px 0;
+  font-size: 12px;
+  z-index: 999;
+}
+
+/* Responsive styles */
+@media screen and (max-width: 768px) {
+  .location-tracking-toggle {
+    bottom: auto;
+    top: 110px;
+    right: 10px;
+    padding: 8px;
+  }
+  
+  .location-tracking-toggle .switch {
+    width: 50px;
+    height: 28px;
+  }
+  
+  .location-tracking-toggle .slider:before {
+    height: 20px;
+    width: 20px;
+  }
+  
+  .location-tracking-toggle .switch-label {
+    font-size: 14px;
+  }
+}

@@ -13,6 +13,7 @@ import shutil
 from flask_session import Session
 from flask_compress import Compress
 from flask import Flask, send_from_directory, jsonify, request, session
+from flask_cors import CORS  # Add this import
 from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text, is_hate_speech, isInOpoleProvince
 from dotenv import load_dotenv
 from contextlib import closing
@@ -28,6 +29,8 @@ user_icon = os.path.join('user_icon.png')
 class Server:
     def __init__(self):
         self.app = Flask(__name__, static_url_path='/static')
+        # Enable CORS for React frontend
+        CORS(self.app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
         Compress(self.app)
         self.app.secret_key = os.environ.get('KEY')  # klucz do sesji - niezbędny
         
@@ -223,6 +226,45 @@ class Server:
             który wczytuje JS i następnie dociąga /render_map w div#map.
             """
             return send_from_directory('static/html', 'template.html')
+
+        @self.app.route('/api/map-data', methods=['GET'])
+        def get_map_data():
+            """Return map data as JSON for React frontend"""
+            user_id = session.get('user_id')
+            user_data = session.get(user_id, {}) if user_id else {}
+            user_marker = user_data.get('marker')
+            
+            # Get filtered markers
+            filtered_markers = self.get_filtered_markers(user_data.get('filters', {}))
+            
+            # Get current route if any
+            route_data = None
+            if user_data.get('current_route'):
+                route = user_data.get('current_route')
+                coordinates = [
+                    [coord[1], coord[0]]
+                    for coord in route['routes'][0]['geometry']['coordinates']
+                ]
+                distance = route['routes'][0]['distance']
+                duration = route['routes'][0]['duration'] / 60
+                
+                route_data = {
+                    'coordinates': coordinates,
+                    'distance': distance,
+                    'distance_text': f"{distance / 1000:.2f} km",
+                    'duration': f"{duration:.0f}"
+                }
+            
+            return jsonify({
+                'markers': filtered_markers,
+                'userMarker': user_marker,
+                'center': {
+                    'lat': user_marker['lat'] if user_marker else self.default_lat,
+                    'lon': user_marker['lon'] if user_marker else self.default_lon
+                },
+                'route': route_data,
+                'selectedTarget': user_data.get('selected_target')
+            })
 
         @self.app.route('/location', methods=['POST'])
         def location():
@@ -1815,5 +1857,22 @@ class Server:
                             logging.info(f"Usunięto osierocony plik zdjęcia: {full_path}")
         except Exception as e:
             logging.error(f"Błąd podczas czyszczenia osieroconych zdjęć: {e}")
+
+    def get_filtered_markers(self, filters):
+        filter_payable = filters.get('filterPayable', False)
+        filter_for_clients = filters.get('filterForClients', False)
+        filter_for_disabled = filters.get('filterForDisabled', False)
+        filter_rating = float(filters.get('filterRating', 0))
+        
+        if not (filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0):
+            return self.markers
+            
+        return [
+            marker for marker in self.original_markers
+            if (not filter_payable or marker.get('payable', False)) and
+               (not filter_for_clients or marker.get('onlyForClients', False)) and
+               (not filter_for_disabled or marker.get('forDisabled', False)) and
+               (float(marker.get('rating', 0)) >= filter_rating)
+        ]
 
 

@@ -1,0 +1,98 @@
+.map-container {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
+.toilet-popup {
+  width: 300px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: 'Roboto', sans-serif;
+}
+
+.toilet-popup h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.toilet-popup p {
+  margin: 5px 0;
+}
+
+.toilet-photo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.comments-section {
+  margin-top: 10px;
+}
+
+.comments-section h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.comment {
+  max-height: 80px;
+  overflow-y: hidden;
+  padding-right: 5px;
+}
+
+.more-comments {
+  width: auto;
+  background: none;
+  color: #666;
+  padding: 4px 8px;
+  margin: 2px 0;
+  border: none;
+  cursor: pointer;
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+}
+
+.popup-button {
+  width: 80%;
+  background-color: red;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 300;
+  transition: all 0.3s ease;
+}
+
+.popup-button:hover {
+  background-color: #C92704;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.popup-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.distance-label {
+  font-size: 14px;
+  color: #D32F2F;
+  font-weight: bold;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 0.4em 0.8em;
+  border-radius: 0.3em;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.1);
+  display: inline-block;
+  min-width: max-content;
+  white-space: nowrap;
+}
