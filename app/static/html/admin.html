@@ -151,6 +151,7 @@
         <table>
             <thead>
                 <tr>
+                    <th><input type="checkbox" id="selectAllCheckbox"></th>
                     <th>ID</th>
                     <th>Name</th>
                     <th>Description</th>
@@ -215,6 +216,30 @@
                         For Disabled
                     </label>
                 </div>
+
+                <!-- Opening hours section -->
+                <div class="form-group">
+                    <h4>Godziny otwarcia (dni powszednie)</h4>
+                    <div class="hours-inputs">
+                        <label>Od: <input type="time" id="weekdayOpen" name="weekdayOpen"></label>
+                        <label>Do: <input type="time" id="weekdayClose" name="weekdayClose"></label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <h4>Godziny otwarcia (weekendy)</h4>
+                    <div class="hours-inputs">
+                        <label>Od: <input type="time" id="weekendOpen" name="weekendOpen"></label>
+                        <label>Do: <input type="time" id="weekendClose" name="weekendClose"></label>
+                    </div>
+                </div>
+
+                <!-- Photo section -->
+                <div class="form-group" id="photoSection">
+                    <h4>Zdjęcie</h4>
+                    <div id="photoPreview"></div>
+                    <button type="button" id="deletePhotoBtn" class="btn btn-danger" style="display:none;">Usuń zdjęcie</button>
+                </div>
                 
                 <div class="modal-buttons">
                     <button type="button" class="cancel-btn" id="cancelEdit">Cancel</button>
@@ -259,6 +284,13 @@
                     <button type="submit" class="save-btn">Add Comment</button>
                 </div>
             </form>
+
+            <!-- Add these checkboxes for bulk selection -->
+            <div class="form-group">
+                <button type="button" id="selectAllCommentsBtn" class="btn btn-secondary">Zaznacz wszystkie komentarze</button>
+                <button type="button" id="deselectAllCommentsBtn" class="btn btn-secondary">Odznacz wszystkie</button>
+                <button type="button" id="deleteSelectedCommentsBtn" class="btn btn-danger">Usuń zaznaczone komentarze</button>
+            </div>
         </div>
     </div>
     
@@ -330,6 +362,7 @@
                 const row = document.createElement('tr');
                 
                 row.innerHTML = `
+                    <td><input type="checkbox" class="toilet-checkbox" data-id="${toilet.id}"></td>
                     <td>${toilet.id}</td>
                     <td>${toilet.name || 'N/A'}</td>
                     <td>${toilet.description ? toilet.description.substring(0, 50) + '...' : 'N/A'}</td>
@@ -377,6 +410,29 @@
                 document.getElementById('onlyForClients').checked = toilet.onlyForClients || false;
                 document.getElementById('forDisabled').checked = toilet.forDisabled || false;
                 
+                // Load opening hours
+                document.getElementById('weekdayOpen').value = toilet.weekday_open || '';
+                document.getElementById('weekdayClose').value = toilet.weekday_close || '';
+                document.getElementById('weekendOpen').value = toilet.weekend_open || '';
+                document.getElementById('weekendClose').value = toilet.weekend_close || '';
+                
+                // Load photo preview
+                const photoPreview = document.getElementById('photoPreview');
+                photoPreview.innerHTML = '';
+                const deletePhotoBtn = document.getElementById('deletePhotoBtn');
+                
+                if (toilet.photo) {
+                    const img = document.createElement('img');
+                    img.src = `/static/${toilet.photo}`;
+                    img.style.maxWidth = '200px';
+                    img.style.maxHeight = '200px';
+                    photoPreview.appendChild(img);
+                    deletePhotoBtn.style.display = 'block';
+                    deletePhotoBtn.onclick = () => deleteToiletPhoto(toilet.id);
+                } else {
+                    deletePhotoBtn.style.display = 'none';
+                }
+
                 editModal.style.display = 'block';
             }
         }
@@ -405,7 +461,11 @@
                 base_rating: document.getElementById('baseRating').value,
                 payable: document.getElementById('payable').checked,
                 onlyForClients: document.getElementById('onlyForClients').checked,
-                forDisabled: document.getElementById('forDisabled').checked
+                forDisabled: document.getElementById('forDisabled').checked,
+                weekday_open: document.getElementById('weekdayOpen').value,
+                weekday_close: document.getElementById('weekdayClose').value,
+                weekend_open: document.getElementById('weekendOpen').value,
+                weekend_close: document.getElementById('weekendClose').value
             };
             
             fetch(`/api/toilets/by-name/${encodeURIComponent(currentToiletName)}`, {
@@ -611,6 +671,106 @@
                 alert('Error deleting comment.');
             });
         }
+
+        // Bulk operations for toilets
+        document.getElementById('selectAllToiletsBtn').addEventListener('click', function() {
+            document.querySelectorAll('.toilet-checkbox').forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        });
+        
+        document.getElementById('deselectAllToiletsBtn').addEventListener('click', function() {
+            document.querySelectorAll('.toilet-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        });
+        
+        document.getElementById('deleteSelectedToiletsBtn').addEventListener('click', function() {
+            const selectedToilets = Array.from(document.querySelectorAll('.toilet-checkbox:checked'))
+                .map(checkbox => parseInt(checkbox.dataset.id));
+            
+            if (selectedToilets.length === 0) {
+                alert('Nie wybrano żadnych toalet');
+                return;
+            }
+            
+            if (confirm(`Czy na pewno chcesz usunąć ${selectedToilets.length} wybranych toalet?`)) {
+                fetch('/api/toilets/bulk-delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ toilet_ids: selectedToilets })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Wybrane toalety zostały usunięte');
+                        loadToilets(); // Reload toilets
+                    } else {
+                        alert(`Błąd: ${data.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Wystąpił błąd podczas usuwania toalet');
+                });
+            }
+        });
+        
+        // Bulk operations for comments
+        document.getElementById('selectAllCommentsBtn').addEventListener('click', function() {
+            document.querySelectorAll('.comment-checkbox').forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        });
+        
+        document.getElementById('deselectAllCommentsBtn').addEventListener('click', function() {
+            document.querySelectorAll('.comment-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        });
+        
+        document.getElementById('deleteSelectedCommentsBtn').addEventListener('click', function() {
+            const selectedComments = Array.from(document.querySelectorAll('.comment-checkbox:checked'))
+                .map(checkbox => parseInt(checkbox.dataset.id));
+            
+            if (selectedComments.length === 0) {
+                alert('Nie wybrano żadnych komentarzy');
+                return;
+            }
+            
+            if (confirm(`Czy na pewno chcesz usunąć ${selectedComments.length} wybranych komentarzy?`)) {
+                fetch('/api/comments/bulk-delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ comment_ids: selectedComments })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Wybrane komentarze zostały usunięte');
+                        loadToiletDetails(currentToilet); // Reload current toilet details
+                    } else {
+                        alert(`Błąd: ${data.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Wystąpił błąd podczas usuwania komentarzy');
+                });
+            }
+        });
+        
+        // "Select all" checkbox in toilet list header
+        document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+            const isChecked = this.checked;
+            document.querySelectorAll('.toilet-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        });
     </script>
     
     <div style="position: fixed; bottom: 20px; right: 20px;">

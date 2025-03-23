@@ -1031,7 +1031,11 @@ class Server:
                             onlyForClients = ?,
                             forDisabled = ?,
                             rating = ?,
-                            base_rating = ?
+                            base_rating = ?,
+                            weekday_open = ?,
+                            weekday_close = ?,
+                            weekend_open = ?,
+                            weekend_close = ?
                         WHERE id = ?
                         ''', (
                             data.get('name', ''),
@@ -1041,6 +1045,10 @@ class Server:
                             1 if data.get('forDisabled', False) else 0,
                             self.safe_float(data.get('rating', 0)),
                             self.safe_float(data.get('base_rating', 0)),
+                            data.get('weekday_open', ''),
+                            data.get('weekday_close', ''),
+                            data.get('weekend_open', ''),
+                            data.get('weekend_close', ''),
                             toilet_id
                         ))
                         conn.commit()
@@ -1212,6 +1220,115 @@ class Server:
                         conn.commit()
                         
                         # Reload markers after update
+                        self.markers = self.load_markers()
+                        self.original_markers = self.markers.copy()
+                        
+                        return jsonify({"success": True})
+            except sqlite3.Error as e:
+                return jsonify({"error": str(e)}), 500
+
+        @self.app.route('/api/toilets/photo', methods=['DELETE'])
+        def delete_toilet_photo():
+            """Delete a toilet's photo"""
+            if not session.get('admin_logged_in'):
+                return jsonify({"error": "Access denied"}), 403
+            
+            toilet_id = request.json.get('toilet_id')
+            
+            try:
+                with closing(sqlite3.connect('data/toilets.db')) as conn:
+                    with closing(conn.cursor()) as cursor:
+                        # Get the current photo path
+                        cursor.execute('SELECT photo FROM toilets WHERE id = ?', (toilet_id,))
+                        result = cursor.fetchone()
+                        if not result or not result[0]:
+                            return jsonify({"error": "Toilet has no photo"}), 404
+                        
+                        photo_path = result[0]
+                        
+                        # Update the database to remove the photo reference
+                        cursor.execute('UPDATE toilets SET photo = NULL WHERE id = ?', (toilet_id,))
+                        conn.commit()
+                        
+                        # Delete the physical file
+                        full_path = os.path.join('static', photo_path)
+                        if os.path.exists(full_path):
+                            os.remove(full_path)
+                        
+                        # Reload markers
+                        self.markers = self.load_markers()
+                        self.original_markers = self.markers.copy()
+                        
+                        return jsonify({"success": True})
+            except sqlite3.Error as e:
+                return jsonify({"error": str(e)}), 500
+
+        @self.app.route('/api/toilets/bulk-delete', methods=['POST'])
+        def bulk_delete_toilets():
+            """Delete multiple toilets at once"""
+            if not session.get('admin_logged_in'):
+                return jsonify({"error": "Access denied"}), 403
+            
+            toilet_ids = request.json.get('toilet_ids', [])
+            
+            try:
+                with closing(sqlite3.connect('data/toilets.db')) as conn:
+                    with closing(conn.cursor()) as cursor:
+                        for toilet_id in toilet_ids:
+                            # Get the photo path before deleting
+                            cursor.execute('SELECT photo FROM toilets WHERE id = ?', (toilet_id,))
+                            result = cursor.fetchone()
+                            if result and result[0]:
+                                photo_path = result[0]
+                                full_path = os.path.join('static', photo_path)
+                                if os.path.exists(full_path):
+                                    os.remove(full_path)
+                            
+                            # Delete comments first
+                            cursor.execute('DELETE FROM comments WHERE toilet_id = ?', (toilet_id,))
+                            # Then delete the toilet
+                            cursor.execute('DELETE FROM toilets WHERE id = ?', (toilet_id,))
+                        
+                        conn.commit()
+                        
+                        # Reload markers
+                        self.markers = self.load_markers()
+                        self.original_markers = self.markers.copy()
+                        
+                        return jsonify({"success": True})
+            except sqlite3.Error as e:
+                return jsonify({"error": str(e)}), 500
+
+        @self.app.route('/api/comments/bulk-delete', methods=['POST'])
+        def bulk_delete_comments():
+            """Delete multiple comments at once"""
+            if not session.get('admin_logged_in'):
+                return jsonify({"error": "Access denied"}), 403
+            
+            comment_ids = request.json.get('comment_ids', [])
+            
+            try:
+                with closing(sqlite3.connect('data/toilets.db')) as conn:
+                    with closing(conn.cursor()) as cursor:
+                        # Get unique toilet IDs for all comments to update ratings later
+                        toilet_ids = set()
+                        for comment_id in comment_ids:
+                            cursor.execute('SELECT toilet_id FROM comments WHERE id = ?', (comment_id,))
+                            result = cursor.fetchone()
+                            if result:
+                                toilet_ids.add(result[0])
+                        
+                        # Delete the comments
+                        for comment_id in comment_ids:
+                            cursor.execute('DELETE FROM comments WHERE id = ?', (comment_id,))
+                        
+                        # Update ratings for all affected toilets
+                        for toilet_id in toilet_ids:
+                            self.update_toilet_rating(toilet_id, cursor)
+                        
+                        conn.commit()
+                        
+                        # Reload markers
                         self.markers = self.load_markers()
                         self.original_markers = self.markers.copy()
                         
@@ -1815,5 +1932,37 @@ class Server:
                             logging.info(f"Usunięto osierocony plik zdjęcia: {full_path}")
         except Exception as e:
             logging.error(f"Błąd podczas czyszczenia osieroconych zdjęć: {e}")
+
+    def update_toilet_rating(self, toilet_id, cursor):
+        """Update a toilet's rating based on its comments"""
+        cursor.execute(
+            'SELECT AVG(rating) FROM comments WHERE toilet_id = ?',
+            (toilet_id,)
+        )
+        avg_comment_rating = cursor.fetchone()[0] or 0
+        
+        cursor.execute(
+            'SELECT base_rating FROM toilets WHERE id = ?',
+            (toilet_id,)
+        )
+        base_rating = cursor.fetchone()[0] or 0
+        
+        cursor.execute(
+            'SELECT COUNT(*) FROM comments WHERE toilet_id = ?',
+            (toilet_id,)
+        )
+        comment_count = cursor.fetchone()[0]
+        
+        # Calculate new rating
+        if comment_count > 0:
+            computed_rating = (float(base_rating) + float(avg_comment_rating) * comment_count) / (1 + comment_count)
+        else:
+            computed_rating = float(base_rating)
+        
+        # Update toilet rating
+        cursor.execute(
+            'UPDATE toilets SET rating = ? WHERE id = ?',
+            (computed_rating, toilet_id)
+        )
 
 
