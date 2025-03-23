@@ -881,7 +881,7 @@
         
         document.getElementById('deleteSelectedCommentsBtn').addEventListener('click', function() {
             const selectedComments = Array.from(document.querySelectorAll('.comment-checkbox:checked'))
-                .map(checkbox => parseInt(checkbox.dataset.id));
+                .map(checkbox => parseInt(checkbox.getAttribute('data-index')));
             
             if (selectedComments.length === 0) {
                 alert('Nie wybrano żadnych komentarzy');
@@ -889,26 +889,8 @@
             }
             
             if (confirm(`Czy na pewno chcesz usunąć ${selectedComments.length} wybranych komentarzy?`)) {
-                fetch('/api/comments/bulk-delete', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ comment_ids: selectedComments })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Wybrane komentarze zostały usunięte');
-                        loadToiletDetails(currentToilet); // Reload current toilet details
-                    } else {
-                        alert(`Błąd: ${data.error}`);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Wystąpił błąd podczas usuwania komentarzy');
-                });
+                // Use the existing deleteSelectedComments function
+                deleteSelectedComments();
             }
         });
         
