@@ -1587,8 +1587,12 @@ class Server:
                             try:
                                 open_time = datetime.datetime.strptime(weekday_open, "%H:%M").time()
                                 close_time = datetime.datetime.strptime(weekday_close, "%H:%M").time()
-                                # Użyj czasu z dodaną godziną zamiast oryginalnego
-                                is_open = open_time <= current_time_plus_1h <= close_time
+                                
+                                # Handle overnight opening hours (close time earlier than open time)
+                                if close_time < open_time:  # e.g., 06:00 to 02:00 (overnight)
+                                    is_open = current_time_plus_1h >= open_time or current_time_plus_1h <= close_time
+                                else:  # Normal hours, e.g., 08:00 to 20:00
+                                    is_open = open_time <= current_time_plus_1h <= close_time
                             except ValueError:
                                 is_open = False
                     else:  # Weekend
@@ -1596,8 +1600,12 @@ class Server:
                             try:
                                 open_time = datetime.datetime.strptime(weekend_open, "%H:%M").time()
                                 close_time = datetime.datetime.strptime(weekend_close, "%H:%M").time()
-                                # Tutaj też użyj czasu z dodaną godziną
-                                is_open = open_time <= current_time_plus_1h <= close_time
+                                
+                                # Handle overnight opening hours (close time earlier than open time)
+                                if close_time < open_time:  # e.g., 06:00 to 02:00 (overnight)
+                                    is_open = current_time_plus_1h >= open_time or current_time_plus_1h <= close_time
+                                else:  # Normal hours, e.g., 08:00 to 20:00
+                                    is_open = open_time <= current_time_plus_1h <= close_time
                             except ValueError:
                                 is_open = False
 
