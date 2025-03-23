@@ -940,32 +940,42 @@
                 // Sort indices in descending order to avoid shifting problems when deleting
                 selectedComments.sort((a, b) => b - a);
                 
-                const toilet = toilets.find(t => t.id == currentToiletId);
-                
-                // Delete comments one by one
-                const deletePromises = selectedComments.map(index => {
-                    return fetch('/api/delete_comment', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            toilet_id: currentToiletId,
-                            comment_index: index
-                        })
-                    }).then(response => response.json());
-                });
-                
-                Promise.all(deletePromises)
-                    .then(results => {
-                        loadToilets(); // Reload all data
+                // Process deletes sequentially instead of using Promise.all
+                // This ensures that each deletion completes before the next one starts
+                const deleteSequentially = async () => {
+                    try {
+                        for (const index of selectedComments) {
+                            console.log('Deleting comment at index:', index);
+                            
+                            const response = await fetch('/api/delete_comment', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    toilet_id: currentToiletId,
+                                    comment_index: index
+                                })
+                            });
+                            
+                            const result = await response.json();
+                            if (!result.success) {
+                                console.error('Failed to delete comment at index:', index);
+                            }
+                        }
+                        
+                        // Only reload and close after all operations are complete
+                        loadToilets();
                         commentsModal.style.display = 'none';
                         alert('Wybrane komentarze zostały usunięte');
-                    })
-                    .catch(error => {
+                    } catch (error) {
                         console.error('Error deleting comments:', error);
                         alert('Wystąpił błąd podczas usuwania komentarzy');
-                    });
+                    }
+                };
+                
+                // Start the sequential deletion process
+                deleteSequentially();
             }
         }
 
