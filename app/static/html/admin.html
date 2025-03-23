@@ -142,6 +142,104 @@
             margin-top: 10px;
             text-align: right;
         }
+        /* Custom checkbox styles */
+        .checkbox-container {
+            display: inline-block;
+            position: relative;
+            padding-left: 25px;
+            margin-right: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .checkbox-container input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 18px;
+            width: 18px;
+            background-color: #eee;
+            border-radius: 3px;
+        }
+        
+        .checkbox-container:hover input ~ .checkmark {
+            background-color: #ccc;
+        }
+        
+        .checkbox-container input:checked ~ .checkmark {
+            background-color: #D32F2F;
+        }
+        
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+        
+        .checkbox-container input:checked ~ .checkmark:after {
+            display: block;
+        }
+        
+        .checkbox-container .checkmark:after {
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        /* Delete selected button container */
+        .delete-selected-container {
+            margin: 15px 0;
+            text-align: right;
+        }
+        
+        .delete-selected-btn {
+            background-color: #D32F2F;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+        
+        .delete-selected-btn:hover {
+            background-color: #b71c1c;
+        }
+        
+        /* Improved comment card styles */
+        .comment-card {
+            padding: 15px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .comment-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .comment-body {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
@@ -151,7 +249,12 @@
         <table>
             <thead>
                 <tr>
-                    <th><input type="checkbox" id="selectAllCheckbox"></th>
+                    <th>
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="selectAllCheckbox">
+                            <span class="checkmark"></span>
+                        </label>
+                    </th>
                     <th>ID</th>
                     <th>Name</th>
                     <th>Description</th>
@@ -358,11 +461,26 @@
         function renderToilets() {
             toiletList.innerHTML = '';
             
+            // Add delete selected button container (initially hidden)
+            const deleteSelectedContainer = document.createElement('div');
+            deleteSelectedContainer.id = 'deleteSelectedToiletsContainer';
+            deleteSelectedContainer.className = 'delete-selected-container';
+            deleteSelectedContainer.style.display = 'none';
+            deleteSelectedContainer.innerHTML = `
+                <button id="deleteSelectedToilets" class="delete-selected-btn">Usuń zaznaczone toalety</button>
+            `;
+            document.getElementById('toiletTable').insertBefore(deleteSelectedContainer, document.querySelector('table'));
+            
             toilets.forEach(toilet => {
                 const row = document.createElement('tr');
                 
                 row.innerHTML = `
-                    <td><input type="checkbox" class="toilet-checkbox" data-id="${toilet.id}"></td>
+                    <td>
+                        <label class="checkbox-container">
+                            <input type="checkbox" class="toilet-checkbox" data-id="${toilet.id}">
+                            <span class="checkmark"></span>
+                        </label>
+                    </td>
                     <td>${toilet.id}</td>
                     <td>${toilet.name || 'N/A'}</td>
                     <td>${toilet.description ? toilet.description.substring(0, 50) + '...' : 'N/A'}</td>
@@ -392,6 +510,14 @@
             document.querySelectorAll('.comments-btn').forEach(button => {
                 button.addEventListener('click', showComments);
             });
+            
+            // Add event listeners to checkboxes
+            document.querySelectorAll('.toilet-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateDeleteSelectedToiletsVisibility);
+            });
+            
+            // Add event listener to delete selected button
+            document.getElementById('deleteSelectedToilets').addEventListener('click', deleteSelectedToilets);
         }
         
         // Open the edit modal with toilet data
@@ -549,6 +675,16 @@
             if (!toilet.comments || toilet.comments.length === 0) {
                 commentsList.innerHTML = '<p>No comments yet.</p>';
             } else {
+                // Add delete selected button container (initially hidden)
+                const deleteSelectedContainer = document.createElement('div');
+                deleteSelectedContainer.id = 'deleteSelectedCommentsContainer';
+                deleteSelectedContainer.className = 'delete-selected-container';
+                deleteSelectedContainer.style.display = 'none';
+                deleteSelectedContainer.innerHTML = `
+                    <button id="deleteSelectedComments" class="delete-selected-btn">Usuń zaznaczone komentarze</button>
+                `;
+                commentsList.appendChild(deleteSelectedContainer);
+                
                 // Create element for each comment
                 toilet.comments.forEach((comment, index) => {
                     const commentCard = document.createElement('div');
@@ -556,6 +692,10 @@
                     
                     commentCard.innerHTML = `
                         <div class="comment-header">
+                            <label class="checkbox-container">
+                                <input type="checkbox" class="comment-checkbox" data-index="${index}">
+                                <span class="checkmark"></span>
+                            </label>
                             <span>Rating: ${comment.rating}/10</span>
                         </div>
                         <div class="comment-body">
@@ -576,6 +716,14 @@
                         deleteComment(commentIndex);
                     });
                 });
+                
+                // Add event listeners to checkboxes
+                document.querySelectorAll('.comment-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', updateDeleteSelectedCommentsVisibility);
+                });
+                
+                // Add event listener to delete selected button
+                document.getElementById('deleteSelectedComments').addEventListener('click', deleteSelectedComments);
             }
             
             commentsModal.style.display = 'block';
@@ -770,7 +918,107 @@
             document.querySelectorAll('.toilet-checkbox').forEach(checkbox => {
                 checkbox.checked = isChecked;
             });
+            updateDeleteSelectedToiletsVisibility();
         });
+
+        // Add these functions after the other function declarations
+
+        function updateDeleteSelectedCommentsVisibility() {
+            const checkedComments = document.querySelectorAll('.comment-checkbox:checked');
+            const deleteSelectedContainer = document.getElementById('deleteSelectedCommentsContainer');
+            
+            if (checkedComments.length > 0) {
+                deleteSelectedContainer.style.display = 'block';
+            } else {
+                deleteSelectedContainer.style.display = 'none';
+            }
+        }
+
+        function updateDeleteSelectedToiletsVisibility() {
+            const checkedToilets = document.querySelectorAll('.toilet-checkbox:checked');
+            const deleteSelectedContainer = document.getElementById('deleteSelectedToiletsContainer');
+            
+            if (checkedToilets.length > 0) {
+                deleteSelectedContainer.style.display = 'block';
+            } else {
+                deleteSelectedContainer.style.display = 'none';
+            }
+        }
+
+        function deleteSelectedComments() {
+            const selectedComments = Array.from(document.querySelectorAll('.comment-checkbox:checked'))
+                .map(checkbox => parseInt(checkbox.getAttribute('data-index')));
+            
+            if (selectedComments.length === 0) {
+                alert('Nie wybrano żadnych komentarzy');
+                return;
+            }
+            
+            if (confirm(`Czy na pewno chcesz usunąć ${selectedComments.length} wybranych komentarzy?`)) {
+                // Sort indices in descending order to avoid shifting problems when deleting
+                selectedComments.sort((a, b) => b - a);
+                
+                const toilet = toilets.find(t => t.id == currentToiletId);
+                
+                // Delete comments one by one
+                const deletePromises = selectedComments.map(index => {
+                    return fetch('/api/delete_comment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            toilet_id: currentToiletId,
+                            comment_index: index
+                        })
+                    }).then(response => response.json());
+                });
+                
+                Promise.all(deletePromises)
+                    .then(results => {
+                        loadToilets(); // Reload all data
+                        commentsModal.style.display = 'none';
+                        alert('Wybrane komentarze zostały usunięte');
+                    })
+                    .catch(error => {
+                        console.error('Error deleting comments:', error);
+                        alert('Wystąpił błąd podczas usuwania komentarzy');
+                    });
+            }
+        }
+
+        function deleteSelectedToilets() {
+            const selectedToilets = Array.from(document.querySelectorAll('.toilet-checkbox:checked'))
+                .map(checkbox => parseInt(checkbox.getAttribute('data-id')));
+            
+            if (selectedToilets.length === 0) {
+                alert('Nie wybrano żadnych toalet');
+                return;
+            }
+            
+            if (confirm(`Czy na pewno chcesz usunąć ${selectedToilets.length} wybranych toalet?`)) {
+                fetch('/api/toilets/bulk-delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ toilet_ids: selectedToilets })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Wybrane toalety zostały usunięte');
+                        loadToilets(); // Reload toilets
+                    } else {
+                        alert(`Błąd: ${data.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Wystąpił błąd podczas usuwania toalet');
+                });
+            }
+        }
     </script>
     
     <div style="position: fixed; bottom: 20px; right: 20px;">
