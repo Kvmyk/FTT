@@ -1835,7 +1835,7 @@ class Server:
 
                                 folium.PolyLine(
                                     locations=coordinates,
-                                    color='cyan',
+                                    color='#d00000',
                                     weight=5,
                                     opacity=0.7
                                 ).add_to(self.m)
