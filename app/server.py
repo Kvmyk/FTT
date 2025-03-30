@@ -1420,8 +1420,8 @@ class Server:
                 # Marker toalety (globalny)
                 iconToilet = folium.CustomIcon(
                     toilet_icon, 
-                    icon_size=(50, 50), 
-                    shadow_size=(50, 60)
+                    icon_size=(50, 55), 
+                    shadow_size=(50, 50)
                 )
                 name = marker.get('name', 'Unknown')
                 description = marker.get('description', 'No description')
