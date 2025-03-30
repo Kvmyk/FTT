@@ -1,4 +1,4 @@
-![Logo (1)](https://github.com/user-attachments/assets/e8a84cd5-9ce6-46f1-b8dd-0551b380d436)
+![Logo](https://github.com/user-attachments/assets/fd63b77b-7ad9-4fec-ab52-c3ca663bbdc5)
 
 
 # Find My Throne 🚻
