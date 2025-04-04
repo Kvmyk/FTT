@@ -13,6 +13,8 @@ def create_app():
     runner = Server()
     return runner.app
 
+app = create_app()
+
 if __name__ == "__main__":
     runner = Server()
     import threading
