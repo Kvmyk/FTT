@@ -2006,8 +2006,8 @@ class Server:
             (computed_rating, toilet_id)
         )
 
-        def create_app():
-            server = Server()
-            return server.app
+    def create_app():
+        server = Server()
+        return server.app
 
 
