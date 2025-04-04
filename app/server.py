@@ -1,7 +1,6 @@
 import os
 import folium
 import flask
-import base64
 import uuid
 import logging
 import threading
@@ -9,7 +8,7 @@ import time
 import sqlite3
 import datetime
 import gc
-import shutil
+import gunicorn
 from flask_session import Session
 from flask_compress import Compress
 from flask import Flask, send_from_directory, jsonify, request, session
@@ -2006,5 +2005,9 @@ class Server:
             'UPDATE toilets SET rating = ? WHERE id = ?',
             (computed_rating, toilet_id)
         )
+
+        def create_app():
+            server = Server()
+            return server.app
 
 
