@@ -176,15 +176,16 @@ class Server:
                     for marker in self.original_markers:
                         # Insert toilet record with opening hours
                         cursor.execute('''
-                        INSERT INTO toilets (lat, lon, name, description, payable, 
+                        INSERT INTO toilets (lat, lon, name, place_name, description, payable, 
                                             onlyForClients, forDisabled, rating, 
                                             base_rating, weekday_open, weekday_close,
                                             weekend_open, weekend_close, photo)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ''', (
                             marker['lat'],
                             marker['lon'],
                             marker.get('name', 'Unknown'),
+                            marker.get('place_name', ''),
                             marker.get('description', ''),
                             1 if marker.get('payable', False) else 0,
                             1 if marker.get('onlyForClients', False) else 0,
@@ -373,6 +374,7 @@ class Server:
         def submit():
             data = request.form
             userInput = data.get('userInput', '')
+            place_name = data.get('place_name', '')  # Get place name from form
             description = data.get('description', '')
             payable = data.get('payable', 'false').lower() == 'true'
             onlyForClients = data.get('onlyForClients', 'false').lower() == 'true'
@@ -419,6 +421,9 @@ class Server:
 
             existing_marker = next((m for m in self.markers if m['lat'] == lat and m['lon'] == lon), None)
             if existing_marker:
+                # Add place_name to existing marker if provided
+                if place_name:
+                    existing_marker['place_name'] = place_name
                 existing_marker.setdefault('comments', []).append({
                     'comment': description,
                     'rating': rating
@@ -442,6 +447,7 @@ class Server:
                     "lat": lat,
                     "lon": lon,
                     "name": userInput,
+                    "place_name": place_name,  # Add place_name to new marker
                     "description": description,
                     "payable": payable,
                     "onlyForClients": onlyForClients,
@@ -1026,6 +1032,7 @@ class Server:
                         cursor.execute('''
                         UPDATE toilets SET 
                             name = ?, 
+                            place_name = ?,
                             description = ?, 
                             payable = ?,
                             onlyForClients = ?,
@@ -1039,6 +1046,7 @@ class Server:
                         WHERE id = ?
                         ''', (
                             data.get('name', ''),
+                            data.get('place_name', ''),
                             data.get('description', ''),
                             1 if data.get('payable', False) else 0,
                             1 if data.get('onlyForClients', False) else 0,
@@ -1424,6 +1432,7 @@ class Server:
                     shadow_size=(50, 50)
                 )
                 name = marker.get('name', 'Unknown')
+                place_name = marker.get('place_name', '')
                 description = marker.get('description', 'No description')
                 payable = "TAK" if marker.get('payable', False) else "NIE"
                 onlyForClients = "TAK" if marker.get('onlyForClients', False) else "NIE"
@@ -1616,10 +1625,14 @@ class Server:
                     else:
                         current_status = '<p><strong style="color: red;">Zamknięta</strong></p>'
 
+                # Display place name if available
+                place_name_html = f'<p><strong>Nazwa miejsca:</strong> {place_name}</p>' if place_name else ''
+
                 if not comments_list:
                     wholePopUp = f"""
                         <div style="width: 300px; max-height:300px, overflow-y: auto;">
                             <h2>{name}</h2>
+                            {place_name_html}
                             <p>{description}</p>
                             <p><strong>Płatna:</strong> {payable}</p>
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
@@ -1639,6 +1652,7 @@ class Server:
                     wholePopUp = f"""
                         <div style="width: 300px; max-height:300px, overflow-y: auto;">
                             <h2>{name}</h2>
+                            {place_name_html}
                             <p>{description}</p>
                             <p><strong>Płatna:</strong> {payable}</p>
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
@@ -1886,32 +1900,41 @@ class Server:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     lat REAL NOT NULL,
                     lon REAL NOT NULL,
-                    name TEXT NOT NULL,
+                    name TEXT,
+                    place_name TEXT,
                     description TEXT,
-                    payable BOOLEAN NOT NULL DEFAULT 0,
-                    onlyForClients BOOLEAN NOT NULL DEFAULT 0,
-                    forDisabled BOOLEAN NOT NULL DEFAULT 0,
-                    rating REAL DEFAULT 0,
-                    base_rating REAL DEFAULT 0,
+                    payable INTEGER,
+                    onlyForClients INTEGER,
+                    forDisabled INTEGER,
+                    rating REAL,
+                    base_rating REAL,
                     weekday_open TEXT,
                     weekday_close TEXT,
                     weekend_open TEXT,
                     weekend_close TEXT,
-                    photo TEXT
+                    photo TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
                 ''')
                 
-                # Create comments table with foreign key to toilets
+                # Check if place_name column exists, if not add it
+                cursor.execute("PRAGMA table_info(toilets)")
+                columns = [column[1] for column in cursor.fetchall()]
+                if 'place_name' not in columns:
+                    cursor.execute("ALTER TABLE toilets ADD COLUMN place_name TEXT")
+                
+                # Create comments table
                 cursor.execute('''
                 CREATE TABLE IF NOT EXISTS comments (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    toilet_id INTEGER NOT NULL,
-                    comment TEXT NOT NULL,
-                    rating REAL NOT NULL,
+                    toilet_id INTEGER,
+                    comment TEXT,
+                    rating REAL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (toilet_id) REFERENCES toilets (id) ON DELETE CASCADE
+                    FOREIGN KEY (toilet_id) REFERENCES toilets (id)
                 )
                 ''')
+                
                 conn.commit()
 
     def runThePage(self):

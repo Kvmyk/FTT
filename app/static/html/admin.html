@@ -280,13 +280,16 @@
                 <input type="hidden" id="toiletId">
                 
                 <div class="form-group">
-                    <label for="name">Name:</label>
-                    <input type="text" id="name" required>
+                    <label for="name">Nazwa</label>
+                    <input type="text" id="name" name="name" required>
                 </div>
-                
                 <div class="form-group">
-                    <label for="description">Description:</label>
-                    <textarea id="description" rows="3"></textarea>
+                    <label for="placeName">Nazwa miejsca</label>
+                    <input type="text" id="placeName" name="placeName">
+                </div>
+                <div class="form-group">
+                    <label for="description">Opis</label>
+                    <textarea id="description" name="description" required></textarea>
                 </div>
                 
                 <div class="form-group">
@@ -529,6 +532,7 @@
             
             if (toilet) {
                 document.getElementById('name').value = toilet.name || '';
+                document.getElementById('placeName').value = toilet.placeName || '';
                 document.getElementById('description').value = toilet.description || '';
                 document.getElementById('rating').value = toilet.rating || 0;
                 document.getElementById('baseRating').value = toilet.base_rating || 0;
@@ -582,6 +586,7 @@
             
             const toiletData = {
                 name: document.getElementById('name').value,
+                placeName: document.getElementById('placeName').value,
                 description: document.getElementById('description').value,
                 rating: document.getElementById('rating').value,
                 base_rating: document.getElementById('baseRating').value,

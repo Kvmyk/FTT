@@ -299,6 +299,7 @@ function checkProfanity(text) {
 function submitModal() {
     const description = document.getElementById('descriptionInput').value;
     const userInput = document.getElementById('userInput').value;
+    const placeName = document.getElementById('placeNameInput').value;
     const rating = document.getElementById('ratingInput').value;
 
     // Check if required fields are filled
@@ -342,6 +343,7 @@ function submitModal() {
         const formData = new FormData();
 
         formData.append('userInput', userInput);
+        formData.append('place_name', placeName);
         formData.append('description', description);
         formData.append('payable', payable);
         formData.append('onlyForClients', onlyForClients);
