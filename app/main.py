@@ -9,6 +9,10 @@ def monitor_memory():
         print(f"RSS: {mem_info.rss / 1024 ** 2:.2f} MB, VMS: {mem_info.vms / 1024 ** 2:.2f} MB")
         time.sleep(5)  # Sprawdzaj co 5 sekund
 
+def create_app():
+    runner = Server()
+    return runner.app
+
 if __name__ == "__main__":
     runner = Server()
     import threading
