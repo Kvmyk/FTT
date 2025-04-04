@@ -1428,7 +1428,7 @@ class Server:
                 # Marker toalety (globalny)
                 iconToilet = folium.CustomIcon(
                     toilet_icon, 
-                    icon_size=(70, 70), 
+                    icon_size=(75, 75), 
                     shadow_size=(50, 50)
                 )
                 name = marker.get('name', 'Unknown')
@@ -1628,11 +1628,22 @@ class Server:
                 # Display place name if available
                 place_name_html = f'<p><strong>Nazwa miejsca:</strong> {place_name}</p>' if place_name else ''
 
+                # Zmodyfikowana logika dla wyświetlania nazwy i adresu
+                if place_name:
+                    # Jeśli nazwa miejsca istnieje, pokaż ją jako główny nagłówek, a adres poniżej
+                    name_html = f'<h2>{place_name}</h2>'
+                    address_html = f'<p><strong>Adres:</strong> {name}</p>'
+                else:
+                    # Jeśli nazwa miejsca nie istnieje, pokaż adres jako główny nagłówek
+                    name_html = f'<h2>{name}</h2>'
+                    address_html = ''
+
+                # Poprawione bloki dla całego popup'u
                 if not comments_list:
                     wholePopUp = f"""
                         <div style="width: 300px; max-height:300px, overflow-y: auto;">
-                            <h2>{name}</h2>
-                            {place_name_html}
+                            {name_html}
+                            {address_html}
                             <p>{description}</p>
                             <p><strong>Płatna:</strong> {payable}</p>
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
@@ -1651,8 +1662,8 @@ class Server:
                 else:
                     wholePopUp = f"""
                         <div style="width: 300px; max-height:300px, overflow-y: auto;">
-                            <h2>{name}</h2>
-                            {place_name_html}
+                            {name_html}
+                            {address_html}
                             <p>{description}</p>
                             <p><strong>Płatna:</strong> {payable}</p>
                             <p><strong>Tylko dla klientów:</strong> {onlyForClients}</p>
