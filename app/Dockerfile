@@ -14,7 +14,7 @@ COPY . .
 
 
 # Expose the port the app runs on
-EXPOSE 81
+EXPOSE 80
 
 # Command to run the application
-CMD ["gunicorn", "-w", "2", "-b", "[::]:81", "main:app"]
+CMD ["gunicorn", "-w", "2", "-b", "[::]:80", "main:app"]
