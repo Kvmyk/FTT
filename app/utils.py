@@ -35,7 +35,7 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * c  # Odległość w kilometrach
 
 def get_route(start_lat, start_lon, end_lat, end_lon):
-    url = f"http://172.17.0.2:5000/route/v1/foot/{start_lon},{start_lat};{end_lon},{end_lat}?overview=full&geometries=geojson&steps=true&alternatives=false"
+    url = os.environ.get('OSRM_URL')
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
@@ -43,7 +43,7 @@ def get_route(start_lat, start_lon, end_lat, end_lon):
         return None
     
 def is_hate_speech(text):
-    url = "http://172.17.0.3:5001/analyze"
+    url = os.environ.get('MOP_URL')
     headers = {
         "Content-Type": "application/json"
     }
