@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 80
 
 # Command to run the application
-CMD ["gunicorn", "-w", "2", "-b", "[2a01:4f9:2b:289c::130]:80", "main:app"]
+CMD ["gunicorn", "-w", "2", "-b", "[::]:80", "main:app"]
