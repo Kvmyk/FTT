@@ -12,13 +12,9 @@ ENV PATH=/root/.local/bin:$PATH
 # Copy application code
 COPY . .
 
-# Create any necessary directories
-RUN mkdir -p data
-RUN mkdir -p static
-RUN mkdir -p osrm-data
 
 # Expose the port the app runs on
-EXPOSE 5000
+EXPOSE 5003
 
 # Command to run the application
 CMD ["python", "main.py"]
