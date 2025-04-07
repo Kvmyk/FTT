@@ -43,7 +43,7 @@ def get_route(start_lat, start_lon, end_lat, end_lon):
         return None
     
 def is_hate_speech(text):
-    url = "http://172.17.0.2:5001/analyze"
+    url = "http://172.17.0.3:5001/analyze"
     headers = {
         "Content-Type": "application/json"
     }
