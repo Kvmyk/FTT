@@ -14,7 +14,7 @@ COPY . .
 
 
 # Expose the port the app runs on
-EXPOSE 5003
+EXPOSE 81
 
 # Command to run the application
-CMD ["python", "main.py"]
+CMD ["gunicorn", "-w", "2", "-b", "[::]:81", "main:app"]
