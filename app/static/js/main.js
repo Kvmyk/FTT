@@ -536,6 +536,17 @@ function navigateToToilet(targetLat, targetLon) {
                 })
                 .then(response => response ? response.json() : null)
                 .then(data => {
+
+                    if (!isInOpoleProvince(userLat, userLon)) {
+                        alert('Znajdujesz się poza województwem opolskim. Nawigacja jest dostępna tylko w województwie opolskim.');
+                        return;
+                    }
+    
+                    if (!isInOpoleProvince(targetLat, targetLon)) {
+                        alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
+                        return;
+                    }
+
                     if (data && data.status === 'success') {
                         const nearestPinInfo = document.getElementById('nearestPinInfo');
                         const nearestPinText = document.getElementById('nearestPinText');
