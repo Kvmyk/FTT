@@ -1947,7 +1947,7 @@ class Server:
                 
                 conn.commit()
 
-    def runThePage(self):
+    def run_the_page(self):
         self.app.run(host = os.environ.get('SERVER_HOST'), port=os.environ.get('SERVER_PORT'))
 
     def clean_orphaned_photos(self):
