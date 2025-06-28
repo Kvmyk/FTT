@@ -479,6 +479,12 @@ function navigateToToilet(targetLat, targetLon) {
     
     // Wymusz natychmiastową aktualizację przy następnym śledzeniu
     forceNextUpdate = true;
+    
+    // Tymczasowo zatrzymaj śledzenie podczas ustawiania nowego celu
+    const trackingEnabled = document.getElementById('locationTrackingToggle')?.checked;
+    if (trackingEnabled) {
+        stopIntelligentTracking();
+    }
 
     // Zawsze generuj trasę natychmiast, niezależnie od trybu śledzenia
     if (navigator.geolocation) {
@@ -487,7 +493,8 @@ function navigateToToilet(targetLat, targetLon) {
                 const userLat = position.coords.latitude;
                 const userLon = position.coords.longitude;
 
-                fetch('/navigate', {
+                // Użyj tego samego endpointu co inteligentne śledzenie dla spójności
+                fetch('/update_user_location', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -495,76 +502,49 @@ function navigateToToilet(targetLat, targetLon) {
                     body: JSON.stringify({
                         user_lat: userLat,
                         user_lon: userLon,
-                        target_lat: targetLat,
-                        target_lon: targetLon
+                        target_lat: parseFloat(targetLat),
+                        target_lon: parseFloat(targetLon)
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
-                    return fetch('/render_map');
+                    if (data.status === 'success') {
+                        // Jeśli serwer zwrócił informacje o trasie, pokaż je
+                        if (data.distance && data.duration && data.name) {
+                            const nearestPinInfo = document.getElementById('nearestPinInfo');
+                            const nearestPinText = document.getElementById('nearestPinText');
+                            const cancelBtn = document.getElementById('cancelNavigationBtn');
+                            nearestPinText.innerText = `Nawigacja do: ${data.name}\nOdległość: ${data.distance}\nSzacowany czas: ${data.duration} min 🚶`;
+                            nearestPinInfo.classList.add('show');
+                            cancelBtn.style.display = 'inline-block';
+                        }
+                        
+                        return fetch('/render_map');
+                    }
                 })
                 .then(response => response ? response.text() : null)
                 .then(html => {
                     if (html) {
                         document.getElementById('map').innerHTML = html;
                         
-                        // Dopiero po wygenerowaniu trasy, restart śledzenia jeśli potrzeba
-                        const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
+                        // Restart śledzenia jeśli było włączone (z opóźnieniem dla stabilności)
                         if (trackingEnabled) {
-                            stopIntelligentTracking();
-                            startIntelligentTracking();
-                            
-                            // Dodatkowo: od razu wywołaj aktualizację pozycji, żeby nie czekać na kolejny cykl
-                            if (navigator.geolocation) {
-                                navigator.geolocation.getCurrentPosition(
-                                    (pos) => {
-                                        // Symuluj wywołanie z startIntelligentTracking z nową pozycją
-                                        const currentPosition = {
-                                            lat: pos.coords.latitude,
-                                            lon: pos.coords.longitude
-                                        };
-                                        lastPosition = currentPosition;
-                                        forceNextUpdate = false; // Resetuj flagę po wymuszeniu
-                                    },
-                                    (error) => console.error('Error getting position for immediate update:', error),
-                                    { enableHighAccuracy: true, timeout: 5000 }
-                                );
-                            }
+                            setTimeout(() => {
+                                startIntelligentTracking();
+                            }, 500); // 500ms opóźnienie
                         }
-                        
-                        return fetch('/navigate_toilet_distance', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                user_lat: userLat,
-                                user_lon: userLon,
-                                target_lat: parseFloat(targetLat),
-                                target_lon: parseFloat(targetLon)
-                            })
-                        });
                     }
-                    return null;
                 })
-                .then(response => response ? response.json() : null)                    .then(data => {
-                        if (data && data.status === 'success') {
-                            const nearestPinInfo = document.getElementById('nearestPinInfo');
-                            const nearestPinText = document.getElementById('nearestPinText');
-                            const cancelBtn = document.getElementById('cancelNavigationBtn');
-                            nearestPinText.innerText = `Nawigacja do: ${data.name}\nOdległość: ${data.distance}\nSzacowany czas: ${data.duration} min 🚶`;
-                            nearestPinInfo.classList.add('show');
-                            // Pokaż przycisk anulowania tylko jeśli jest cel nawigacji
-                            const targetLat = localStorage.getItem('targetLat');
-                            const targetLon = localStorage.getItem('targetLon');
-                            if (targetLat && targetLon) {
-                                cancelBtn.style.display = 'inline-block';
-                            } else {
-                                cancelBtn.style.display = 'none';
-                            }
-                        }
-                    })
                 .catch(error => console.error('Error:', error));
+            },
+            (error) => {
+                console.error('Error getting location:', error);
+                // Restart śledzenia nawet w przypadku błędu
+                if (trackingEnabled) {
+                    setTimeout(() => {
+                        startIntelligentTracking();
+                    }, 500);
+                }
             }
         );
     }

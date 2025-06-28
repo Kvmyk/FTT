@@ -765,6 +765,7 @@ class Server:
             # Handle navigation target
             if target_lat and target_lon:
                 # Nawigacja do konkretnego celu
+                logging.info(f"Setting navigation target to: {target_lat}, {target_lon}")
                 selected_target = {
                     'lat': target_lat,
                     'lon': target_lon
@@ -774,6 +775,13 @@ class Server:
                 # Recalculate route with updated user location
                 route = get_route(user_lat, user_lon, target_lat, target_lon)
                 if route:
+                    logging.info(f"Route calculated successfully: {route['routes'][0]['distance']}m")
+                    # Zapisz trasę w user_data przed wywołaniem add_route_to_map
+                    user_data['current_route'] = route
+                    user_data['selected_target'] = selected_target
+                    session[user_id] = user_data
+                    
+                    # Następnie wywołaj add_route_to_map, które wywoła update_map
                     self.add_route_to_map(route)
                     
                     # Get duration and distance from route
