@@ -8,3 +8,4 @@ gunicorn==21.2.0
 Flask-Session==0.5.0
 Flask-Compress==1.14
 python-dotenv==1.0.0
+polyline==2.0.0

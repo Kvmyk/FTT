@@ -34,7 +34,32 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c  # Odległość w kilometrach
 
+def get_route_osrm_fallback(start_lat, start_lon, end_lat, end_lon):
+    """Fallback function using OSRM public API"""
+    url = f"https://router.project-osrm.org/route/v1/foot/{start_lon},{start_lat};{end_lon},{end_lat}?overview=full&geometries=geojson&steps=true&alternatives=false"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logging.error(f"OSRM fallback API error: {response.status_code}")
+            return None
+    except requests.RequestException as e:
+        logging.error(f"Error connecting to OSRM fallback API: {e}")
+        return None
+
 def get_route(start_lat, start_lon, end_lat, end_lon):
+    """Get walking route using OpenRouteService API with OSRM fallback"""
+    # Try OpenRouteService first
+    result = get_route_openrouteservice(start_lat, start_lon, end_lat, end_lon)
+    if result:
+        return result
+    
+    # Fallback to OSRM if OpenRouteService fails
+    logging.warning("OpenRouteService failed, trying OSRM fallback...")
+    return get_route_osrm_fallback(start_lat, start_lon, end_lat, end_lon)
+
+def get_route_openrouteservice(start_lat, start_lon, end_lat, end_lon):
     """Get walking route using OpenRouteService API (free alternative to OSRM)"""
     api_key = os.environ.get('OPENROUTESERVICE_API_KEY')
     
@@ -51,7 +76,7 @@ def get_route(start_lat, start_lon, end_lat, end_lon):
     
     data = {
         "coordinates": [[start_lon, start_lat], [end_lon, end_lat]],
-        "format": "geojson",
+        "format": "json",  # Use JSON format instead of geojson
         "instructions": True
     }
     
@@ -59,22 +84,46 @@ def get_route(start_lat, start_lon, end_lat, end_lon):
         response = requests.post(url, headers=headers, json=data, timeout=10)
         if response.status_code == 200:
             result = response.json()
-            # Convert to OSRM-like format for compatibility
-            if 'features' in result and len(result['features']) > 0:
-                feature = result['features'][0]
-                return {
+            logging.info(f"OpenRouteService response received with {len(result.get('routes', []))} routes")
+            
+            # Convert to OSRM-compatible format
+            if 'routes' in result and len(result['routes']) > 0:
+                route = result['routes'][0]
+                
+                # Decode the geometry (OpenRouteService uses encoded polyline)
+                import polyline
+                coordinates = polyline.decode(route['geometry'])
+                # Convert to [lon, lat] format for consistency with OSRM
+                coordinates = [[coord[1], coord[0]] for coord in coordinates]
+                
+                # Create OSRM-compatible response
+                osrm_format = {
                     "routes": [{
-                        "geometry": feature['geometry'],
-                        "distance": feature['properties']['summary']['distance'],
-                        "duration": feature['properties']['summary']['duration']
+                        "geometry": {
+                            "coordinates": coordinates,
+                            "type": "LineString"
+                        },
+                        "distance": route['summary']['distance'],  # meters
+                        "duration": route['summary']['duration']   # seconds
                     }]
                 }
-            return None
+                
+                logging.info(f"Successfully converted OpenRouteService route: {route['summary']['distance']}m, {route['summary']['duration']}s")
+                return osrm_format
+            else:
+                logging.error("No routes found in OpenRouteService response")
+                return None
         else:
-            logging.error(f"OpenRouteService API error: {response.status_code}")
+            logging.error(f"OpenRouteService API error: {response.status_code}, response: {response.text}")
             return None
+    except ImportError:
+        logging.error("polyline library not found. Install with: pip install polyline")
+        return None
     except requests.RequestException as e:
         logging.error(f"Error connecting to OpenRouteService API: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"Error processing OpenRouteService response: {e}")
         return None
     
 def is_hate_speech(text):
