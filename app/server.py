@@ -683,8 +683,25 @@ class Server:
             if target_lat is None or target_lon is None:
                 return jsonify({'status': 'error', 'message': 'Invalid target coordinates'}), 400
 
+            # Get or create user session
+            user_id = session.get('user_id')
+            if not user_id:
+                user_id = str(uuid.uuid4())
+                session['user_id'] = user_id
+            
+            user_data = session.get(user_id, {})
+
             route = get_route(user_lat, user_lon, target_lat, target_lon)
             if route:
+                # SAVE the route and navigation target in session!
+                user_data['current_route'] = route
+                user_data['selected_target'] = {
+                    'lat': target_lat,
+                    'lon': target_lon
+                }
+                session[user_id] = user_data
+                logging.info(f"Saved navigation target and route: {route['routes'][0]['distance']}m to target {target_lat}, {target_lon}")
+                
                 distance = route['routes'][0]['distance']  # w metrach
                 duration = route['routes'][0]['duration'] / 60  # w minutach
                 distance_text = format_distance_text(distance)
@@ -698,7 +715,8 @@ class Server:
                     'name': target_name
                 })
             else:
-                return jsonify({'status': 'error', 'message': 'Route not found'}), 404
+                logging.error(f"Failed to calculate route from {user_lat},{user_lon} to {target_lat},{target_lon}")
+                return jsonify({'status': 'error', 'message': 'Route calculation failed'})
 
         @self.app.route('/check_marker_exists', methods=['POST'])
         def check_marker_exists():
@@ -775,7 +793,7 @@ class Server:
                 # Recalculate route with updated user location
                 route = get_route(user_lat, user_lon, target_lat, target_lon)
                 if route:
-                    logging.info(f"Route calculated successfully: {route['routes'][0]['distance']}m")
+                    logging.info(f"Route calculated successfully: {route['routes'][0]['distance']}m, {len(route['routes'][0]['geometry']['coordinates'])} coordinates")
                     # Zapisz trasę w user_data przed wywołaniem add_route_to_map
                     user_data['current_route'] = route
                     user_data['selected_target'] = selected_target
@@ -783,6 +801,7 @@ class Server:
                     
                     # Następnie wywołaj add_route_to_map, które wywoła update_map
                     self.add_route_to_map(route)
+                    logging.info("Called add_route_to_map for target navigation")
                     
                     # Get duration and distance from route
                     distance = route['routes'][0]['distance']  # in meters
@@ -1816,11 +1835,15 @@ class Server:
                                     nearest_marker['lat'], nearest_marker['lon']
                                 )
                                 if route:
-                                    self.add_route_to_map(route)
+                                    # Zapisz trasę w sesji bez rekurencyjnego wywołania
+                                    user_data['current_route'] = route
+                                    session[user_id] = user_data
+                                    logging.info(f"Generated and saved route to nearest marker: {route['routes'][0]['distance']}m")
 
                         # Wyświetlamy trasę tylko jeśli route istnieje
                         route = user_data.get('current_route')
                         if route:
+                                logging.info(f"Rendering route on map: {route['routes'][0]['distance']}m, {len(route['routes'][0]['geometry']['coordinates'])} coordinates")
                                 coordinates = [
                                     (coord[1], coord[0])
                                     for coord in route['routes'][0]['geometry']['coordinates']
