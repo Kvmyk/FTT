@@ -136,7 +136,7 @@ def is_hate_speech(text):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
     
     prompt = f"""
-Sprawdź poniższą treść pod kątem mowy nienawiści, obraźliwych słów, wulgarizmów, dyskryminacji, przemocy lub innych nieodpowiednich treści. 
+Sprawdź poniższą treść pod kątem mowy nienawiści, obraźliwych słów, wulgarizmów, dyskryminacji, przemocy lub innych nieodpowiednich treści. Analizujesz to w języku Polskim. Skup się na slangach, wulgaryzmach i wszelkich formach mowy nienawiści, które mogą być używane w Polskim internecie. 
 
 Treść do sprawdzenia: "{text}"
 
