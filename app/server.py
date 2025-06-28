@@ -738,10 +738,12 @@ class Server:
 
         @self.app.route('/update_user_location', methods=['POST'])
         def update_user_location():
-            """Updates user location without changing navigation target"""
+            """Updates user location and handles navigation target if exists"""
             data = request.json
             user_lat = data.get('user_lat')
             user_lon = data.get('user_lon')
+            target_lat = data.get('target_lat')  # Dodaj obsługę celu nawigacji
+            target_lon = data.get('target_lon')
             
             # Get or create user session
             user_id = session.get('user_id')
@@ -751,7 +753,7 @@ class Server:
             
             user_data = session.get(user_id, {})
             
-            # Update the user's marker without affecting other data
+            # Update the user's marker
             user_marker = {
                 "lat": user_lat,
                 "lon": user_lon,
@@ -759,16 +761,18 @@ class Server:
                 "description": "This is your location"
             }
             user_data["marker"] = user_marker
-            session[user_id] = user_data
             
-            # Check if we have a selected target
-            selected_target = user_data.get('selected_target')
-            if selected_target:
+            # Handle navigation target
+            if target_lat and target_lon:
+                # Nawigacja do konkretnego celu
+                selected_target = {
+                    'lat': target_lat,
+                    'lon': target_lon
+                }
+                user_data['selected_target'] = selected_target
+                
                 # Recalculate route with updated user location
-                route = get_route(
-                    user_lat, user_lon,
-                    selected_target['lat'], selected_target['lon']
-                )
+                route = get_route(user_lat, user_lon, target_lat, target_lon)
                 if route:
                     self.add_route_to_map(route)
                     
@@ -779,9 +783,11 @@ class Server:
                     
                     # Get target marker name
                     target_marker = next((marker for marker in self.markers 
-                                 if abs(marker['lat'] - selected_target['lat']) < 0.0001
-                                 and abs(marker['lon'] - selected_target['lon']) < 0.0001), None)
+                                 if abs(marker['lat'] - target_lat) < 0.0001
+                                 and abs(marker['lon'] - target_lon) < 0.0001), None)
                     target_name = target_marker['name'] if target_marker else 'Unknown'
+                    
+                    session[user_id] = user_data
                     
                     return jsonify({
                         'status': 'success',
@@ -790,8 +796,11 @@ class Server:
                         'name': target_name
                     })
             else:
+                # Usuń cel nawigacji jeśli nie podano
+                user_data.pop('selected_target', None)
                 self.update_map()
             
+            session[user_id] = user_data
             return jsonify({'status': 'success'})
 
         @self.app.route('/admin', methods=['GET'])

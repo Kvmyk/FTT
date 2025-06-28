@@ -90,53 +90,36 @@ function startIntelligentTracking() {
                         },
                         body: JSON.stringify({
                             user_lat: currentPosition.lat,
-                            user_lon: currentPosition.lon
+                            user_lon: currentPosition.lon,
+                            target_lat: targetLat ? parseFloat(targetLat) : null,
+                            target_lon: targetLon ? parseFloat(targetLon) : null
                         })
                     })
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
+                            // Jeśli jest cel nawigacji i serwer zwrócił informacje o trasie
+                            if (data.distance && data.duration && data.name) {
+                                const nearestPinInfo = document.getElementById('nearestPinInfo');
+                                const nearestPinText = document.getElementById('nearestPinText');
+                                const cancelBtn = document.getElementById('cancelNavigationBtn');
+                                nearestPinText.innerText = `Nawigacja do: ${data.name}\nOdległość: ${data.distance}\nSzacowany czas: ${data.duration} min 🚶`;
+                                nearestPinInfo.classList.add('show');
+                                // Pokaż przycisk anulowania tylko jeśli jest cel nawigacji
+                                const targetLat = localStorage.getItem('targetLat');
+                                const targetLon = localStorage.getItem('targetLon');
+                                if (targetLat && targetLon) {
+                                    cancelBtn.style.display = 'inline-block';
+                                } else {
+                                    cancelBtn.style.display = 'none';
+                                }
+                            }
                             return fetch('/render_map');
                         }
                     })
                     .then(response => response.text())
                     .then(html => {
                         document.getElementById('map').innerHTML = html;
-                        
-                        // After map is updated, get distance info if we have a target
-                        if (targetLat && targetLon) {
-                            return fetch('/navigate_toilet_distance', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    user_lat: currentPosition.lat,
-                                    user_lon: currentPosition.lon,
-                                    target_lat: parseFloat(targetLat),
-                                    target_lon: parseFloat(targetLon)
-                                })
-                            });
-                        }
-                        return null;
-                    })
-                    .then(response => response ? response.json() : null)
-                    .then(data => {
-                        if (data && data.status === 'success') {
-                            const nearestPinInfo = document.getElementById('nearestPinInfo');
-                            const nearestPinText = document.getElementById('nearestPinText');
-                            const cancelBtn = document.getElementById('cancelNavigationBtn');
-                            nearestPinText.innerText = `Nawigacja do: ${data.name}\nOdległość: ${data.distance}\nSzacowany czas: ${data.duration} min 🚶`;
-                            nearestPinInfo.classList.add('show');
-                            // Pokaż przycisk anulowania tylko jeśli jest cel nawigacji
-                            const targetLat = localStorage.getItem('targetLat');
-                            const targetLon = localStorage.getItem('targetLon');
-                            if (targetLat && targetLon) {
-                                cancelBtn.style.display = 'inline-block';
-                            } else {
-                                cancelBtn.style.display = 'none';
-                            }
-                        }
                     })
                     .catch(error => {
                         console.error('Error:', error);
