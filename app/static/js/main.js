@@ -886,46 +886,42 @@ function clearNavigation() {
     })
     .then(response => response.json())
     .then(data => {
-        // Sprawdź czy jest włączone śledzenie lokalizacji
-        const trackingEnabled = document.getElementById('locationTrackingToggle')?.checked;
-        if (trackingEnabled) {
-            // Jeśli śledzenie jest włączone, pokaż informacje o najbliższej toalecie BEZ przycisku anulowania
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        // Wywołaj endpoint do znalezienia najbliższej toalety
-                        fetch('/nearest_toilet_distance')
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                const nearestPinText = document.getElementById('nearestPinText');
-                                // Zawsze ukryj przycisk anulowania dla najbliższej toalety
-                                cancelBtn.style.display = 'none';
-                                nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
-                                nearestPinInfo.classList.add('show');
-                            }
-                        })
-                        .catch(error => console.error('Error:', error));
-                    },
-                    (error) => {
-                        console.error('Error getting location:', error);
-                    }
-                );
-            }
-        }
-        
-        // Odśwież mapę bez trasy
+        // Najpierw odśwież mapę bez trasy
         return fetch('/render_map');
     })
     .then(response => response.text())
     .then(html => {
         document.getElementById('map').innerHTML = html;
         
-        // Restart śledzenia bez celu nawigacji
-        const trackingEnabled = document.getElementById('locationTrackingToggle')?.checked;
-        if (trackingEnabled) {
-            stopIntelligentTracking();
-            startIntelligentTracking();
+        // Po odświeżeniu mapy, zawsze pokaż informacje o najbliższej toalecie
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    // Wywołaj endpoint do znalezienia najbliższej toalety
+                    fetch('/nearest_toilet_distance')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const nearestPinText = document.getElementById('nearestPinText');
+                            // NIE pokazuj przycisku anulowania dla najbliższej toalety
+                            cancelBtn.style.display = 'none';
+                            nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                            nearestPinInfo.classList.add('show');
+                            
+                            // Dopiero teraz restart śledzenia bez celu nawigacji, jeśli było włączone
+                            const trackingEnabled = document.getElementById('locationTrackingToggle')?.checked;
+                            if (trackingEnabled) {
+                                stopIntelligentTracking();
+                                startIntelligentTracking();
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                },
+                (error) => {
+                    console.error('Error getting location:', error);
+                }
+            );
         }
     })
     .catch(error => console.error('Error:', error));
