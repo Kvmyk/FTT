@@ -35,30 +35,73 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * c  # Odległość w kilometrach
 
 def get_route(start_lat, start_lon, end_lat, end_lon):
-    url = f"http://172.17.0.2:5000/route/v1/foot/{start_lon},{start_lat};{end_lon},{end_lat}?overview=full&geometries=geojson&steps=true&alternatives=false"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
+    """Get walking route using public OSRM API"""
+    url = f"https://router.project-osrm.org/route/v1/foot/{start_lon},{start_lat};{end_lon},{end_lat}?overview=full&geometries=geojson&steps=true&alternatives=false"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logging.error(f"OSRM API error: {response.status_code}")
+            return None
+    except requests.RequestException as e:
+        logging.error(f"Error connecting to OSRM API: {e}")
         return None
     
 def is_hate_speech(text):
-    url = "http://172.17.0.3:5001/analyze"
+    """Check if text contains hate speech using Google Gemini API"""
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        logging.error("GEMINI_API_KEY not found in environment variables")
+        return False
+    
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
+    
+    prompt = f"""
+Sprawdź poniższą treść pod kątem mowy nienawiści, obraźliwych słów, wulgarizmów, dyskryminacji, przemocy lub innych nieodpowiednich treści. 
+
+Treść do sprawdzenia: "{text}"
+
+Odpowiedz tylko jednym słowem:
+- "OK" - jeśli treść jest odpowiednia i nie zawiera mowy nienawiści
+- "NOT OK" - jeśli treść zawiera mowę nienawiści, wulgaryzmy lub jest nieodpowiednia
+
+Odpowiedź:"""
+
     headers = {
         "Content-Type": "application/json"
     }
+    
     data = {
-        "text": text
+        "contents": [{
+            "parts": [{
+                "text": prompt
+            }]
+        }]
     }
+    
     try:
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()  # Sprawdź, czy odpowiedź jest poprawna
+        response = requests.post(url, headers=headers, json=data, timeout=10)
+        response.raise_for_status()
         result = response.json()
-        logging.info(f"Response from hate speech analysis: {result}")
-        return result.get('label') == 'hate'
+        
+        # Extract the response text
+        if 'candidates' in result and len(result['candidates']) > 0:
+            response_text = result['candidates'][0]['content']['parts'][0]['text'].strip()
+            logging.info(f"Gemini response for text '{text[:50]}...': {response_text}")
+            
+            # Return True if NOT OK (contains hate speech)
+            return "NOT OK" in response_text.upper()
+        else:
+            logging.error(f"Unexpected Gemini API response format: {result}")
+            return False
+            
     except requests.RequestException as e:
-        logging.error(f"Błąd podczas analizy mowy nienawiści: {e}")
-        return False  # Domyślnie zwracamy False w przypadku błędu
+        logging.error(f"Error connecting to Gemini API: {e}")
+        return False  # Default to allowing content if API fails
+    except Exception as e:
+        logging.error(f"Error processing Gemini API response: {e}")
+        return False
     
 def find_nearest_marker(user_location, markers):
     min_distance = float('inf')
@@ -76,18 +119,3 @@ def format_distance_text(distance):
         return f"{int(distance)} m"
     else:
         return f"{distance/1000:.2f} km"
-    
-def isInOpoleProvince(lat, lon):
-        """
-        Sprawdza, czy podane współrzędne znajdują się w granicach województwa opolskiego.
-        """
-        # Granice województwa opolskiego (przybliżone)
-        opole_bounds = {
-            'north': 51.0,
-            'south': 49.5,
-            'west': 16.5,
-            'east': 18.5
-        }
-
-        return opole_bounds['south'] <= lat <= opole_bounds['north'] and \
-            opole_bounds['west'] <= lon <= opole_bounds['east']

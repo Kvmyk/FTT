@@ -12,7 +12,7 @@ import gunicorn
 from flask_session import Session
 from flask_compress import Compress
 from flask import Flask, send_from_directory, jsonify, request, session
-from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text, is_hate_speech, isInOpoleProvince
+from utils import get_coordinates, get_route, find_nearest_marker, haversine, format_distance_text, is_hate_speech
 from dotenv import load_dotenv
 from contextlib import closing
 
@@ -259,18 +259,7 @@ class Server:
             filter_for_disabled = filters.get('filterForDisabled', False)
             filter_rating = float(filters.get('filterRating', 0))
 
-            # Sprawdź czy użytkownik jest w woj. opolskim
-            if not isInOpoleProvince(data['lat'], data['lon']):
-                logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
-                user_data['current_route'] = None
-                session[user_id] = user_data
-                return jsonify({
-                    'status': 'success',
-                    'lat': user_marker['lat'],
-                    'lon': user_marker['lon']
-                })
-
-            # Filtrowanie markerów i generowanie trasy tylko dla użytkowników z woj. opolskiego
+            # Filtrowanie markerów i generowanie trasy
             markers_to_search = self.original_markers
             if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
                 markers_to_search = [
@@ -281,21 +270,15 @@ class Server:
                        (float(marker.get('rating', 0)) >= filter_rating)
                 ]
 
-            # Obliczamy trasę TYLKO dla użytkowników z woj. opolskiego
+            # Obliczamy trasę do najbliższego markera
             nearest_marker = find_nearest_marker(user_marker, markers_to_search)
             if nearest_marker:
-                # Sprawdź, czy najbliższy marker jest również w województwie opolskim
-                if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
-                    logging.warning("Najbliższy marker poza województwem opolskim - nie generuję trasy.")
-                    user_data['current_route'] = None
-                    session[user_id] = user_data
-                else:
-                    route = get_route(
-                        user_marker['lat'], user_marker['lon'],
-                        nearest_marker['lat'], nearest_marker['lon']
-                    )
-                    if route:
-                        self.add_route_to_map(route)
+                route = get_route(
+                    user_marker['lat'], user_marker['lon'],
+                    nearest_marker['lat'], nearest_marker['lon']
+                )
+                if route:
+                    self.add_route_to_map(route)
 
             return jsonify({
                 'status': 'success',
@@ -347,13 +330,7 @@ class Server:
                 response.headers['Cache-Control'] = 'no-store'
                 return response, 404
             
-            if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
-                                    logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
-                                    user_data['current_route'] = None
-                                    session[user_id] = user_data
-                                    route = None
-            else:
-                route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
+            route = get_route(user_marker['lat'], user_marker['lon'], nearest_marker['lat'], nearest_marker['lon'])
             if route:
                 distance = route['routes'][0]['distance']  # w metrach
                 duration = route['routes'][0]['duration'] / 60  # w minutach
@@ -594,10 +571,6 @@ class Server:
             if not user_marker:
                 return jsonify({'status': 'error', 'message': 'User location is not set'}), 400
             
-            # Check if target is in Opole province
-            if not isInOpoleProvince(data['target_lat'], data['target_lon']):
-                return jsonify({'status': 'error', 'message': 'Target location is outside Opole province'}), 400
-            
             target_marker = next((marker for marker in self.markers 
                          if marker['lat'] == data['target_lat'] 
                          and marker['lon'] == data['target_lon']), None)
@@ -656,23 +629,10 @@ class Server:
                     'filterRating': filter_rating
                 }
                 
-                # Sprawdź czy użytkownik jest poza województwem opolskim
-                user_marker = user_data.get('marker')
-                if user_marker and not isInOpoleProvince(user_marker['lat'], user_marker['lon']):
-                    # Jeśli użytkownik jest poza województwem, usuń trasę
-                    user_data['current_route'] = None
-                    logging.warning("Użytkownik poza województwem opolskim - usunięto trasę po zastosowaniu filtrów.")
-                
-                # Sprawdź czy cel nawigacji jest poza województwem opolskim
+                # Sprawdź czy cel nawigacji nadal istnieje po zastosowaniu filtrów
                 selected_target = user_data.get('selected_target')
-                if selected_target and not isInOpoleProvince(selected_target['lat'], selected_target['lon']):
-                    # Jeśli cel jest poza województwem, usuń trasę i cel
-                    user_data['current_route'] = None
-                    user_data['selected_target'] = None
-                    logging.warning("Cel nawigacji poza województwem opolskim - usunięto trasę po zastosowaniu filtrów.")
-                
-                # Zastosuj filtry do markerów, aby sprawdzić czy cel nadal istnieje
                 if selected_target:
+                    # Zastosuj filtry do markerów, aby sprawdzić czy cel nadal istnieje
                     filtered_markers = [
                         marker for marker in self.original_markers
                         if (not filter_payable or marker.get('payable', False)) and
@@ -723,10 +683,7 @@ class Server:
             if target_lat is None or target_lon is None:
                 return jsonify({'status': 'error', 'message': 'Invalid target coordinates'}), 400
 
-            if not isInOpoleProvince(target_lat, target_lon):
-                route = None
-            else:
-                route = get_route(user_lat, user_lon, target_lat, target_lon)
+            route = get_route(user_lat, user_lon, target_lat, target_lon)
             if route:
                 distance = route['routes'][0]['distance']  # w metrach
                 duration = route['routes'][0]['duration'] / 60  # w minutach
@@ -807,18 +764,7 @@ class Server:
             # Check if we have a selected target
             selected_target = user_data.get('selected_target')
             if selected_target:
-                # Sprawdź czy użytkownik i cel są w województwie opolskim
-                if not isInOpoleProvince(user_lat, user_lon):
-                    user_data['current_route'] = None
-                    session[user_id] = user_data
-                    return jsonify({'status': 'success', 'message': 'User outside Opole province'})
-                    
-                if not isInOpoleProvince(selected_target['lat'], selected_target['lon']):
-                    user_data['current_route'] = None
-                    session[user_id] = user_data
-                    return jsonify({'status': 'success', 'message': 'Target outside Opole province'})
-                
-                # Recalculate route only when both user and target are within Opole province
+                # Recalculate route with updated user location
                 route = get_route(
                     user_lat, user_lon,
                     selected_target['lat'], selected_target['lon']
@@ -1376,34 +1322,16 @@ class Server:
                 user_data = session.get(user_id, {}) if user_id else {}
                 user_marker = user_data.get('marker')
                 
-                # Calculate distance if user location exists
-                distance_km = None
-                is_within_range = False
-                # If user_marker exists, calculate the distance
-                if user_marker:
-                    distance = haversine(
-                        user_marker['lat'], user_marker['lon'],
-                        marker['lat'], marker['lon']
-                    )
-                    distance_km = distance / 1000  # Convert distance to kilometers
-                    is_within_range = distance_km <= 10
-                else:
-                    is_within_range = False
-
-                # Create toilet marker with modified navigation button
+                # Create toilet marker with navigation button (always enabled)
                 lat = marker['lat']
                 lon = marker['lon']
 
                 onclick_attr = f"window.parent.navigateToToilet({lat}, {lon})"
-                disabled_attr = "" if is_within_range else 'disabled="disabled"'
 
                 navigate_button_html = f"""
                     <button onclick="{onclick_attr}; this.closest('.leaflet-popup').style.display='none';"
                             class="popup-button" 
                             style="
-                                opacity: {'1' if is_within_range else '0.7'};
-                                pointer-events: {'auto' if is_within_range else 'none'};
-                                filter: {'none' if is_within_range else 'brightness(0.8)'};
                                 width: 80%;
                                 background-color: red;
                                 color: white;
@@ -1417,11 +1345,9 @@ class Server:
                                 transition: all 0.3s ease;
                             "
                             onmouseover="this.style.backgroundColor='#C92704';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
-                            onmouseout="this.style.backgroundColor='red';this.style.transform='none';this.style.boxShadow='none'"
-                            {disabled_attr}>
+                            onmouseout="this.style.backgroundColor='red';this.style.transform='none';this.style.boxShadow='none'">
                         Nawiguj
                     </button>
-                    {f'<span style="color: #d32f2f; font-size: 12px; margin-left: 8px;">Toaleta znajduje się dalej niż 10km</span>' if not is_within_range else ''}
                 """
 
                 # Marker toalety (globalny)
@@ -1775,81 +1701,53 @@ class Server:
                 user_data = session.get(user_id, {})
                 user_marker = user_data.get('marker')
                 if user_marker:
-                    # Always add user marker regardless of location
+                    # Always add user marker
                     self.add_marker_to_map(user_marker)
                     
-                    # Rest of code for filtering and route calculation
-                    # Only skip route generation if outside Opole, but still show the marker
-                    if not isInOpoleProvince(user_marker['lat'], user_marker['lon']):
-                        logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
+                    # Route generation code
+                    filtered_markers = [
+                        marker for marker in markers_to_add 
+                        if marker.get('name', '') != "User Location"
+                    ]
+                    # Sprawdź czy zapisany cel nawigacji nadal istnieje po filtrowaniu
+                    selected_target = user_data.get('selected_target')
+                    if selected_target:
+                        target_lat = selected_target.get('lat')
+                        target_lon = selected_target.get('lon')
+                        
+                        # Sprawdź czy cel nawigacji nadal istnieje w przefiltrowanych markerach
+                        target_exists = any(
+                            abs(marker['lat'] - target_lat) < 0.0001 and abs(marker['lon'] - target_lon) < 0.0001
+                            for marker in filtered_markers
+                        )
+
+                        if not target_exists:
+                            # Cel nawigacji nie istnieje po filtrowaniu, usuwamy trasę i cel
+                            user_data['current_route'] = None
+                            user_data['selected_target'] = None
+                            session[user_id] = user_data
+            
+                    if not filtered_markers:
                         user_data['current_route'] = None
                         session[user_id] = user_data
                     else:
-                        # Route generation code remains the same...
-                        filtered_markers = [
-                            marker for marker in markers_to_add 
-                            if marker.get('name', '') != "User Location"
-                        ]
-                        # Sprawdź czy zapisany cel nawigacji nadal istnieje po filtrowaniu
-                        selected_target = user_data.get('selected_target')
-                        if selected_target:
-                            target_lat = selected_target.get('lat')
-                            target_lon = selected_target.get('lon')
-                            
-                            # Sprawdź czy cel nawigacji nadal istnieje w przefiltrowanych markerach
-                            target_exists = any(
-                                abs(marker['lat'] - target_lat) < 0.0001 and abs(marker['lon'] - target_lon) < 0.0001
-                                for marker in filtered_markers
-                            )
+                        # Używamy trasy zapisanej w sesji, jeśli istnieje
+                        route = user_data.get('current_route')
+                        
+                        if not route:
+                            # Generuj trasę do najbliższego markera
+                            nearest_marker = find_nearest_marker(user_marker, filtered_markers)
+                            if nearest_marker:
+                                route = get_route(
+                                    user_marker['lat'], user_marker['lon'],
+                                    nearest_marker['lat'], nearest_marker['lon']
+                                )
+                                if route:
+                                    self.add_route_to_map(route)
 
-                            if not target_exists:
-                                # Cel nawigacji nie istnieje po filtrowaniu, usuwamy trasę i cel
-                                user_data['current_route'] = None
-                                user_data['selected_target'] = None
-                                session[user_id] = user_data
-                
-                        if not filtered_markers:
-                            user_data['current_route'] = None
-                            session[user_id] = user_data
-                        else:
-                            # Dodaj sprawdzenie dla lokalizacji użytkownika
-                            if user_marker and not isInOpoleProvince(user_marker['lat'], user_marker['lon']):
-                                logging.warning("Użytkownik poza województwem opolskim - nie generuję trasy.")
-                                user_data['current_route'] = None
-                                session[user_id] = user_data
-                            else:
-                                # Używamy trasy zapisanej w sesji, jeśli istnieje
-                                route = user_data.get('current_route')
-                                
-                                # Sprawdź czy cel nawigacji jest w województwie opolskim
-                                selected_target = user_data.get('selected_target')
-                                if selected_target and not isInOpoleProvince(selected_target['lat'], selected_target['lon']):
-                                    logging.warning("Cel nawigacji poza województwem opolskim - usuwam trasę.")
-                                    user_data['current_route'] = None
-                                    route = None
-                                    session[user_id] = user_data
-                                
-                                if not route:
-                                    # Reszta kodu bez zmian...
-                                    route = None
-                                    nearest_marker = find_nearest_marker(user_marker, filtered_markers)
-                                    if nearest_marker:
-                                        # Sprawdzamy województwo przed jakimkolwiek generowaniem trasy
-                                        if not isInOpoleProvince(nearest_marker['lat'], nearest_marker['lon']):
-                                            logging.warning("Marker poza województwem opolskim – nie generuję trasy.")
-                                            user_data['current_route'] = None
-                                            session[user_id] = user_data
-                                        else:
-                                            route = get_route(
-                                                user_marker['lat'], user_marker['lon'],
-                                                nearest_marker['lat'], nearest_marker['lon']
-                                            )
-                                            if route:
-                                                user_data['current_route'] = route
-                                                session[user_id] = user_data
-
-                            # Wyświetlamy trasę tylko jeśli route istnieje i marker jest w województwie
-                            if route:
+                        # Wyświetlamy trasę tylko jeśli route istnieje
+                        route = user_data.get('current_route')
+                        if route:
                                 coordinates = [
                                     (coord[1], coord[0])
                                     for coord in route['routes'][0]['geometry']['coordinates']
