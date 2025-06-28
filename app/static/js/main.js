@@ -1,6 +1,7 @@
 // Dodaj globalne zmienne na górze pliku
 let watchId = null;
 let lastPosition = null;
+let forceNextUpdate = false; // flaga wymuszająca natychmiastową aktualizację
 const MIN_DISTANCE = 25; // minimalna odległość w metrach do wywołania aktualizacji
 const UPDATE_INTERVAL = 30000; // 30 sekund
 
@@ -70,11 +71,12 @@ function startIntelligentTracking() {
                 }
 
                 // Reszta logiki śledzenia...
-                if (!lastPosition || calculateDistance(
+                if (!lastPosition || forceNextUpdate || calculateDistance(
                     lastPosition.lat, lastPosition.lon,
                     currentPosition.lat, currentPosition.lon
                 ) > MIN_DISTANCE) {
                     lastPosition = currentPosition;
+                    forceNextUpdate = false; // Resetuj flagę po wymuszeniu aktualizacji
                         
                     // Zawsze sprawdzaj zapisany cel nawigacji
                     const targetLat = localStorage.getItem('targetLat');
@@ -491,6 +493,9 @@ function navigateToToilet(targetLat, targetLon) {
     // Zapisz nowy cel w localStorage
     localStorage.setItem('targetLat', targetLat);
     localStorage.setItem('targetLon', targetLon);
+    
+    // Wymusz natychmiastową aktualizację przy następnym śledzeniu
+    forceNextUpdate = true;
 
     // Zawsze generuj trasę natychmiast, niezależnie od trybu śledzenia
     if (navigator.geolocation) {
@@ -525,6 +530,23 @@ function navigateToToilet(targetLat, targetLon) {
                         if (trackingEnabled) {
                             stopIntelligentTracking();
                             startIntelligentTracking();
+                            
+                            // Dodatkowo: od razu wywołaj aktualizację pozycji, żeby nie czekać na kolejny cykl
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(
+                                    (pos) => {
+                                        // Symuluj wywołanie z startIntelligentTracking z nową pozycją
+                                        const currentPosition = {
+                                            lat: pos.coords.latitude,
+                                            lon: pos.coords.longitude
+                                        };
+                                        lastPosition = currentPosition;
+                                        forceNextUpdate = false; // Resetuj flagę po wymuszeniu
+                                    },
+                                    (error) => console.error('Error getting position for immediate update:', error),
+                                    { enableHighAccuracy: true, timeout: 5000 }
+                                );
+                            }
                         }
                         
                         return fetch('/navigate_toilet_distance', {
@@ -870,6 +892,9 @@ function clearNavigation() {
     // Usuń cel nawigacji z localStorage
     localStorage.removeItem('targetLat');
     localStorage.removeItem('targetLon');
+    
+    // Resetuj flagę wymuszającą aktualizację
+    forceNextUpdate = false;
     
     // Ukryj box z informacjami o nawigacji i przycisk anulowania
     const nearestPinInfo = document.getElementById('nearestPinInfo');
