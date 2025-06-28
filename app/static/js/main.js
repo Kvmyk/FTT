@@ -126,7 +126,14 @@ function startIntelligentTracking() {
                             const cancelBtn = document.getElementById('cancelNavigationBtn');
                             nearestPinText.innerText = `Nawigacja do: ${data.name}\nOdległość: ${data.distance}\nSzacowany czas: ${data.duration} min 🚶`;
                             nearestPinInfo.classList.add('show');
-                            cancelBtn.style.display = 'inline-block'; // Pokaż przycisk anulowania
+                            // Pokaż przycisk anulowania tylko jeśli jest cel nawigacji
+                            const targetLat = localStorage.getItem('targetLat');
+                            const targetLon = localStorage.getItem('targetLon');
+                            if (targetLat && targetLon) {
+                                cancelBtn.style.display = 'inline-block';
+                            } else {
+                                cancelBtn.style.display = 'none';
+                            }
                         }
                     })
                     .catch(error => {
@@ -542,7 +549,14 @@ function navigateToToilet(targetLat, targetLon) {
                             const cancelBtn = document.getElementById('cancelNavigationBtn');
                             nearestPinText.innerText = `Nawigacja do: ${data.name}\nOdległość: ${data.distance}\nSzacowany czas: ${data.duration} min 🚶`;
                             nearestPinInfo.classList.add('show');
-                            cancelBtn.style.display = 'inline-block';
+                            // Pokaż przycisk anulowania tylko jeśli jest cel nawigacji
+                            const targetLat = localStorage.getItem('targetLat');
+                            const targetLon = localStorage.getItem('targetLon');
+                            if (targetLat && targetLon) {
+                                cancelBtn.style.display = 'inline-block';
+                            } else {
+                                cancelBtn.style.display = 'none';
+                            }
                         }
                     })
                 .catch(error => console.error('Error:', error));
@@ -857,7 +871,7 @@ function clearNavigation() {
     localStorage.removeItem('targetLat');
     localStorage.removeItem('targetLon');
     
-    // Ukryj box z informacjami o nawigacji
+    // Ukryj box z informacjami o nawigacji i przycisk anulowania
     const nearestPinInfo = document.getElementById('nearestPinInfo');
     const cancelBtn = document.getElementById('cancelNavigationBtn');
     nearestPinInfo.classList.remove('show');
@@ -872,6 +886,34 @@ function clearNavigation() {
     })
     .then(response => response.json())
     .then(data => {
+        // Sprawdź czy jest włączone śledzenie lokalizacji
+        const trackingEnabled = document.getElementById('locationTrackingToggle')?.checked;
+        if (trackingEnabled) {
+            // Jeśli śledzenie jest włączone, pokaż informacje o najbliższej toalecie BEZ przycisku anulowania
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // Wywołaj endpoint do znalezienia najbliższej toalety
+                        fetch('/nearest_toilet_distance')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                const nearestPinText = document.getElementById('nearestPinText');
+                                // Zawsze ukryj przycisk anulowania dla najbliższej toalety
+                                cancelBtn.style.display = 'none';
+                                nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
+                                nearestPinInfo.classList.add('show');
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                    },
+                    (error) => {
+                        console.error('Error getting location:', error);
+                    }
+                );
+            }
+        }
+        
         // Odśwież mapę bez trasy
         return fetch('/render_map');
     })
@@ -879,8 +921,8 @@ function clearNavigation() {
     .then(html => {
         document.getElementById('map').innerHTML = html;
         
-        // Sprawdź czy jest włączone śledzenie i restart je bez celu nawigacji
-        const trackingEnabled = document.getElementById('locationTrackingToggle').checked;
+        // Restart śledzenia bez celu nawigacji
+        const trackingEnabled = document.getElementById('locationTrackingToggle')?.checked;
         if (trackingEnabled) {
             stopIntelligentTracking();
             startIntelligentTracking();
