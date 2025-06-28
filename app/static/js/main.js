@@ -68,18 +68,6 @@ function startIntelligentTracking() {
                 if (!targetExists && (localStorage.getItem('targetLat') || localStorage.getItem('targetLon'))) {
                     return;
                 }
-                
-                if (!isInOpoleProvince(currentPosition.lat, currentPosition.lon)) {
-                    alert('Znajdujesz się poza województwem opolskim. Nawigacja jest dostępna tylko w województwie opolskim.');
-                    stopIntelligentTracking();
-                    return;
-                }
-
-                if (targetLat && targetLon && !isInOpoleProvince(parseFloat(targetLat), parseFloat(targetLon))) {
-                    alert('Marker znajduje się poza województwem opolskim. Nawigacja jest dostępna tylko do markerów w województwie opolskim.');
-                    stopIntelligentTracking();
-                    return;
-                }
 
                 // Reszta logiki śledzenia...
                 if (!lastPosition || calculateDistance(

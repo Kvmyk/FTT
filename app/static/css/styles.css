@@ -209,9 +209,9 @@ html, body {
     left: 50%;
     transform: translateX(-50%);
     background: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 1000;
     display: none;
     transition: opacity 0.3s ease-in-out;
@@ -219,6 +219,31 @@ html, body {
     font-weight: 300; /* Light */
     width: 70%;
     max-width: 550px;
+}
+
+/* Style dla przycisku anulowania nawigacji */
+#cancelNavigationBtn {
+    background-color: #ff4444 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease, transform 0.1s ease !important;
+    white-space: nowrap !important;
+    min-width: fit-content !important;
+    font-family: 'Roboto', sans-serif !important;
+}
+
+#cancelNavigationBtn:hover {
+    background-color: #e63939 !important;
+    transform: translateY(-1px) !important;
+}
+
+#cancelNavigationBtn:active {
+    transform: translateY(0) !important;
 }
 
 #nearestPinInfo.show {

@@ -39,10 +39,12 @@
 <body>
     <div class="circle-plus">+</div>
     <div id="nearestPinInfo">
-        <p id="nearestPinText"></p>
-        <button id="cancelNavigationBtn" onclick="clearNavigation()" style="display:none; margin-top: 10px; padding: 8px 16px; background-color: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-            ❌ Anuluj nawigację
-        </button>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <p id="nearestPinText" style="margin: 0; flex: 1;"></p>
+            <button id="cancelNavigationBtn" onclick="clearNavigation()" style="display:none; padding: 6px 12px; background-color: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap; align-self: flex-start;">
+                Anuluj
+            </button>
+        </div>
     </div>
     <!-- Modal -->
     <div id="map"></div>
