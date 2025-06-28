@@ -1289,6 +1289,19 @@ class Server:
             except sqlite3.Error as e:
                 return jsonify({"error": str(e)}), 500
 
+        @self.app.route('/clear_navigation', methods=['POST'])
+        def clear_navigation():
+            """Clear navigation target from user session"""
+            user_id = session.get('user_id')
+            if user_id:
+                user_data = session.get(user_id, {})
+                # Remove navigation target
+                user_data.pop('selected_target', None)
+                user_data.pop('current_route', None)
+                session[user_id] = user_data
+            
+            return jsonify({'status': 'success'})
+
     def add_marker_to_map(self, marker):
         """
         Dodaje POJEDYNCZY marker do mapy self.m.
