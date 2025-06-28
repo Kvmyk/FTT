@@ -806,6 +806,49 @@ class Server:
             else:
                 # Usuń cel nawigacji jeśli nie podano
                 user_data.pop('selected_target', None)
+                user_data.pop('current_route', None)
+                
+                # Pobierz filtry z sesji
+                filters = user_data.get('filters', {})
+                filter_payable = filters.get('filterPayable', False)
+                filter_for_clients = filters.get('filterForClients', False)
+                filter_for_disabled = filters.get('filterForDisabled', False)
+                filter_rating = float(filters.get('filterRating', 0))
+
+                # Filtrowanie markerów
+                filtered_markers = self.original_markers
+                if filter_payable or filter_for_clients or filter_for_disabled or filter_rating > 0:
+                    filtered_markers = [
+                        marker for marker in self.original_markers
+                        if (not filter_payable or marker.get('payable', False)) and
+                           (not filter_for_clients or marker.get('onlyForClients', False)) and
+                           (not filter_for_disabled or marker.get('forDisabled', False)) and
+                           (float(marker.get('rating', 0)) >= filter_rating)
+                    ]
+                
+                session[user_id] = user_data
+                
+                # Znajdź najbliższą toaletę i zwróć informacje o niej
+                nearest_marker = find_nearest_marker(user_marker, filtered_markers)
+                
+                if nearest_marker:
+                    # Oblicz trasę do najbliższej toalety
+                    route = get_route(user_lat, user_lon, nearest_marker['lat'], nearest_marker['lon'])
+                    if route:
+                        self.update_map()
+                        
+                        distance = route['routes'][0]['distance']  # in meters
+                        duration = route['routes'][0]['duration'] / 60  # in minutes
+                        distance_text = format_distance_text(distance)
+                        
+                        return jsonify({
+                            'status': 'success',
+                            'distance': distance_text,
+                            'duration': f"{duration:.0f}",
+                            'name': nearest_marker['name'],
+                            'is_nearest': True  # Flaga oznaczająca że to najbliższa toaleta
+                        })
+                
                 self.update_map()
             
             session[user_id] = user_data

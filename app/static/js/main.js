@@ -98,21 +98,32 @@ function startIntelligentTracking() {
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
-                            // Jeśli jest cel nawigacji i serwer zwrócił informacje o trasie
+                            // Jeśli serwer zwrócił informacje o trasie
                             if (data.distance && data.duration && data.name) {
                                 const nearestPinInfo = document.getElementById('nearestPinInfo');
                                 const nearestPinText = document.getElementById('nearestPinText');
                                 const cancelBtn = document.getElementById('cancelNavigationBtn');
-                                nearestPinText.innerText = `Nawigacja do: ${data.name}\nOdległość: ${data.distance}\nSzacowany czas: ${data.duration} min 🚶`;
-                                nearestPinInfo.classList.add('show');
-                                // Pokaż przycisk anulowania tylko jeśli jest cel nawigacji
-                                const targetLat = localStorage.getItem('targetLat');
-                                const targetLon = localStorage.getItem('targetLon');
-                                if (targetLat && targetLon) {
-                                    cancelBtn.style.display = 'inline-block';
-                                } else {
+                                
+                                // Użyj flagi is_nearest z serwera do rozróżnienia typu nawigacji
+                                console.log('updateUserLocation response:', {
+                                    is_nearest: data.is_nearest,
+                                    name: data.name,
+                                    hasTarget: localStorage.getItem('targetLat') && localStorage.getItem('targetLon')
+                                });
+                                
+                                if (data.is_nearest) {
+                                    // Najbliższa toaleta - NIE pokazuj przycisku anulowania
+                                    nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                                     cancelBtn.style.display = 'none';
+                                    console.log('Set cancel button to none (nearest toilet)');
+                                } else {
+                                    // Nawigacja do konkretnego celu - pokaż przycisk anulowania
+                                    nearestPinText.innerText = `Nawigacja do: ${data.name}\nOdległość: ${data.distance}\nSzacowany czas: ${data.duration} min 🚶`;
+                                    cancelBtn.style.display = 'inline-block';
+                                    console.log('Set cancel button to inline-block (target navigation)');
                                 }
+                                
+                                nearestPinInfo.classList.add('show');
                             }
                             return fetch('/render_map');
                         }
@@ -852,9 +863,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function clearNavigation() {
+    console.log('clearNavigation called');
+    
     // Usuń cel nawigacji z localStorage
     localStorage.removeItem('targetLat');
     localStorage.removeItem('targetLon');
+    console.log('Removed target from localStorage');
     
     // Resetuj flagę wymuszającą aktualizację
     forceNextUpdate = false;
@@ -864,6 +878,7 @@ function clearNavigation() {
     const cancelBtn = document.getElementById('cancelNavigationBtn');
     nearestPinInfo.classList.remove('show');
     cancelBtn.style.display = 'none';
+    console.log('Hidden info box and cancel button');
     
     // Wywołaj endpoint serwera do usunięcia celu nawigacji z sesji
     fetch('/clear_navigation', {
@@ -881,6 +896,9 @@ function clearNavigation() {
     .then(html => {
         document.getElementById('map').innerHTML = html;
         
+        // Sprawdź czy jest włączone śledzenie
+        const trackingEnabled = document.getElementById('locationTrackingToggle')?.checked;
+        
         // Po odświeżeniu mapy, zawsze pokaż informacje o najbliższej toalecie
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -891,16 +909,20 @@ function clearNavigation() {
                     .then(data => {
                         if (data.status === 'success') {
                             const nearestPinText = document.getElementById('nearestPinText');
-                            // NIE pokazuj przycisku anulowania dla najbliższej toalety
+                            // ZAWSZE ukryj przycisk anulowania dla najbliższej toalety
                             cancelBtn.style.display = 'none';
+                            console.log('clearNavigation: Set cancel button to none for nearest toilet');
                             nearestPinText.innerText = `Od twojej lokalizacji do najbliższej toalety jest ${data.distance} - ${data.name}.\nSzacowany czas dotarcia: ${data.duration} min 🚶`;
                             nearestPinInfo.classList.add('show');
+                            console.log('clearNavigation: Showed nearest toilet info box');
                             
-                            // Dopiero teraz restart śledzenia bez celu nawigacji, jeśli było włączone
-                            const trackingEnabled = document.getElementById('locationTrackingToggle')?.checked;
+                            // Dopiero TERAZ restart śledzenia, z opóźnieniem, żeby nie konkurowało z boxem
                             if (trackingEnabled) {
-                                stopIntelligentTracking();
-                                startIntelligentTracking();
+                                console.log('clearNavigation: Will restart tracking in 1s');
+                                setTimeout(() => {
+                                    stopIntelligentTracking();
+                                    startIntelligentTracking();
+                                }, 1000); // 1s opóźnienie
                             }
                         }
                     })
@@ -908,8 +930,23 @@ function clearNavigation() {
                 },
                 (error) => {
                     console.error('Error getting location:', error);
+                    // Restart śledzenia nawet w przypadku błędu geolokalizacji
+                    if (trackingEnabled) {
+                        setTimeout(() => {
+                            stopIntelligentTracking();
+                            startIntelligentTracking();
+                        }, 1000);
+                    }
                 }
             );
+        } else {
+            // Restart śledzenia nawet jeśli geolokalizacja nie jest dostępna
+            if (trackingEnabled) {
+                setTimeout(() => {
+                    stopIntelligentTracking();
+                    startIntelligentTracking();
+                }, 1000);
+            }
         }
     })
     .catch(error => console.error('Error:', error));
