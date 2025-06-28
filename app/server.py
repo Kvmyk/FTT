@@ -438,7 +438,14 @@ class Server:
                 }
                 self.markers.append(new_marker)
                 self.original_markers.append(new_marker)
+            
+            # Zapisz do bazy danych
             self.save_markers()
+            
+            # KLUCZOWE: Przeładuj markery z bazy żeby zsynchronizować stan
+            self.markers = self.load_markers()
+            self.original_markers = self.markers.copy()
+            logging.info(f"Reloaded {len(self.markers)} markers from database after adding new marker")
 
             user_id = session.get('user_id')
             if user_id:
