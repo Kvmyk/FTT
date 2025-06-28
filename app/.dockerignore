@@ -1,0 +1,71 @@
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+venv
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.DS_Store
+
+# Development files
+.env.example
+README.md
+LICENSE
+*.md
+docs/
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files
+Dockerfile*
+.dockerignore
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Log files
+*.log
+logs/
+
+# Database files (if not needed in container)
+*.db-journal
+
+# Node modules (if any)
+node_modules/
+
+# Test files
+tests/
+test_*
+*_test.py
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

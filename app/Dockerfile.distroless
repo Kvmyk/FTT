@@ -1,0 +1,37 @@
+# Multi-stage build with Google Distroless for maximum security and minimal size
+FROM python:3.12-slim AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Production stage using Google Distroless
+FROM gcr.io/distroless/python3-debian12
+
+# Copy Python packages from builder
+COPY --from=builder /root/.local /root/.local
+
+# Copy application code
+WORKDIR /app
+COPY . .
+
+# Create data directory
+RUN mkdir -p data static/uploads
+
+# Set environment
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH=/app
+
+# Expose port
+EXPOSE 80
+
+# Command to run the application
+CMD ["/root/.local/bin/gunicorn", "--workers", "2", "--bind", "[::]:80", "--timeout", "120", "main:app"]

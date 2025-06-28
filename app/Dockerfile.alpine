@@ -1,11 +1,13 @@
-# Multi-stage build for minimal image size
-FROM python:3.12-slim AS builder
+# Ultra-lightweight multi-stage build using Alpine
+FROM python:3.12-alpine AS builder
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+    musl-dev \
+    linux-headers \
+    postgresql-dev \
+    && pip install --upgrade pip
 
 WORKDIR /src
 COPY requirements.txt .
@@ -13,14 +15,16 @@ COPY requirements.txt .
 # Install Python dependencies in a virtual environment
 RUN python -m venv /venv
 ENV PATH="/venv/bin:$PATH"
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Final stage - minimal runtime image
-FROM python:3.12-slim
+# Final stage - ultra-minimal Alpine runtime
+FROM python:3.12-alpine
 
-# Create non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Install only runtime dependencies
+RUN apk add --no-cache \
+    postgresql-libs \
+    && addgroup -g 1001 -S appuser \
+    && adduser -u 1001 -S appuser -G appuser
 
 # Copy only the virtual environment from builder
 COPY --from=builder /venv /venv
@@ -43,7 +47,7 @@ EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:80/', timeout=5)" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:80/', timeout=5)" || exit 1
 
 # Command to run the application
 CMD ["gunicorn", "--workers", "2", "--bind", "[::]:80", "--timeout", "120", "--max-requests", "1000", "--max-requests-jitter", "100", "main:app"]
