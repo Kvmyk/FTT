@@ -35,17 +35,46 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * c  # Odległość w kilometrach
 
 def get_route(start_lat, start_lon, end_lat, end_lon):
-    """Get walking route using public OSRM API"""
-    url = f"https://router.project-osrm.org/route/v1/foot/{start_lon},{start_lat};{end_lon},{end_lat}?overview=full&geometries=geojson&steps=true&alternatives=false"
+    """Get walking route using OpenRouteService API (free alternative to OSRM)"""
+    api_key = os.environ.get('OPENROUTESERVICE_API_KEY')
+    
+    if not api_key:
+        logging.error("OPENROUTESERVICE_API_KEY not found in environment variables")
+        return None
+    
+    url = "https://api.openrouteservice.org/v2/directions/foot-walking"
+    
+    headers = {
+        'Authorization': api_key,
+        'Content-Type': 'application/json'
+    }
+    
+    data = {
+        "coordinates": [[start_lon, start_lat], [end_lon, end_lat]],
+        "format": "geojson",
+        "instructions": True
+    }
+    
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.post(url, headers=headers, json=data, timeout=10)
         if response.status_code == 200:
-            return response.json()
+            result = response.json()
+            # Convert to OSRM-like format for compatibility
+            if 'features' in result and len(result['features']) > 0:
+                feature = result['features'][0]
+                return {
+                    "routes": [{
+                        "geometry": feature['geometry'],
+                        "distance": feature['properties']['summary']['distance'],
+                        "duration": feature['properties']['summary']['duration']
+                    }]
+                }
+            return None
         else:
-            logging.error(f"OSRM API error: {response.status_code}")
+            logging.error(f"OpenRouteService API error: {response.status_code}")
             return None
     except requests.RequestException as e:
-        logging.error(f"Error connecting to OSRM API: {e}")
+        logging.error(f"Error connecting to OpenRouteService API: {e}")
         return None
     
 def is_hate_speech(text):
