@@ -230,6 +230,10 @@ class Server:
             Otrzymuje JSON z danymi {lat, lon} i zapisuje je w sesji użytkownika 
             jako 'marker' (lokatę usera). Następnie oblicza trasę do najbliższej toalety.
             """
+            # Załaduj świeże markery z bazy danych
+            self.markers = self.load_markers()
+            self.original_markers = self.markers.copy()
+            
             data = request.json
             # Pobierz/utwórz unikalne user_id
             user_id = session.get('user_id')
@@ -291,6 +295,10 @@ class Server:
             """
             Dodatkowy endpoint, który zwraca odległość do najbliższej toalety.
             """
+            # Załaduj świeże markery z bazy danych
+            self.markers = self.load_markers()
+            self.original_markers = self.markers.copy()
+            
             user_id = session.get('user_id')
             if not user_id:
                 user_id = str(uuid.uuid4())
@@ -566,6 +574,9 @@ class Server:
 
         @self.app.route('/navigate', methods=['POST'])
         def navigate():
+            # Załaduj świeże markery z bazy danych
+            self.markers = self.load_markers()
+            
             data = request.json
             user_id = session.get('user_id')
             
@@ -620,6 +631,10 @@ class Server:
 
         @self.app.route('/apply_filters', methods=['POST'])
         def apply_filters():
+            # Załaduj świeże markery z bazy danych
+            self.markers = self.load_markers()
+            self.original_markers = self.markers.copy()
+            
             data = request.json
             filter_payable = data.get('filterPayable', False)
             filter_for_clients = data.get('filterForClients', False)
@@ -681,6 +696,9 @@ class Server:
 
         @self.app.route('/navigate_toilet_distance', methods=['POST'])
         def navigate_toilet_distance():
+            # Załaduj świeże markery z bazy danych
+            self.markers = self.load_markers()
+            
             data = request.json
             user_lat = data.get('user_lat')
             user_lon = data.get('user_lon')
@@ -728,6 +746,9 @@ class Server:
         @self.app.route('/check_marker_exists', methods=['POST'])
         def check_marker_exists():
             """Sprawdza czy marker istnieje na mapie po zastosowaniu filtrów"""
+            # Załaduj świeże markery z bazy danych
+            self.markers = self.load_markers()
+            
             data = request.json
             lat = data.get('lat')
             lon = data.get('lon')
@@ -764,6 +785,10 @@ class Server:
         @self.app.route('/update_user_location', methods=['POST'])
         def update_user_location():
             """Updates user location and handles navigation target if exists"""
+            # Załaduj świeże markery z bazy danych
+            self.markers = self.load_markers()
+            self.original_markers = self.markers.copy()
+            
             data = request.json
             user_lat = data.get('user_lat')
             user_lon = data.get('user_lon')
@@ -1751,6 +1776,12 @@ class Server:
     def update_map(self):
         """Aktualizuje mapę, najpierw ją usuwając"""
         try:
+            # WAŻNE: Zawsze ładuj markery z bazy danych przed renderowaniem mapy
+            # Zapewnia to spójność w środowisku wieloprocesowym (Docker/Gunicorn)
+            self.markers = self.load_markers()
+            self.original_markers = self.markers.copy()
+            logging.info(f"[SYNC] Przeładowano {len(self.markers)} markerów z bazy danych")
+            
             # Wyczyść starą mapę
             if hasattr(self, 'm') and self.m is not None:
                 del self.m
