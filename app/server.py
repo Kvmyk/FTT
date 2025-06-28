@@ -1784,6 +1784,28 @@ class Server:
                            (not filter_for_disabled or marker.get('forDisabled', False)) and
                            (float(marker.get('rating', 0)) >= filter_rating)
                     ]
+                
+                # ZAWSZE dodaj cel nawigacji do markerów do wyświetlenia, niezależnie od filtrów
+                selected_target = user_data.get('selected_target')
+                if selected_target:
+                    target_lat = selected_target.get('lat')
+                    target_lon = selected_target.get('lon')
+                    
+                    # Znajdź marker celu nawigacji w oryginalnych markerach
+                    target_marker = next((
+                        marker for marker in self.original_markers
+                        if abs(marker['lat'] - target_lat) < 0.0001 and abs(marker['lon'] - target_lon) < 0.0001
+                    ), None)
+                    
+                    # Jeśli znalazł i nie ma go już w przefiltrowanych markerach, dodaj go
+                    if target_marker:
+                        target_in_filtered = any(
+                            abs(marker['lat'] - target_lat) < 0.0001 and abs(marker['lon'] - target_lon) < 0.0001
+                            for marker in markers_to_add
+                        )
+                        if not target_in_filtered:
+                            markers_to_add.append(target_marker)
+                            logging.info(f"Added navigation target marker to map despite filters: {target_marker['name']}")
 
             for marker in markers_to_add:
                 self.add_marker_to_map(marker)
@@ -1801,23 +1823,8 @@ class Server:
                         marker for marker in markers_to_add 
                         if marker.get('name', '') != "User Location"
                     ]
-                    # Sprawdź czy zapisany cel nawigacji nadal istnieje po filtrowaniu
-                    selected_target = user_data.get('selected_target')
-                    if selected_target:
-                        target_lat = selected_target.get('lat')
-                        target_lon = selected_target.get('lon')
-                        
-                        # Sprawdź czy cel nawigacji nadal istnieje w przefiltrowanych markerach
-                        target_exists = any(
-                            abs(marker['lat'] - target_lat) < 0.0001 and abs(marker['lon'] - target_lon) < 0.0001
-                            for marker in filtered_markers
-                        )
-
-                        if not target_exists:
-                            # Cel nawigacji nie istnieje po filtrowaniu, usuwamy trasę i cel
-                            user_data['current_route'] = None
-                            user_data['selected_target'] = None
-                            session[user_id] = user_data
+                    # Cel nawigacji już jest zawsze dodany do markers_to_add powyżej
+                    # więc nie musimy sprawdzać czy istnieje po filtrowaniu
             
                     if not filtered_markers:
                         user_data['current_route'] = None
