@@ -5,7 +5,7 @@
 
 ## Opis
 
-[**Find My Throne**](https://findmythrone.net/) to strona internetowa, która pomaga szybko zlokalizować najbliższą toaletę publiczną! 🚽 Bez względu na Twoje położenie, nasza aplikacja wskaże Ci najszybszą drogę do najbliższego miejsca, gdzie możesz skorzystać z toalety.
+[**Find My Throne**](https://findmythrone.net/) to nowoczesna aplikacja internetowa, która pomaga szybko zlokalizować najbliższą toaletę publiczną w dowolnym miejscu na świecie! 🚽 Dzięki zaawansowanej technologii routing'u i sztucznej inteligencji, nasza aplikacja oferuje bezpieczne i niezawodne rozwiązanie dla użytkowników na całym globie.
 
 ## Funkcje
 
@@ -13,7 +13,7 @@
   Wykorzystuje Twoją bieżącą lokalizację, aby znaleźć najbliższe toalety publiczne.
 
 - **Nawigacja w czasie rzeczywistym** 🧭  
-  Oferuje wskazówki krok po kroku, umożliwiając szybkie dotarcie do wybranego miejsca.
+  Oferuje precyzyjne wskazówki wykorzystując publiczne API OpenRouteService z fallback'iem do OSRM dla maksymalnej niezawodności.
 
 - **Informacje o udogodnieniach** ℹ️  
   Pozwala sprawdzić, czy toaleta jest przystosowana dla osób niepełnosprawnych lub wyposażona w przewijak dla niemowląt.
@@ -22,37 +22,29 @@
   Umożliwia przeglądanie opinii innych użytkowników oraz dodawanie własnych ocen po skorzystaniu z toalety.
 
 - **Monitorowanie treści użytkowników** 🛡️  
-  Dzięki integracji z modelem [**MOP**](https://github.com/Kvmyk/MOP) (Monitorowanie Obraźliwych Przekazów), aplikacja automatycznie filtruje obraźliwe lub nieodpowiednie treści w recenzjach i komentarzach, zapewniając przyjazne środowisko dla wszystkich użytkowników.
+  Dzięki integracji z Google Gemini AI, aplikacja automatycznie filtruje obraźliwe lub nieodpowiednie treści w recenzjach i komentarzach, zapewniając przyjazne środowisko dla wszystkich użytkowników.
 
-## 🔹 Integracja z [MOP](https://github.com/Kvmyk/MOP)
+- **Globalna dostępność** 🌍  
+  Aplikacja działa na całym świecie bez ograniczeń geograficznych, umożliwiając znajdowanie toalet publicznych w dowolnej lokalizacji.
 
-Aby zapewnić bezpieczne i przyjazne środowisko dla wszystkich użytkowników, **Find My Throne** integruje model [**MOP**](https://github.com/Kvmyk/MOP) (Monitorowanie Obraźliwych Przekazów). Model ten analizuje treści generowane przez użytkowników, takie jak recenzje i komentarze, w celu wykrycia i filtrowania obraźliwych lub nieodpowiednich treści.
+## 🔹 Integracja z Google Gemini AI
 
-### 🔍 Cechy modelu MOP:
+Aby zapewnić bezpieczne i przyjazne środowisko dla wszystkich użytkowników, **Find My Throne** wykorzystuje Google Gemini AI do analizy treści generowanych przez użytkowników. System automatycznie sprawdza recenzje i komentarze pod kątem mowy nienawiści, wulgaryzmów i nieodpowiednich treści.
 
-- **Czyszczenie tekstu**: Usuwa niepotrzebne znaki i formatowania, aby zapewnić spójność danych wejściowych.
-- **Preprocessing**: Konwertuje tekst na małe litery i usuwa znaki specjalne, przygotowując dane do analizy.
-- **Kodowanie tekstu**: Przekształca słowa na indeksy za pomocą słownika słów, umożliwiając modelowi przetwarzanie danych tekstowych.
-- **Architektura modelu**: Wykorzystuje sieć LSTM do analizy sekwencji słów i klasyfikacji treści jako "hate" lub "neutral".
-- **Trening i walidacja**: Model jest trenowany z użyciem funkcji straty BCELoss i optymalizatora Adam, z zastosowaniem technik takich jak early stopping i regularyzacja L2, aby zapewnić wysoką precyzję i generalizację.
-- **API Flask**: Udostępnia interfejs API do analizy tekstu w czasie rzeczywistym, umożliwiając integrację z aplikacją **Find My Throne**.
+### 🔍 Cechy systemu moderacji:
 
-### 🔗 Przykład użycia API MOP:
+- **Analiza w języku polskim**: Specjalizuje się w wykrywaniu polskich wulgaryzmów i slangu internetowego.
+- **Sztuczna inteligencja**: Wykorzystuje zaawansowane modele językowe Google Gemini do precyzyjnej analizy tekstu.
+- **Automatyczna moderacja**: Treści zawierające mowę nienawiści są automatycznie blokowane.
+- **Bezpieczeństwo użytkowników**: Chroni społeczność przed nieodpowiednimi treściami.
+
+### 🔗 Przykład konfiguracji:
 ```bash
-curl -X POST http://localhost:5001/analyze -H "Content-Type: application/json" -d '{"text": "Twój tekst do analizy"}'
+# Wymagany klucz API Google Gemini w pliku .env
+GEMINI_API_KEY=your_api_key_here
 ```
 
-### 📩 Przykładowa odpowiedź:
-```json
-{
-  "text": "Twój tekst do analizy",
-  "label": "neutral",
-  "score": 0.3,
-  "confidence": 0.4
-}
-```
-
-Dzięki integracji modelu **MOP** z aplikacją **Find My Throne**, wszystkie treści generowane przez użytkowników są monitorowane i filtrowane pod kątem obraźliwych lub nieodpowiednich wypowiedzi, co przyczynia się do utrzymania przyjaznej atmosfery w społeczności użytkowników.
+Dzięki integracji z Google Gemini AI, **Find My Throne** automatycznie filtruje nieodpowiednie treści, zapewniając przyjazną atmosferę w społeczności użytkowników.
 
 
 ## Stos technologiczny
@@ -73,8 +65,15 @@ Dzięki integracji modelu **MOP** z aplikacją **Find My Throne**, wszystkie tre
 - **Baza danych**:  
   ![SQLite](https://img.shields.io/badge/SQLite-3.x-blue)
 
-- **Geokodowanie i geolokalizacja**:  
+- **Geokodowanie i routing**:  
   ![Nominatim](https://img.shields.io/badge/Nominatim-OpenStreetMap-brightgreen)
+  ![OpenRouteService](https://img.shields.io/badge/OpenRouteService-Free_API-green)
+
+- **Sztuczna inteligencja**:  
+  ![Google Gemini](https://img.shields.io/badge/Google_Gemini-AI_Moderation-blue)
+
+- **Konteneryzacja**:  
+  ![Docker](https://img.shields.io/badge/Docker-Multi--stage_builds-2496ED)
 
 - **System operacyjny serwera**:  
   ![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04%20LTS-orange)
@@ -85,6 +84,59 @@ Dzięki integracji modelu **MOP** z aplikacją **Find My Throne**, wszystkie tre
 - **Hosting kodu źródłowego**:  
   ![GitHub](https://img.shields.io/badge/GitHub-Repo-lightgrey)
 
+## 🚀 Ulepszenia techniczne
+
+**Find My Throne** został znacząco ulepszony pod kątem wydajności, niezawodności i globalnej dostępności:
+
+### 🌐 Routing i nawigacja
+- **OpenRouteService API**: Zastąpiono lokalny OSRM publicznym API dla globalnej dostępności
+- **Fallback do OSRM**: Automatyczne przełączanie na publiczne OSRM w przypadku problemów z głównym API
+- **Dekodowanie polyline**: Wsparcie dla zakodowanych tras z OpenRouteService
+
+### 🛡️ Bezpieczeństwo i moderacja
+- **Google Gemini AI**: Zaawansowana detekcja mowy nienawiści w języku polskim
+- **Automatyczna moderacja**: Filtrowanie nieodpowiednich treści w czasie rzeczywistym
+- **Obsługa błędów**: Graceful degradation w przypadku problemów z API
+
+### 📦 Deployment i konteneryzacja
+- **Multi-stage Docker builds**: Zoptymalizowane obrazy kontenerów
+- **Alpine Linux variant**: Minimalne obrazy dla produkcji
+- **Distroless images**: Obrazy bez zbędnych zależności dla maksymalnego bezpieczeństwa
+- **.dockerignore**: Optymalizacja czasu budowania
+
+### 🗺️ Usunięte ograniczenia
+- **Globalna dostępność**: Usunięto ograniczenia do województwa opolskiego
+- **Uniwersalność**: Aplikacja działa w dowolnej lokalizacji na świecie
+
+## 📋 Wymagania i konfiguracja
+
+### Zmienne środowiskowe (.env)
+```bash
+# Geokodowanie (Nominatim)
+USER_AGENT=YourAppName/1.0
+
+# Routing (OpenRouteService)
+OPENROUTESERVICE_API_KEY=your_openrouteservice_api_key
+
+# Moderacja treści (Google Gemini)
+GEMINI_API_KEY=your_gemini_api_key
+
+# Administracja
+ADMIN_KEY=your_admin_password
+```
+
+### Docker deployment
+```bash
+# Standardowy build
+docker build -t find-my-throne .
+
+# Alpine variant (mniejszy obraz)
+docker build -f Dockerfile.alpine -t find-my-throne:alpine .
+
+# Distroless variant (najbezpieczniejszy)
+docker build -f Dockerfile.distroless -t find-my-throne:distroless .
+```
+
 ## 📜 Licencja
 
-Ten projekt jest objęty licencją **GNU General Public License v3 (GPL-3.0)**. Więcej informacji znajdziesz w pliku [LICENSE](LICENSE) lub na stronie oficjalnej licencji: [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html). 
+Ten projekt jest objęty licencją **GNU General Public License v3 (GPL-3.0)**. Więcej informacji znajdziesz w pliku [LICENSE](LICENSE) lub na stronie oficjalnej licencji: [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html).
