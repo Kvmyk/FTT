@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Zarządzanie Toaletami</h1>
+        <a href="{{ url_for('admin.logout') }}" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition">
+            Wyloguj
+        </a>
+    </div>
+
+    <!-- Tabela -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full leading-normal">
+                <thead>
+                    <tr>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            ID
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Nazwa
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Opis
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Ocena
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Akcje
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="toiletList">
+                    <!-- Wiersze ładowane przez JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edycji -->
+<div id="editModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-auto">
+        <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+            <h3 class="font-bold text-lg text-gray-800">Edytuj Toaletę</h3>
+            <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700">&times;</button>
+        </div>
+        <div class="p-6">
+            <form id="editForm" class="space-y-4">
+                <input type="hidden" id="editId">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Nazwa</label>
+                    <input type="text" id="editName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Miejsce/Adres</label>
+                    <input type="text" id="editPlaceName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Opis</label>
+                    <textarea id="editDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Ocena</label>
+                        <input type="number" id="editRating" step="0.1" max="10" class="mt-1 block w-full border p-2 rounded">
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="editPayable" class="rounded text-blue-600">
+                        <span class="text-sm text-gray-700">Płatna</span>
+                    </label>
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="editDisabled" class="rounded text-blue-600">
+                        <span class="text-sm text-gray-700">Dla niepełnosprawnych</span>
+                    </label>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Anuluj</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', loadToilets);
+
+    function loadToilets() {
+        fetch('/api/toilets')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('toiletList');
+                tbody.innerHTML = '';
+                data.forEach(t => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 border-b border-gray-200";
+                    tr.innerHTML = `
+                        <td class="px-5 py-5 text-sm bg-white">${t.id}</td>
+                        <td class="px-5 py-5 text-sm bg-white font-medium">${t.name || t.place_name || '-'}</td>
+                        <td class="px-5 py-5 text-sm bg-white text-gray-500 truncate max-w-xs">${t.description || '-'}</td>
+                        <td class="px-5 py-5 text-sm bg-white">
+                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded font-bold">${t.rating || '?'}</span>
+                        </td>
+                        <td class="px-5 py-5 text-sm bg-white space-x-2">
+                            <button onclick='openEditModal(${JSON.stringify(t).replace(/'/g, "&#39;")})' class="text-blue-600 hover:text-blue-900 font-bold">Edytuj</button>
+                            <button onclick="deleteToilet(${t.id})" class="text-red-600 hover:text-red-900 font-bold">Usuń</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+    }
+
+    function deleteToilet(id) {
+        if(!confirm('Czy na pewno chcesz usunąć tę toaletę?')) return;
+        
+        fetch('/admin/api/toilets/' + id, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    loadToilets();
+                } else {
+                    alert('Błąd usuwania');
+                }
+            });
+    }
+
+    // Edit Modal Logic
+    const editModal = document.getElementById('editModal');
+    const editForm = document.getElementById('editForm');
+
+    function openEditModal(toilet) {
+        document.getElementById('editId').value = toilet.id;
+        document.getElementById('editName').value = toilet.name || '';
+        document.getElementById('editPlaceName').value = toilet.place_name || '';
+        document.getElementById('editDescription').value = toilet.description || '';
+        document.getElementById('editRating').value = toilet.rating || '';
+        document.getElementById('editPayable').checked = toilet.payable;
+        document.getElementById('editDisabled').checked = toilet.forDisabled;
+        
+        editModal.classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+        editModal.classList.add('hidden');
+    }
+
+    editForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('editId').value;
+        const data = {
+            name: document.getElementById('editName').value,
+            place_name: document.getElementById('editPlaceName').value,
+            description: document.getElementById('editDescription').value,
+            rating: document.getElementById('editRating').value,
+            payable: document.getElementById('editPayable').checked,
+            forDisabled: document.getElementById('editDisabled').checked
+        };
+
+        fetch('/admin/api/toilets/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                closeEditModal();
+                loadToilets();
+            } else {
+                alert('Błąd aktualizacji');
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Find My Throne{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        body { font-family: 'Roboto', sans-serif; }
+        /* Custom scrollbar if needed */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-100 flex flex-col h-screen overflow-hidden">
+
+    <!-- Header / Navbar -->
+    <nav class="bg-white shadow-md z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center gap-3">
+                        <img src="/static/toilet_icon.png" alt="Find My Throne Logo" class="h-12 w-12 object-contain">
+                        <span class="font-bold text-xl text-gray-800 hidden sm:block">Find My Throne</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="locateMeBtn" class="text-gray-600 hover:text-red-600 transition p-2 rounded-full hover:bg-red-50">
+                        <i class="fas fa-crosshairs text-xl" title="Zlokalizuj mnie"></i>
+                    </button>
+                    <!-- Więcej opcji menu tutaj -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow relative z-0">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer - opcjonalnie, w mapie full-screen często zbędny, ale damy minimalistyczny -->
+    <!-- <footer class="bg-white border-t border-gray-200 py-2 text-center text-xs text-gray-500 absolute bottom-0 w-full z-50 opacity-80 pointer-events-none">
+        &copy; 2025 Find My Throne
+    </footer> -->
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

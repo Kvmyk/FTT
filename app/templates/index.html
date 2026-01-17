@@ -1,0 +1,637 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="map" class="w-full h-full z-10"></div>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center transition-opacity duration-500">
+    <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-red-600 mb-4"></div>
+    <h2 class="text-xl font-semibold text-gray-700">Ładowanie mapy...</h2>
+</div>
+
+<!-- Route Info Card (Hidden by default) -->
+<div id="routeInfo" class="hidden fixed top-20 left-1/2 transform -translate-x-1/2 z-40 bg-white px-6 py-3 rounded-full shadow-lg border border-gray-200 flex items-center gap-4 transition-all duration-300">
+    <div class="flex items-center gap-2 text-gray-700">
+        <i class="fas fa-walking text-xl text-blue-600"></i>
+        <span id="routeTime" class="font-bold text-lg">0 min</span>
+    </div>
+    <div class="h-6 w-px bg-gray-300"></div>
+    <div class="flex items-center gap-2 text-gray-500">
+        <i class="fas fa-ruler-horizontal text-sm"></i>
+        <span id="routeDist" class="text-sm font-medium">0 km</span>
+    </div>
+    <button onclick="clearRoute()" class="ml-2 text-gray-400 hover:text-red-500 transition">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+
+<!-- Floating Action Buttons -->
+<div class="fixed bottom-8 right-8 flex flex-col gap-4 z-40">
+    <!-- Filter Button -->
+    <button id="filterBtn" class="bg-white hover:bg-gray-50 text-gray-700 rounded-full p-4 shadow-lg transition transform hover:scale-110 flex items-center justify-center border border-gray-200">
+        <i class="fas fa-filter text-xl text-red-600"></i>
+    </button>
+    
+    <!-- Add Button -->
+    <button id="addToiletBtn" class="bg-red-600 hover:bg-red-700 text-white rounded-full p-4 shadow-lg transition transform hover:scale-110 flex items-center justify-center">
+        <i class="fas fa-plus text-xl"></i>
+    </button>
+</div>
+
+<!-- Modal Filtrów -->
+<div id="filterModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 overflow-hidden">
+        <div class="bg-gray-100 px-4 py-3 border-b flex justify-between items-center">
+            <h3 class="font-bold text-gray-800">Filtruj toalety</h3>
+            <button id="closeFilterModal" class="text-gray-600 hover:text-gray-800">&times;</button>
+        </div>
+        <div class="p-4 space-y-4">
+            <div class="flex items-center justify-between">
+                <span class="text-gray-700">Tylko bezpłatne</span>
+                <label class="switch relative inline-block w-10 h-6">
+                    <input type="checkbox" id="filterPayable" class="opacity-0 w-0 h-0">
+                    <span class="slider round absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-300 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full"></span>
+                </label>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-gray-700">Dla niepełnosprawnych</span>
+                <label class="switch relative inline-block w-10 h-6">
+                    <input type="checkbox" id="filterDisabled" class="opacity-0 w-0 h-0">
+                    <span class="slider round absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-300 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full"></span>
+                </label>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-gray-700">Dostępne publicznie</span>
+                <label class="switch relative inline-block w-10 h-6">
+                    <input type="checkbox" id="filterPublic" class="opacity-0 w-0 h-0">
+                    <span class="slider round absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-300 transition-all duration-300 rounded-full before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:transition-all before:duration-300 before:rounded-full"></span>
+                </label>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Minimalna ocena: <span id="ratingVal" class="text-red-600 font-bold">0</span></label>
+                <input type="range" id="filterRating" min="0" max="10" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600">
+            </div>
+            <button id="applyFiltersBtn" class="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 font-bold">Zastosuj filtry</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Custom Slider CSS for toggles */
+    input:checked + .slider { background-color: #DC2626; } /* red-600 */
+    input:focus + .slider { box-shadow: 0 0 1px #DC2626; }
+    input:checked + .slider:before { transform: translateX(16px); }
+</style>
+
+<!-- Modal dodawania toalety -->
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-gray-900 bg-opacity-60 transition-opacity"></div>
+
+    <!-- Modal Content -->
+    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm sm:max-w-md flex flex-col max-h-[calc(100vh-2rem)] overflow-hidden">
+        
+        <!-- Header (Fixed) -->
+        <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center shrink-0">
+            <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-map-marker-alt text-red-600"></i> Dodaj toaletę
+            </h3>
+            <button id="closeAddModal" class="text-gray-400 hover:text-gray-700 transition rounded-full p-1 hover:bg-gray-200">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Scrollable Body -->
+        <div class="p-4 overflow-y-auto custom-scrollbar space-y-4">
+            <form id="addToiletForm">
+                
+                <!-- Nazwa -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Nazwa</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                            <i class="fas fa-heading text-xs"></i>
+                        </span>
+                        <input type="text" name="place_name" class="block w-full pl-8 pr-3 py-2 text-sm rounded-lg border-gray-300 focus:ring-red-500 focus:border-red-500 bg-gray-50 border" required placeholder="np. Szalet Miejski">
+                    </div>
+                </div>
+
+                <!-- Opis -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Opis</label>
+                    <textarea name="description" rows="2" class="block w-full p-2 text-sm rounded-lg border-gray-300 focus:ring-red-500 focus:border-red-500 bg-gray-50 border" required placeholder="Czysto, papier jest..."></textarea>
+                </div>
+                
+                <!-- Godziny otwarcia (Compact) -->
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-2">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                        <i class="far fa-clock"></i> Godziny
+                    </h4>
+                    
+                    <!-- Pn-Pt -->
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-semibold text-gray-600 w-10">Pn-Pt</span>
+                        <div class="flex items-center gap-1 flex-1">
+                            <input type="time" name="weekdayOpen" class="w-full text-xs border-gray-300 rounded p-1 focus:border-red-500 focus:ring-red-500">
+                            <span class="text-gray-400">-</span>
+                            <input type="time" name="weekdayClose" class="w-full text-xs border-gray-300 rounded p-1 focus:border-red-500 focus:ring-red-500">
+                        </div>
+                    </div>
+
+                    <!-- Weekend -->
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-semibold text-gray-600 w-10">Wkd</span>
+                        <div class="flex items-center gap-1 flex-1">
+                            <input type="time" name="weekendOpen" class="w-full text-xs border-gray-300 rounded p-1 focus:border-red-500 focus:ring-red-500">
+                            <span class="text-gray-400">-</span>
+                            <input type="time" name="weekendClose" class="w-full text-xs border-gray-300 rounded p-1 focus:border-red-500 focus:ring-red-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ocena -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Ocena</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                            <i class="fas fa-star text-xs"></i>
+                        </span>
+                        <input type="number" name="rating" min="1" max="10" value="5" class="block w-full pl-8 pr-3 py-2 text-sm rounded-lg border-gray-300 focus:ring-red-500 focus:border-red-500 bg-gray-50 border" required>
+                    </div>
+                </div>
+
+                <!-- Opcje (Uporządkowane) -->
+                <div class="space-y-2 pt-1">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Udogodnienia</label>
+                    <div class="flex flex-col gap-2">
+                        <label class="flex items-center space-x-3 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer bg-white">
+                            <input type="checkbox" name="payable" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                            <span class="text-sm text-gray-700">Płatna</span>
+                        </label>
+
+                        <label class="flex items-center space-x-3 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer bg-white">
+                            <input type="checkbox" name="forDisabled" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                            <span class="text-sm text-gray-700">Dostępna dla niepełnosprawnych</span>
+                        </label>
+
+                        <label class="flex items-center space-x-3 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer bg-white">
+                            <input type="checkbox" name="onlyForClients" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                            <span class="text-sm text-gray-700">Tylko dla klientów</span>
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer (Fixed) -->
+        <div class="p-4 border-t bg-gray-50 shrink-0">
+            <button type="submit" form="addToiletForm" class="w-full bg-red-600 text-white py-2.5 px-4 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition font-bold shadow-md text-sm flex items-center justify-center gap-2">
+                <i class="fas fa-check"></i> Dodaj znacznik
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal dla szczegółów toalety (ukryty domyślnie) -->
+<div id="detailsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalTitle">Nazwa toalety</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500" id="modalDescription">Opis...</p>
+                <div id="modalDetails" class="mt-4 text-left text-sm"></div>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button id="closeModalBtn" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    Zamknij
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Zmienne globalne ---
+        const map = L.map('map').setView([50.6751, 17.9213], 13);
+        let userLocation = null;
+        let userMarker = null;
+        let routeLayer = null;
+        let markersLayer = L.layerGroup().addTo(map);
+        let allToilets = [];
+        let isFirstLocationSet = false; 
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Custom icons
+        const toiletIcon = L.icon({
+            iconUrl: '/static/toilet_icon.png',
+            iconSize: [56, 56],
+            iconAnchor: [28, 56],
+            popupAnchor: [0, -56]
+        });
+
+        const userIcon = L.icon({
+            iconUrl: '/static/user_icon.png',
+            iconSize: [56, 56],
+            iconAnchor: [28, 56],
+            popupAnchor: [0, -56]
+        });
+
+        // --- Funkcje pomocnicze ---
+        
+        function tryAutoRoute() {
+            console.log("tryAutoRoute wywołana:", {
+                hasUserLocation: !!userLocation,
+                toiletsCount: allToilets.length
+            });
+            
+            if (!userLocation) {
+                console.log("Auto-route: Czekam na lokalizację użytkownika...");
+                return;
+            }
+            
+            if (allToilets.length === 0) {
+                console.log("Auto-route: Czekam na listę toalet...");
+                return;
+            }
+
+            console.log("Auto-route: Mam komplet danych. Szukam najbliższej toalety...");
+            const nearest = findNearestToilet(userLocation.lat, userLocation.lng);
+            
+            if (nearest) {
+                console.log("Auto-route: Znaleziono najbliższą toaletę:", nearest.name || nearest.place_name);
+                
+                // Daj chwilę na załadowanie mapy i markerów
+                setTimeout(() => {
+                    map.invalidateSize();
+                    console.log("Auto-route: Wyznaczam trasę do:", nearest.lat, nearest.lon);
+                    window.calculateRoute(nearest.lat, nearest.lon, true);
+                }, 500);
+            } else {
+                console.log("Auto-route: Brak toalet w pobliżu.");
+            }
+        }
+
+        function findNearestToilet(lat, lon) {
+            if (allToilets.length === 0) return null;
+            let nearest = null;
+            let minDist = Infinity;
+            allToilets.forEach(t => {
+                const dist = map.distance([lat, lon], [t.lat, t.lon]);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = t;
+                }
+            });
+            return nearest;
+        }
+
+        window.clearRoute = function() {
+            if (routeLayer) map.removeLayer(routeLayer);
+            document.getElementById('routeInfo').classList.add('hidden');
+        };
+
+        function fetchToilets(params = {}) {
+            const url = new URL('/api/toilets', window.location.origin);
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('loadingOverlay').classList.remove('opacity-0');
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(`Pobrano ${data.length} toalet z API`);
+                    allToilets = data;
+                    markersLayer.clearLayers();
+                    data.forEach(toilet => {
+                        const marker = L.marker([toilet.lat, toilet.lon], {icon: toiletIcon});
+                        let hoursInfo = '';
+                        if (toilet.weekday_open) {
+                            hoursInfo = `<p class="text-xs text-gray-500 mt-1"><i class="far fa-clock"></i> Pn-Pt: ${toilet.weekday_open}-${toilet.weekday_close}</p>`;
+                        }
+
+                        const popupContent = `
+                            <div class="font-sans min-w-[200px]">
+                                <h3 class="font-bold text-lg text-gray-800 border-b pb-1 mb-2">${toilet.name || 'Toaleta'}</h3>
+                                <p class="text-sm font-medium text-gray-700">${toilet.place_name || ''}</p>
+                                <p class="text-sm text-gray-600 italic mb-2">${toilet.description || 'Brak opisu'}</p>
+                                ${hoursInfo}
+                                
+                                <div class="flex flex-wrap gap-1 text-xs mb-3 mt-2">
+                                    <span class="px-2 py-1 rounded font-bold ${toilet.payable ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                                        ${toilet.payable ? 'Płatna' : 'Bezpłatna'}
+                                    </span>
+                                    ${toilet.forDisabled ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold"><i class="fas fa-wheelchair"></i></span>' : ''}
+                                    <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded font-bold flex items-center">
+                                        <i class="fas fa-star mr-1"></i> ${toilet.rating || '?'}
+                                    </span>
+                                </div>
+                                
+                                <button onclick="calculateRoute(${toilet.lat}, ${toilet.lon})" class="w-full bg-red-600 text-white py-2 px-3 rounded hover:bg-red-700 text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                                    <i class="fas fa-directions"></i> Nawiguj
+                                </button>
+                            </div>
+                        `;
+                        marker.bindPopup(popupContent);
+                        markersLayer.addLayer(marker);
+                    });
+                    console.log("Wszystkie markery dodane, wywołuję tryAutoRoute()...");
+                    tryAutoRoute();
+                })
+                .catch(err => console.error('Błąd:', err))
+                .finally(() => {
+                    document.getElementById('loadingOverlay').classList.add('opacity-0');
+                    setTimeout(() => {
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                    }, 500);
+                });
+        }
+
+        // --- Obsługa Lokalizacji ---
+        document.getElementById('locateMeBtn').addEventListener('click', function() {
+            map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
+        });
+
+        map.on('locationfound', function(e) {
+            console.log("Lokalizacja znaleziona:", e.latlng);
+            userLocation = e.latlng;
+            
+            // Tylko przy pierwszej lokalizacji ustaw widok na użytkownika
+            if (!isFirstLocationSet) {
+                map.setView(e.latlng, 16);
+                isFirstLocationSet = true;
+                console.log("Pierwsza lokalizacja - centrowanie mapy");
+            }
+            
+            if (userMarker) {
+                userMarker.setLatLng(e.latlng);
+            } else {
+                userMarker = L.marker(e.latlng, {
+                    icon: userIcon,
+                    zIndexOffset: 1000
+                }).addTo(map).bindPopup("Twoja lokalizacja");
+            }
+
+            console.log("Wywołuję tryAutoRoute() po otrzymaniu lokalizacji...");
+            tryAutoRoute();
+        });
+
+        map.on('locationerror', function(e) {
+            console.warn("Lokalizacja niedostępna:", e.message);
+            // alert("Nie udało się pobrać lokalizacji: " + e.message);
+        });
+
+        // Inicjalizacja
+        console.log("Inicjalizacja: Pobieranie toalet...");
+        fetchToilets();
+        console.log("Inicjalizacja: Rozpoczynam lokalizację użytkownika z automatycznym śledzeniem...");
+        map.locate({setView: false, maxZoom: 16, enableHighAccuracy: true, watch: true, timeout: 30000});
+
+        // --- Filtrowanie ---
+        const filterBtn = document.getElementById('filterBtn');
+        const filterModal = document.getElementById('filterModal');
+        const closeFilterModal = document.getElementById('closeFilterModal');
+        const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+        const ratingSlider = document.getElementById('filterRating');
+        const ratingVal = document.getElementById('ratingVal');
+
+        ratingSlider.addEventListener('input', (e) => ratingVal.textContent = e.target.value);
+
+        filterBtn.addEventListener('click', () => filterModal.classList.remove('hidden'));
+        closeFilterModal.addEventListener('click', () => filterModal.classList.add('hidden'));
+
+        applyFiltersBtn.addEventListener('click', () => {
+            fetch('/api/toilets')
+                .then(res => res.json())
+                .then(data => {
+                    const onlyFree = document.getElementById('filterPayable').checked;
+                    const forDisabled = document.getElementById('filterDisabled').checked;
+                    const publicOnly = document.getElementById('filterPublic').checked;
+                    const minRating = parseFloat(document.getElementById('filterRating').value);
+
+                    const filtered = data.filter(t => {
+                        if (onlyFree && t.payable) return false;
+                        if (forDisabled && !t.forDisabled) return false;
+                        if (publicOnly && t.onlyForClients) return false;
+                        if ((t.rating || 0) < minRating) return false;
+                        return true;
+                    });
+
+                    markersLayer.clearLayers();
+                    filtered.forEach(toilet => {
+                        const marker = L.marker([toilet.lat, toilet.lon], {icon: toiletIcon});
+                        let hoursInfo = '';
+                        if (toilet.weekday_open) hoursInfo = `<p class="text-xs text-gray-500 mt-1"><i class="far fa-clock"></i> Pn-Pt: ${toilet.weekday_open}-${toilet.weekday_close}</p>`;
+
+                        const popupContent = `
+                             <div class="font-sans min-w-[200px]">
+                                <h3 class="font-bold text-lg text-gray-800 border-b pb-1 mb-2">${toilet.name || 'Toaleta'}</h3>
+                                ${hoursInfo}
+                                <div class="flex flex-wrap gap-1 text-xs mb-3 mt-2">
+                                    <span class="px-2 py-1 rounded font-bold ${toilet.payable ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                                        ${toilet.payable ? 'Płatna' : 'Bezpłatna'}
+                                    </span>
+                                    ${toilet.forDisabled ? '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold"><i class="fas fa-wheelchair"></i></span>' : ''}
+                                    <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded font-bold"><i class="fas fa-star mr-1"></i> ${toilet.rating || '?'}</span>
+                                </div>
+                                <button onclick="calculateRoute(${toilet.lat}, ${toilet.lon})" class="w-full bg-red-600 text-white py-2 px-3 rounded hover:bg-red-700 text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                                    <i class="fas fa-directions"></i> Nawiguj
+                                </button>
+                            </div>
+                        `;
+                        marker.bindPopup(popupContent);
+                        markersLayer.addLayer(marker);
+                    });
+                    
+                    filterModal.classList.add('hidden');
+                });
+        });
+
+        // --- Logika dodawania toalety ---
+        let isAddingMode = false;
+        let tempMarker = null;
+        let selectedLocation = null;
+        const addBtn = document.getElementById('addToiletBtn');
+        const addModal = document.getElementById('addModal');
+        const closeAddModal = document.getElementById('closeAddModal');
+        const addForm = document.getElementById('addToiletForm');
+
+        addBtn.addEventListener('click', () => {
+            isAddingMode = !isAddingMode;
+            if (isAddingMode) {
+                addBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                addBtn.classList.add('bg-gray-600', 'hover:bg-gray-700'); 
+                addBtn.innerHTML = '<i class="fas fa-times text-xl"></i>';
+                document.getElementById('map').style.cursor = 'crosshair';
+            } else {
+                resetAddMode();
+            }
+        });
+
+        function resetAddMode() {
+            isAddingMode = false;
+            addBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+            addBtn.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+            addBtn.innerHTML = '<i class="fas fa-plus text-xl"></i>';
+            document.getElementById('map').style.cursor = '';
+            if (tempMarker) {
+                map.removeLayer(tempMarker);
+                tempMarker = null;
+            }
+        }
+
+        map.on('click', function(e) {
+            if (isAddingMode) {
+                selectedLocation = e.latlng;
+                if (tempMarker) map.removeLayer(tempMarker);
+                tempMarker = L.marker(e.latlng).addTo(map);
+                addModal.classList.remove('hidden');
+            }
+        });
+
+        closeAddModal.addEventListener('click', () => addModal.classList.add('hidden'));
+
+        addForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!selectedLocation) return;
+            const formData = new FormData(addForm);
+            const data = Object.fromEntries(formData.entries());
+            data.payable = formData.get('payable') === 'on';
+            data.forDisabled = formData.get('forDisabled') === 'on';
+            data.onlyForClients = formData.get('onlyForClients') === 'on';
+            data.lat = selectedLocation.lat;
+            data.lon = selectedLocation.lng;
+            data.name = data.place_name;
+
+            fetch('/api/toilets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(response => {
+                if (response.status === 'success') {
+                    alert('Dodano!');
+                    addModal.classList.add('hidden');
+                    resetAddMode();
+                    fetchToilets();
+                } else {
+                    alert('Błąd: ' + (response.message || response.error));
+                }
+            });
+        });
+
+        // --- Funkcja Globalna Nawigacji ---
+        window.calculateRoute = function(destLat, destLon, isAutomatic = false) {
+            console.log("calculateRoute wywołana:", { destLat, destLon, isAutomatic, hasUserLocation: !!userLocation });
+            
+            if (!userLocation) {
+                console.warn("Brak lokalizacji użytkownika!");
+                if (!isAutomatic) {
+                    map.locate({setView: true, maxZoom: 16});
+                    alert("Lokalizuję Cię... Spróbuj za chwilę.");
+                }
+                return;
+            }
+
+            console.log("Lokalizacja użytkownika:", userLocation.lat, userLocation.lng);
+
+            const activeEl = document.activeElement;
+            const isButton = activeEl && (activeEl.tagName === 'BUTTON' || activeEl.classList.contains('btn'));
+            
+            let originalContent = '';
+            if (isButton && !isAutomatic) {
+                originalContent = activeEl.innerHTML;
+                activeEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Liczę...';
+                activeEl.disabled = true;
+            }
+
+            const requestData = {
+                lat: userLocation.lat,
+                lon: userLocation.lng,
+                dest_lat: destLat,
+                dest_lon: destLon
+            };
+            
+            console.log("Wysyłam zapytanie do API:", requestData);
+
+            fetch('/api/route', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Route API Response:", data);
+                
+                if (data.status === 'success' && data.route) {
+                    if (routeLayer) map.removeLayer(routeLayer);
+                    
+                    if (data.route.routes && data.route.routes.length > 0) {
+                        const geometry = data.route.routes[0].geometry;
+                        
+                        if (geometry.type === 'LineString') {
+                            const latLngs = geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                            routeLayer = L.polyline(latLngs, {
+                                color: '#DC2626',
+                                weight: 6,
+                                opacity: 0.8
+                            }).addTo(map);
+                            map.fitBounds(routeLayer.getBounds(), {padding: [50, 50]});
+                        } else {
+                            routeLayer = L.geoJSON(geometry, {
+                                style: { color: '#DC2626', weight: 6, opacity: 0.8 }
+                            }).addTo(map);
+                            map.fitBounds(routeLayer.getBounds(), {padding: [50, 50]});
+                        }
+                        
+                        map.closePopup();
+                        
+                        const routeData = data.route.routes[0];
+                        const durationSec = routeData.duration;
+                        const distanceM = routeData.distance;
+                        
+                        const minutes = Math.round(durationSec / 60);
+                        document.getElementById('routeTime').textContent = minutes + " min";
+                        
+                        let distText = "";
+                        if (distanceM < 1000) {
+                            distText = Math.round(distanceM) + " m";
+                        } else {
+                            distText = (distanceM / 1000).toFixed(1) + " km";
+                        }
+                        document.getElementById('routeDist').textContent = distText;
+                        
+                        document.getElementById('routeInfo').classList.remove('hidden');
+                    } else {
+                        console.warn('Nie udało się wyznaczyć trasy (brak danych).');
+                        if (isButton && !isAutomatic) alert('Nie udało się wyznaczyć trasy (brak danych).');
+                    }
+                } else {
+                    console.warn('Błąd API trasy: ' + (data.message || 'Nieznany błąd'));
+                    if (isButton && !isAutomatic) alert('Błąd: ' + (data.message || 'Nieznany błąd'));
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                if (isButton && !isAutomatic) alert('Błąd połączenia.');
+            })
+            .finally(() => {
+                if (isButton && !isAutomatic && activeEl) {
+                    activeEl.innerHTML = originalContent;
+                    activeEl.disabled = false;
+                }
+            });
+        };
+    });
+</script>
+{% endblock %}
